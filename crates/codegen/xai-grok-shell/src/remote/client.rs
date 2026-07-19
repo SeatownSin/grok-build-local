@@ -14,31 +14,6 @@ pub fn share_url(permission_id: &str) -> String {
         std::env::var("GROK_CODE_WEB_URL").unwrap_or_else(|_| GROK_CODE_WEB_URL.to_string());
     format!("{}/build/share/{}", web_url, permission_id)
 }
-fn add_cli_chat_proxy_headers_blocking(
-    builder: reqwest::blocking::RequestBuilder,
-    auth: &GrokAuth,
-    alpha_test_key: Option<&str>,
-    url: &str,
-) -> reqwest::blocking::RequestBuilder {
-    let mut builder = builder
-        .header("Authorization", format!("Bearer {}", &auth.key))
-        .header("X-XAI-Token-Auth", GrokComConfig::default().token_header)
-        .header("x-userid", &auth.user_id)
-        .header("x-grok-client-version", xai_grok_version::VERSION);
-    if let Some(email) = &auth.email {
-        builder = builder.header("x-email", email);
-    }
-    let _ = (alpha_test_key, url);
-    builder
-        .header(
-            "x-grok-client-identifier",
-            crate::http::process_client_identifier(),
-        )
-        .header(
-            crate::http::CLIENT_MODE_HEADER,
-            crate::http::process_client_mode(),
-        )
-}
 async fn parse_json_response<T: serde::de::DeserializeOwned>(
     response: reqwest::Response,
 ) -> Result<T, BackendError> {
@@ -93,6 +68,14 @@ pub async fn fetch_subagent_bundle(
     deployment_key: Option<&str>,
     alpha_test_key: Option<&str>,
 ) -> Result<SubagentBundle, BackendError> {
+    // This build never contacts xAI infrastructure (the default bundle
+    // source is the cli-chat-proxy). Custom non-xAI mirrors still work.
+    if crate::util::is_xai_infrastructure_url(cli_chat_proxy_base_url) {
+        return Err(BackendError::Auth(format!(
+            "bundle source '{cli_chat_proxy_base_url}' targets xAI infrastructure, \
+             which this build never contacts"
+        )));
+    }
     let url = format!("{}/subagents/bundle", cli_chat_proxy_base_url);
     let response = add_bundle_fetch_headers(
         crate::http::shared_client()
@@ -148,6 +131,12 @@ async fn fetch_bundle_inner(
     deployment_key: Option<&str>,
     alpha_test_key: Option<&str>,
 ) -> Result<FetchedBundle, BackendError> {
+    if crate::util::is_xai_infrastructure_url(cli_chat_proxy_base_url) {
+        return Err(BackendError::Auth(format!(
+            "bundle source '{cli_chat_proxy_base_url}' targets xAI infrastructure, \
+             which this build never contacts"
+        )));
+    }
     let archive_url = format!("{}/bundle/archive", cli_chat_proxy_base_url);
     let raw_client = crate::http::shared_client();
     let client: reqwest_middleware::ClientWithMiddleware = if let Some(am) = auth_manager {
@@ -431,6 +420,14 @@ impl BackendClient {
         &self,
         builder: reqwest::RequestBuilder,
     ) -> Result<reqwest::Response, BackendError> {
+        // This build never contacts xAI infrastructure; the default
+        // backend (`code.grok.com` — sharing, session registry) is xAI's.
+        if crate::util::is_xai_infrastructure_url(&self.base_url) {
+            return Err(BackendError::Auth(format!(
+                "backend '{}' targets xAI infrastructure, which this build never contacts",
+                self.base_url
+            )));
+        }
         let headers = self.auth_header_map().await?;
         let builder = xai_file_utils::trace_context::inject_trace_context_into_request(
             builder.headers(headers),
@@ -556,106 +553,19 @@ impl BackendClient {
 /// Retries up to 2 times (3 attempts total) on transient errors (5xx,
 /// network). 4xx and parse errors are not retried.
 pub fn fetch_settings_blocking(
-    cli_chat_proxy_base_url: &str,
-    auth: &GrokAuth,
-    alpha_test_key: Option<&str>,
+    _cli_chat_proxy_base_url: &str,
+    _auth: &GrokAuth,
+    _alpha_test_key: Option<&str>,
 ) -> Option<crate::util::config::RemoteSettings> {
-    let client = crate::http::shared_blocking_client();
-    let url = format!("{}/settings", cli_chat_proxy_base_url);
-    for attempt in 0u64..3 {
-        if attempt > 0 {
-            std::thread::sleep(std::time::Duration::from_millis(500 * attempt));
-        }
-        let request =
-            add_cli_chat_proxy_headers_blocking(client.get(&url), auth, alpha_test_key, &url);
-        match request.send() {
-            Ok(resp) if resp.status().is_success() => match resp.json() {
-                Ok(settings) => {
-                    tracing::debug!("Fetched remote settings from cli-chat-proxy");
-                    return Some(settings);
-                }
-                Err(e) => {
-                    tracing::warn!(attempt, "Failed to parse settings response: {e}");
-                    return None;
-                }
-            },
-            Ok(resp) if resp.status().is_server_error() => {
-                tracing::warn!(
-                    attempt,
-                    status = resp.status().as_u16(),
-                    "Settings fetch server error, retrying"
-                );
-                continue;
-            }
-            Ok(resp) => {
-                tracing::warn!(status = resp.status().as_u16(), "Failed to fetch settings");
-                return None;
-            }
-            Err(e) => {
-                tracing::warn!(attempt, "Settings fetch network error: {e}");
-                continue;
-            }
-        }
-    }
-    tracing::error!("Settings fetch failed after 3 attempts");
+    // Remote-settings pull removed: this build never contacts the
+    // cli-chat-proxy for announcements, promos, campaigns, or feature
+    // flags. Callers already treat `None` as "use local defaults".
     None
 }
-#[derive(Deserialize)]
-struct LoginConfigResponse {
-    /// Tri-state: `Some` forces a transport; `None`/absent → client default.
-    #[serde(default)]
-    device_flow: Option<bool>,
-}
-/// Fetch `grok_build_login_device_flow` from cli-chat-proxy `GET /v1/login-config`.
-///
-/// Unauthenticated (pre-login); `x-grok-agent-id` is the per-install bucketing key.
-/// Best-effort: any error or unset flag returns `None` so the caller keeps the
-/// loopback default. Caps at 1.5s with no retries since it's on the login path;
-/// `agent_id()` runs on the blocking pool so the fetch never stalls the executor.
-pub async fn fetch_login_device_flow(cli_chat_proxy_base_url: &str) -> Option<bool> {
-    let agent_id = tokio::task::spawn_blocking(xai_grok_telemetry::id::agent_id)
-        .await
-        .ok()?;
-    let client = crate::http::shared_client();
-    let url = format!("{}/login-config", cli_chat_proxy_base_url);
-    let response = client
-        .get(&url)
-        .timeout(std::time::Duration::from_millis(1500))
-        .header("x-grok-agent-id", agent_id)
-        .header("x-grok-client-version", xai_grok_version::VERSION)
-        .header(
-            "x-grok-client-identifier",
-            crate::http::process_client_identifier(),
-        )
-        .header(
-            crate::http::CLIENT_MODE_HEADER,
-            crate::http::process_client_mode(),
-        )
-        .send()
-        .await;
-    let resp = match response {
-        Ok(resp) if resp.status().is_success() => resp,
-        Ok(resp) => {
-            tracing::debug!(status = resp.status().as_u16(), "login-config fetch failed");
-            return None;
-        }
-        Err(e) => {
-            tracing::debug!("login-config fetch error: {e}");
-            return None;
-        }
-    };
-    match resp.json::<LoginConfigResponse>().await {
-        Ok(cfg) => {
-            tracing::debug!(
-                device_flow = ? cfg.device_flow, "Fetched remote login-config"
-            );
-            cfg.device_flow
-        }
-        Err(e) => {
-            tracing::debug!("Failed to parse login-config response: {e}");
-            None
-        }
-    }
+pub async fn fetch_login_device_flow(_cli_chat_proxy_base_url: &str) -> Option<bool> {
+    // Login-config pull removed: it transmitted the per-install agent id as
+    // an A/B bucketing key. `None` keeps the client's loopback default.
+    None
 }
 /// Default context window (256k) when the remote endpoint doesn't provide one.
 pub(crate) const DEFAULT_CONTEXT_WINDOW: u64 = 256_000;
@@ -719,22 +629,36 @@ pub(crate) fn fetch_models_blocking(
 ) -> Result<FetchModelsResult, BackendError> {
     let client = crate::http::shared_blocking_client();
     let source = ListModelsEndpoint::from_endpoints(endpoints, fetch_auth);
+    // This build never contacts xAI infrastructure — the stock catalog
+    // endpoint is the cli-chat-proxy. A stale cached token from an older
+    // install must not resurrect this fetch, so block by destination.
+    if crate::util::is_xai_infrastructure_url(&source.url) {
+        return Err(BackendError::Auth(format!(
+            "models endpoint '{}' targets xAI infrastructure, which this build never contacts",
+            source.url
+        )));
+    }
     let inference_base_url = endpoints.resolve_inference_base_url();
     tracing::info!("Fetching models from {}", source.url);
     let mut request = client.get(&source.url);
     match source.auth {
         EndpointAuth::ApiKey => {
             let api_key = crate::agent::auth_method::read_xai_api_key_env()
-                .or_else(|_| {
-                    auth.map(|a| a.key.clone())
-                        .ok_or(std::env::VarError::NotPresent)
-                })
-                .map_err(|_| {
-                    BackendError::Auth(
+                .ok()
+                .or_else(|| auth.map(|a| a.key.clone()));
+            match api_key {
+                Some(api_key) => {
+                    request = request.header("Authorization", format!("Bearer {}", api_key));
+                }
+                // Loopback model servers (Ollama, LM Studio, vLLM, …) list
+                // models without auth; proceed keyless instead of failing.
+                None if crate::util::is_loopback_url(&source.url) => {}
+                None => {
+                    return Err(BackendError::Auth(
                         "No API key for custom models endpoint. Set XAI_API_KEY.".into(),
-                    )
-                })?;
-            request = request.header("Authorization", format!("Bearer {}", api_key));
+                    ));
+                }
+            }
         }
         EndpointAuth::Session => {
             let auth = auth.ok_or_else(|| {
@@ -840,7 +764,12 @@ pub fn parse_remote_model_value(
         api_key: get_string(obj, "apiKey").or_else(|| get_string(obj, "api_key")),
         env_key: get_env_keys(obj, "envKey").or_else(|| get_env_keys(obj, "env_key")),
         api_backend,
-        context_window,
+        no_auth: obj
+            .get("noAuth")
+            .or_else(|| obj.get("no_auth"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        context_window: Some(context_window),
         auto_compact_threshold_percent: get_u64(obj, "autoCompactThresholdPercent")
             .or_else(|| get_u64(obj, "auto_compact_threshold_percent"))
             .and_then(|v| u8::try_from(v).ok()),
@@ -1029,18 +958,6 @@ mod tests {
     };
     use std::sync::{Arc, Mutex};
     #[test]
-    fn login_config_response_parses_tristate() {
-        let parse = |s: &str| {
-            serde_json::from_str::<LoginConfigResponse>(s)
-                .unwrap()
-                .device_flow
-        };
-        assert_eq!(parse(r#"{"device_flow": true}"#), Some(true));
-        assert_eq!(parse(r#"{"device_flow": false}"#), Some(false));
-        assert_eq!(parse(r#"{"device_flow": null}"#), None);
-        assert_eq!(parse("{}"), None, "absent flag must parse as unset");
-    }
-    #[test]
     fn get_env_keys_parses_strings_and_rejects_non_strings() {
         use crate::agent::config::EnvKeys;
         let parse = |v: serde_json::Value| {
@@ -1115,64 +1032,21 @@ mod tests {
         let handle = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
         (format!("{base}/v1"), seen, handle)
     }
+    /// Login-config pull removed: even with a live server offering a
+    /// `device_flow` answer, the fetch must return `None` (client default)
+    /// and never send a request — the per-install agent id was the A/B
+    /// bucketing key and must not leave the machine.
     #[tokio::test]
-    async fn fetch_login_device_flow_parses_2xx_bodies() {
-        for (body, expected) in [
-            (r#"{"device_flow": true}"#, Some(true)),
-            (r#"{"device_flow": false}"#, Some(false)),
-            (r#"{"device_flow": null}"#, None),
-            (r#"{}"#, None),
-            (r#"{"other": 1}"#, None),
-        ] {
-            let (base, _seen, server) =
-                start_login_config_server(StatusCode::OK, body.to_string()).await;
-            let got = fetch_login_device_flow(&base).await;
-            server.abort();
-            assert_eq!(got, expected, "body {body:?}");
-        }
-    }
-    #[tokio::test]
-    async fn fetch_login_device_flow_errors_return_none() {
-        for (status, body) in [
-            (StatusCode::NOT_FOUND, r#"{"device_flow": true}"#),
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                r#"{"device_flow": true}"#,
-            ),
-            (StatusCode::OK, "not json"),
-        ] {
-            let (base, _seen, server) = start_login_config_server(status, body.to_string()).await;
-            let got = fetch_login_device_flow(&base).await;
-            server.abort();
-            assert_eq!(got, None, "status {status}, body {body:?}");
-        }
-    }
-    #[tokio::test]
-    async fn fetch_login_device_flow_sends_only_unauthenticated_headers() {
+    async fn fetch_login_device_flow_never_contacts_server() {
         let (base, seen, server) =
             start_login_config_server(StatusCode::OK, r#"{"device_flow": true}"#.to_string()).await;
         let got = fetch_login_device_flow(&base).await;
         server.abort();
-        assert_eq!(got, Some(true));
-        let seen = seen.lock().unwrap();
-        let h = seen
-            .last()
-            .expect("server should have received one request");
+        assert_eq!(got, None, "removed fetch must yield the client default");
         assert!(
-            h.agent_id.as_deref().is_some_and(|v| !v.is_empty()),
-            "must send x-grok-agent-id (the bucketing key)"
+            seen.lock().unwrap().is_empty(),
+            "no login-config request may reach the server"
         );
-        assert!(
-            h.client_identifier.is_some(),
-            "must send x-grok-client-identifier"
-        );
-        assert!(
-            h.client_version.is_some(),
-            "must send x-grok-client-version"
-        );
-        assert_eq!(h.authorization, None, "must not send Authorization");
-        assert_eq!(h.user_id, None, "must not send x-userid");
-        assert_eq!(h.email, None, "must not send x-email");
     }
     #[derive(Debug, Default, Clone)]
     struct SeenHeaders {
@@ -1477,10 +1351,7 @@ mod tests {
         );
         let result = parse_remote_model_value(&value, "https://default.url").unwrap();
         assert_eq!(result.model, "meta-model-id");
-        assert_eq!(
-            result.context_window,
-            std::num::NonZeroU64::new(131072).unwrap()
-        );
+        assert_eq!(result.context_window, std::num::NonZeroU64::new(131072));
         assert_eq!(result.agent_type, "concise");
     }
     #[test]

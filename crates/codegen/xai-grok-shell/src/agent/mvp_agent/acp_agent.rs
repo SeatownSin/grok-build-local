@@ -502,13 +502,14 @@ impl acp::Agent for MvpAgent {
                         .models_manager
                         .models()
                         .values()
-                        .any(|m| m.has_own_credentials())
+                        .any(|m| m.has_own_credentials() || m.requires_no_auth())
                     {
                         emit_login_span(false, "api_key", None, Some("no_credentials"));
                         return Err(
                             acp::Error::auth_required()
                                 .data(
-                                    "Set XAI_API_KEY or add api_key/env_key to config.toml.",
+                                    "Set XAI_API_KEY, or add api_key/env_key (or a no_auth \
+                                     local model) to config.toml.",
                                 ),
                         );
                     }

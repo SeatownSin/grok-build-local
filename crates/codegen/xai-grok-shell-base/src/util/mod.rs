@@ -113,6 +113,75 @@ fn is_loopback_host(parsed: &reqwest::Url) -> bool {
         None => false,
     }
 }
+/// `true` when an I/O error represents file-lock contention — another handle
+/// already holds the lock.
+///
+/// On Unix, `fs2`/`flock(LOCK_NB)` reports this as [`std::io::ErrorKind::WouldBlock`]
+/// (advisory locking). On Windows, `fs2`/`LockFileEx` locks are **mandatory**
+/// and report contention as the raw OS error `ERROR_LOCK_VIOLATION` (33) — or
+/// `ERROR_LOCK_FAILED` (167) — which the standard library does **not** map to
+/// `WouldBlock`. Callers that only checked `WouldBlock` therefore treated a
+/// contended Windows lock as a hard error instead of "busy / try stale
+/// recovery". Match both so lock-contention handling is cross-platform.
+pub fn is_lock_contention(err: &std::io::Error) -> bool {
+    if err.kind() == std::io::ErrorKind::WouldBlock {
+        return true;
+    }
+    #[cfg(windows)]
+    {
+        // ERROR_LOCK_VIOLATION = 33, ERROR_LOCK_FAILED = 167.
+        if matches!(err.raw_os_error(), Some(33) | Some(167)) {
+            return true;
+        }
+    }
+    false
+}
+/// `true` when the URL's host is a loopback address (`localhost`,
+/// `127.0.0.0/8`, `[::1]`). Used to treat local model servers (Ollama,
+/// llama.cpp, LM Studio, vLLM) as needing no authentication.
+pub fn is_loopback_url(url: &str) -> bool {
+    reqwest::Url::parse(url)
+        .ok()
+        .is_some_and(|u| is_loopback_host(&u))
+}
+/// `true` when the URL targets xAI-operated infrastructure (`x.ai`,
+/// `grok.com`, or any subdomain of either). This build never contacts xAI:
+/// model-catalog entries pointing there are filtered out, and the sampler
+/// refuses such endpoints at construction (its own mirrored check).
+///
+/// Unlike [`is_xai_api_url`], loopback hosts do NOT match — that
+/// predicate's localhost arm exists for dev-proxy classification and must
+/// not cause local model servers to be filtered.
+/// Replace an xAI-infrastructure base URL with an unroutable loopback
+/// sentinel so every request through it fails locally and instantly —
+/// zero DNS traffic, zero bytes to xAI. For constructors that cannot
+/// return an error; request paths that can, should call
+/// [`is_xai_infrastructure_url`] and error instead.
+pub fn block_xai_base_url(base_url: String, what: &str) -> String {
+    if is_xai_infrastructure_url(&base_url) {
+        tracing::warn!(
+            base_url,
+            "{what} targets xAI infrastructure, which this build never contacts; \
+             requests will fail locally"
+        );
+        return "http://127.0.0.1:0/xai-blocked".to_owned();
+    }
+    base_url
+}
+pub fn is_xai_infrastructure_url(url: &str) -> bool {
+    let Ok(parsed) = reqwest::Url::parse(url) else {
+        return false;
+    };
+    match parsed.host_str() {
+        Some(host) => {
+            let host = host.to_ascii_lowercase();
+            ["x.ai", "grok.com"]
+                .iter()
+                .any(|blocked| host == *blocked || host.ends_with(&format!(".{blocked}")))
+        }
+        None => false,
+    }
+}
 /// Truncate a string to at most `max_chars` characters.
 /// Slices at char boundaries so multi-byte UTF-8 never panics.
 pub fn truncate(s: &str, max_chars: usize) -> &str {
@@ -285,6 +354,53 @@ mod tests {
         assert!(!is_xai_api_url(""));
         assert!(is_xai_api_url("http://api.x.ai/v1"));
         assert!(is_xai_api_url("http://localhost:11434/v1"));
+    }
+    /// `is_loopback_url` decides which model endpoints are treated as
+    /// no-auth local servers, so spoof-shaped URLs must never qualify:
+    /// classifying a remote host as loopback would silently drop the
+    /// "never send credentials" guarantee's complement (requests intended
+    /// for a local server going out with no auth is fine; a remote host
+    /// masquerading as local must not unlock the no-login startup path).
+    #[test]
+    fn test_is_loopback_url_accepts_real_loopback_only() {
+        assert!(is_loopback_url("http://localhost:11434/v1"));
+        assert!(is_loopback_url("https://localhost/v1"));
+        assert!(is_loopback_url("http://127.0.0.1:8080/v1"));
+        // Whole /8 is loopback, not just .1.
+        assert!(is_loopback_url("http://127.0.0.2:8080/v1"));
+        assert!(is_loopback_url("http://[::1]:8080/v1"));
+
+        // Userinfo trick: host is evil.com, "localhost" is credentials.
+        assert!(!is_loopback_url("http://localhost@evil.com/v1"));
+        // Subdomain tricks: domain lookups don't parse as IPs.
+        assert!(!is_loopback_url("http://127.0.0.1.evil.com/v1"));
+        assert!(!is_loopback_url("http://localhost.evil.com/v1"));
+        // Non-loopback specials and remote hosts.
+        assert!(!is_loopback_url("http://0.0.0.0:8080/v1"));
+        assert!(!is_loopback_url("http://192.168.1.50:8080/v1"));
+        assert!(!is_loopback_url("https://api.x.ai/v1"));
+        // Garbage never qualifies.
+        assert!(!is_loopback_url("not-a-url"));
+        assert!(!is_loopback_url(""));
+    }
+    #[test]
+    fn test_is_xai_infrastructure_url_blocks_xai_hosts_only() {
+        assert!(is_xai_infrastructure_url("https://api.x.ai/v1"));
+        assert!(is_xai_infrastructure_url("https://x.ai/cli"));
+        assert!(is_xai_infrastructure_url("https://cli-chat-proxy.grok.com/v1"));
+        assert!(is_xai_infrastructure_url("https://assets.grok.com"));
+        assert!(is_xai_infrastructure_url("wss://api.x.ai/v1/stt"));
+        assert!(is_xai_infrastructure_url("http://GROK.COM"));
+
+        // Local model servers must never be classified as xAI infra,
+        // even though `is_xai_api_url` counts localhost as proxy-like.
+        assert!(!is_xai_infrastructure_url("http://localhost:11434/v1"));
+        assert!(!is_xai_infrastructure_url("http://127.0.0.1:8080/v1"));
+        // Spoofs and third parties.
+        assert!(!is_xai_infrastructure_url("https://api.x.ai.evil.example/v1"));
+        assert!(!is_xai_infrastructure_url("https://notgrok.com/v1"));
+        assert!(!is_xai_infrastructure_url("https://api.openai.com/v1"));
+        assert!(!is_xai_infrastructure_url("not-a-url"));
     }
     #[test]
     fn test_is_xai_api_bearer_url() {

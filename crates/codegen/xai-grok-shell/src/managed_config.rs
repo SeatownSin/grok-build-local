@@ -325,6 +325,12 @@ async fn fetch_managed_config_once(
     token: &str,
     source: ManagedConfigSource,
 ) -> Result<ManagedConfigResponse, ManagedConfigError> {
+    // This build never contacts xAI infrastructure; managed configuration
+    // is served from xAI's console backend. Non-xAI mirrors still work.
+    if crate::util::is_xai_infrastructure_url(url) {
+        tracing::debug!(url, "managed config fetch blocked: xAI infrastructure");
+        return Err(ManagedConfigError::ServerError { status: 0 });
+    }
     let resp = match client
         .get(url)
         .header("Authorization", format!("Bearer {}", token))

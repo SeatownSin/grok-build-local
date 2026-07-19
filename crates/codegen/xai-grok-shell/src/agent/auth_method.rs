@@ -67,7 +67,12 @@ where
     if disable_api_key_auth {
         return false;
     }
-    has_xai_api_key_env() || models.into_iter().any(ModelEntry::has_own_credentials)
+    // A no-auth model (local server / loopback base_url) satisfies the gate
+    // exactly like a resolvable credential: the user can run without login.
+    has_xai_api_key_env()
+        || models
+            .into_iter()
+            .any(|m| m.has_own_credentials() || m.requires_no_auth())
 }
 
 /// Inputs to [`build_auth_methods`].

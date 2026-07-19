@@ -42,7 +42,7 @@ impl SandboxClient {
     pub fn new(base_url: impl Into<String>, auth_manager: Arc<AuthManager>) -> Self {
         Self {
             client: crate::http::shared_client(),
-            base_url: base_url.into(),
+            base_url: crate::util::block_xai_base_url(base_url.into(), "cloud sandbox backend"),
             auth_manager,
         }
     }

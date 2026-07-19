@@ -146,6 +146,25 @@ async fn build_embedding_provider(
     if config.model.as_ref().is_none_or(|m| m.is_empty()) {
         return None;
     }
+    // This build never contacts xAI infrastructure; the stock embedding
+    // endpoint is the cli-chat-proxy / api.x.ai. Memory falls back to
+    // non-vector (text) search. Local/BYOK embedding endpoints still work.
+    {
+        let host = reqwest::Url::parse(base_url)
+            .ok()
+            .and_then(|u| u.host_str().map(|h| h.to_ascii_lowercase()));
+        if let Some(host) = host
+            && ["x.ai", "grok.com"]
+                .iter()
+                .any(|b| host == *b || host.ends_with(&format!(".{b}")))
+        {
+            tracing::debug!(
+                base_url,
+                "memory embeddings disabled: endpoint targets xAI infrastructure"
+            );
+            return None;
+        }
+    }
 
     // Enforce at runtime, in release too: a `debug_assert` would compile out of
     // shipped binaries and let a scoped credential reach an unapproved URL.
@@ -1363,8 +1382,12 @@ mod tests {
 
         let auth: Arc<dyn xai_grok_auth::AuthCredentialProvider> = Arc::new(StubAuth);
         let api_key: xai_grok_tools::types::SharedApiKeyProvider = Arc::new(PanicKey);
+        // Non-xAI trusted endpoint (this build never contacts xAI, so the
+        // former `api.x.ai` fixture would be refused — see the dedicated
+        // test below).
+        let endpoint = "https://embeddings.example.com/v1";
         let scoped = EndpointScopedCredentials::for_endpoint(
-            "https://api.x.ai/v1",
+            endpoint,
             |_| true,
             Some(auth),
             Some(api_key),
@@ -1375,12 +1398,35 @@ mod tests {
             model: Some("test-embedding-model".to_string()),
             ..Default::default()
         };
-        let provider =
-            build_embedding_provider(Some(&config), &scoped, None, "https://api.x.ai/v1").await;
+        let provider = build_embedding_provider(Some(&config), &scoped, None, endpoint).await;
         assert!(
             provider.is_some(),
             "trusted endpoint must build a provider from the session credential"
         );
+    }
+
+    /// Axiom: this build never contacts xAI. An xAI embedding endpoint must
+    /// yield no provider (memory degrades to text search) even with a valid
+    /// scoped credential.
+    #[tokio::test]
+    async fn xai_embedding_endpoint_builds_no_provider() {
+        struct AnyKey;
+        impl xai_grok_tools::types::ApiKeyProvider for AnyKey {
+            fn current_api_key(&self) -> Option<String> {
+                Some("k".into())
+            }
+        }
+        let api_key: xai_grok_tools::types::SharedApiKeyProvider = Arc::new(AnyKey);
+        let config = xai_grok_config_types::MemoryEmbeddingConfig {
+            model: Some("test-embedding-model".to_string()),
+            ..Default::default()
+        };
+        for endpoint in ["https://api.x.ai/v1", "https://cli-chat-proxy.grok.com/v1"] {
+            let scoped =
+                EndpointScopedCredentials::for_endpoint(endpoint, |_| true, None, Some(api_key.clone()));
+            let provider = build_embedding_provider(Some(&config), &scoped, None, endpoint).await;
+            assert!(provider.is_none(), "xAI endpoint {endpoint} must be refused");
+        }
     }
 
     #[test]

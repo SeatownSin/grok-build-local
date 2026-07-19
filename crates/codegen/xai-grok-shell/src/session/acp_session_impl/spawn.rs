@@ -977,16 +977,15 @@ pub(crate) async fn spawn_session_actor(
     }
     persist_chat_history_jsonl_sync(&session_info, &conversation);
     chat_state_handle.replace_conversation(conversation);
-    let feedback_client = feedback_proxy_url.map(|base_url| {
-        let mut client =
-            crate::agent::feedback_client::FeedbackClient::new(base_url, feedback_user_token)
-                .with_alpha_test_key(feedback_alpha_test_key)
-                .with_deployment_key(deployment_key);
-        if let Some(am) = auth_manager.as_ref() {
-            client = client.with_auth_manager(am.clone());
-        }
-        client
-    });
+    // Feedback/analytics backend client removed: feedback, session signals,
+    // and turn-delta analytics are never sent in this build. The manager
+    // runs in its supported local-tracking-only mode.
+    let _ = (
+        feedback_proxy_url,
+        feedback_user_token,
+        feedback_alpha_test_key,
+    );
+    let feedback_client: Option<crate::agent::feedback_client::FeedbackClient> = None;
     let has_feedback_client = feedback_client.is_some();
     tracing::info!(
         session_id = % session_info.id.0, has_feedback_client = has_feedback_client,

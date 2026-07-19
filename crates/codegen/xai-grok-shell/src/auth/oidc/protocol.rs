@@ -302,6 +302,16 @@ fn discovery_retry_policy() -> backon::ExponentialBuilder {
         .with_jitter()
 }
 async fn discover_once(issuer_key: &str) -> anyhow::Result<Discovery> {
+    // This build never contacts xAI infrastructure. OIDC discovery is the
+    // single gateway for both interactive login and token refresh, so
+    // refusing an xAI issuer here blocks every Grok-account auth network
+    // call at one choke point. Enterprise/self-hosted OIDC issuers work.
+    if crate::util::is_xai_infrastructure_url(issuer_key) {
+        return Err(anyhow::anyhow!(
+            "OIDC issuer '{issuer_key}' targets xAI infrastructure, which this build \
+             never contacts. Use a local or BYOK model instead of Grok-account auth."
+        ));
+    }
     let url = format!("{issuer_key}/.well-known/openid-configuration");
     tracing::debug!(url = % url, "OIDC: fetching discovery document");
     let resp = with_alpha_test_key(

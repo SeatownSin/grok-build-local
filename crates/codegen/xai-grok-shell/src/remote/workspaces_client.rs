@@ -70,7 +70,7 @@ impl WorkspacesClient {
         .unwrap_or_else(|| GROK_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
-            base_url,
+            base_url: crate::util::block_xai_base_url(base_url, "workspaces backend"),
             auth,
         }
     }

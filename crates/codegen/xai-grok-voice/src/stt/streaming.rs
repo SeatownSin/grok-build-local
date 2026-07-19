@@ -234,6 +234,25 @@ fn insert_optional_header(request: &mut WsRequest, name: &'static str, value: &s
 }
 
 fn build_stt_ws_url(config: &VoiceConfig) -> Result<Url, VoiceError> {
+    // This build never contacts xAI infrastructure. The historical default
+    // STT endpoint was `wss://api.x.ai/v1/stt`; refuse it (and any other
+    // x.ai / grok.com host) so voice only works against a user-configured
+    // local or third-party `[voice].api_base`.
+    if let Ok(base) = Url::parse(&config.stt_ws_url()?)
+        && let Some(host) = base.host_str()
+    {
+        let host = host.to_ascii_lowercase();
+        if ["x.ai", "grok.com"]
+            .iter()
+            .any(|b| host == *b || host.ends_with(&format!(".{b}")))
+        {
+            return Err(VoiceError::Stt(format!(
+                "STT endpoint '{host}' targets xAI infrastructure, which this build \
+                 never contacts. Set [voice].api_base to a local or third-party \
+                 STT server to use voice input."
+            )));
+        }
+    }
     // Resolve `auto` / aliases here so the wire value is always a concrete
     // catalog code (the STT API does not accept `auto`, unlike TTS).
     let language = crate::language_for_api(&config.language);
@@ -256,7 +275,12 @@ mod tests {
 
     #[test]
     fn stt_url_includes_query_params() {
-        let cfg = VoiceConfig::default();
+        // Default api_base is xAI-hosted and now refused; tests exercise
+        // URL construction against a local STT base.
+        let cfg = VoiceConfig {
+            api_base: "https://localhost:8080".into(),
+            ..VoiceConfig::default()
+        };
         let url = build_stt_ws_url(&cfg).unwrap();
         let q = url.query().unwrap_or_default();
         assert!(q.contains("sample_rate=16000"));
@@ -268,6 +292,7 @@ mod tests {
     fn stt_url_resolves_auto_to_concrete_language() {
         let cfg = VoiceConfig {
             language: "auto".into(),
+            api_base: "https://localhost:8080".into(),
             ..VoiceConfig::default()
         };
         let url = build_stt_ws_url(&cfg).unwrap();
@@ -295,12 +320,20 @@ mod tests {
     fn stt_url_passes_through_catalog_language() {
         let cfg = VoiceConfig {
             language: "ja".into(),
+            api_base: "https://localhost:8080".into(),
             ..VoiceConfig::default()
         };
         let url = build_stt_ws_url(&cfg).unwrap();
         assert!(url.query().unwrap_or_default().contains("language=ja"));
     }
 
+
+    /// The default STT endpoint is xAI-hosted; this build refuses it.
+    #[test]
+    fn stt_url_refuses_xai_default() {
+        let err = build_stt_ws_url(&VoiceConfig::default());
+        assert!(err.is_err(), "default api.x.ai STT base must be refused");
+    }
     #[test]
     fn optional_header_inserted_when_present_skipped_when_empty() {
         let mut req = "wss://api.x.ai/v1/stt".into_client_request().unwrap();

@@ -377,7 +377,7 @@ impl SessionActor {
                 for entry in data {
                     let parsed = crate::remote::client::parse_remote_model_value(entry, base_url)?;
                     if parsed.model == *current_model {
-                        return Some((parsed.context_window, parsed.max_completion_tokens));
+                        return Some((parsed.context_window?, parsed.max_completion_tokens));
                     }
                 }
                 None

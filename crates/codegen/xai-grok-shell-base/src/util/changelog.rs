@@ -101,7 +101,11 @@ impl ChangelogManager {
     pub fn fetch(&self) -> Changelog {
         // Always re-resolve from env so a caller holding an older manager
         // (or OnceLock lag) still reads the live harness home.
-        Self::from_env_home().fetch_with(changelog_offline(), CHANGELOG_BASE)
+        //
+        // Forced offline: the changelog CDN is xAI infrastructure
+        // (`x.ai/cli/changelogs`), which this build never contacts. Only
+        // previously cached notes (if any) are shown.
+        Self::from_env_home().fetch_with(true, CHANGELOG_BASE)
     }
 
     /// Fetch using this manager's already-resolved cache paths, an explicit
@@ -198,11 +202,6 @@ impl ChangelogManager {
     }
 }
 
-/// When set, `ChangelogManager::fetch` skips the CDN and only reads disk cache.
-/// Used by PTY harness tests that seed `CHANGELOG.{md,json}` under a temp home.
-fn changelog_offline() -> bool {
-    std::env::var_os("GROK_CHANGELOG_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
-}
 
 fn read_cache(path: &std::path::Path) -> Option<String> {
     std::fs::read_to_string(path)

@@ -404,6 +404,19 @@ async fn connect_to_relay(
     tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
 > {
     let req = build_relay_request(config)?;
+    // This build never contacts xAI infrastructure; the stock relay lives
+    // at `code.grok.com` / `grok.com`. Self-hosted relays still connect.
+    if let Some(host) = req.uri().host() {
+        let host = host.to_ascii_lowercase();
+        if ["x.ai", "grok.com"]
+            .iter()
+            .any(|b| host == *b || host.ends_with(&format!(".{b}")))
+        {
+            anyhow::bail!(
+                "relay '{host}' targets xAI infrastructure, which this build never contacts"
+            );
+        }
+    }
     let connect_timeout = Duration::from_secs(CONNECT_TIMEOUT_SECS);
     tokio::select! {
         _ = cancel.cancelled() => { anyhow::bail!("Connection cancelled"); } result =

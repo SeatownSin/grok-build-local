@@ -3356,6 +3356,7 @@ mod tests {
         name: Option<&str>,
     ) -> config::ModelEntryConfig {
         config::ModelEntryConfig {
+            no_auth: false,
             id: id.map(|s| s.to_owned()),
             model: model.to_owned(),
             base_url: "https://test.api/v1".to_owned(),
@@ -3367,7 +3368,7 @@ mod tests {
             api_key: None,
             env_key: None,
             api_backend: Default::default(),
-            context_window: std::num::NonZeroU64::new(200_000).unwrap(),
+            context_window: Some(std::num::NonZeroU64::new(200_000).unwrap()),
             auto_compact_threshold_percent: None,
             system_prompt_label: None,
             extra_headers: IndexMap::new(),

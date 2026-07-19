@@ -377,19 +377,9 @@ pub(super) fn handle_auth_complete(
         // status only; shell auto-syncs post-auth
         let mut effects = dispatch(Action::RequestBundleStatus, app);
 
-        // Start auto-checking subscription if gated.
-        // Check immediately (don't wait 5s) then schedule the timer.
-        if !app.has_access() {
-            app.paywall_check_started = Some(std::time::Instant::now());
-            effects.push(Effect::CheckSubscription { verify: None });
-            effects.push(Effect::SchedulePaywallCheck);
-        }
-        // Fetch billing so the welcome screen can show a credit warning.
-        if app.usage_visible {
-            effects.push(Effect::FetchAppBilling);
-        }
-        // Fetch changelog (mirrors startup path for interactive login).
-        effects.push(Effect::FetchChangelog);
+        // Subscription/paywall polling, billing prefetch, and the
+        // post-login changelog prefetch are removed: all three queried
+        // xAI infrastructure, which this build never contacts.
 
         // ZDR-blocked users stay on the welcome screen — discard any
         // deferred startup (they cannot start a session).

@@ -473,13 +473,37 @@ impl StorageClient {
         http_client: Client,
         credentials: Arc<dyn AuthCredentialProvider>,
     ) -> Self {
+        // This build never contacts xAI infrastructure (the stock storage
+        // backend is the cli-chat-proxy). Rather than thread a Result
+        // through every constructor, an xAI base URL is replaced with an
+        // unroutable loopback sentinel: every request fails locally and
+        // instantly, with zero DNS traffic and zero bytes to xAI.
+        let base_url = {
+            let is_xai = reqwest::Url::parse(proxy_base_url)
+                .ok()
+                .and_then(|u| u.host_str().map(|h| h.to_ascii_lowercase()))
+                .is_some_and(|host| {
+                    ["x.ai", "grok.com"]
+                        .iter()
+                        .any(|b| host == *b || host.ends_with(&format!(".{b}")))
+                });
+            if is_xai {
+                tracing::warn!(
+                    proxy_base_url,
+                    "storage backend targets xAI infrastructure; requests will fail locally"
+                );
+                "http://127.0.0.1:0/xai-blocked".to_owned()
+            } else {
+                proxy_base_url.to_owned()
+            }
+        };
         let middleware_client = crate::with_auth_retry(http_client.clone(), credentials.clone());
         let breaker = CircuitBreaker::new(storage_breaker_config())
             .with_observer(TracingObserver::new(STORAGE_BREAKER_NAME));
         Self {
             http_client: middleware_client,
             raw_http_client: http_client,
-            base_url: proxy_base_url.to_owned(),
+            base_url,
             retry_config: RetryConfig::default(),
             attribution: None,
             credentials,

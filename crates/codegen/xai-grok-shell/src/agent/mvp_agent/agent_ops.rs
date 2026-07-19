@@ -473,16 +473,10 @@ impl MvpAgent {
             );
         }
     }
-    /// Build a `FeedbackClient` with resolved feedback URL and credentials.
+    /// Feedback/analytics backend client removed: feedback, session
+    /// signals, and turn-delta analytics are never sent in this build.
     pub(crate) fn feedback_client(&self) -> Option<FeedbackClient> {
-        let (base_url, user_token, alpha_test_key, deployment_key) = self
-            .feedback_credentials()?;
-        Some(
-            FeedbackClient::new(base_url, user_token)
-                .with_alpha_test_key(alpha_test_key)
-                .with_deployment_key(deployment_key)
-                .with_auth_manager(self.auth_manager.clone()),
-        )
+        None
     }
     /// Build a `RegistryConfig` if the feature is enabled (for passing to persistence actor).
     pub(super) fn build_registry_config(

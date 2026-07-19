@@ -143,42 +143,11 @@ pub(crate) fn unified_log_url(
 /// for easy aggregation across users. Used by both the auth refresh failure
 /// uploader and the 401/404 error trace uploader.
 pub(crate) async fn upload_to_auth_diagnostics(
-    log_bytes: &[u8],
-    user_id: &str,
-    upload_method: &crate::session::repo_changes::UploadMethod,
-    auth_manager: Arc<crate::auth::AuthManager>,
+    _log_bytes: &[u8],
+    _user_id: &str,
+    _upload_method: &crate::session::repo_changes::UploadMethod,
+    _auth_manager: Arc<crate::auth::AuthManager>,
 ) {
-    let user_id = user_id.replace('/', "_");
-    let ts = chrono::Utc::now().timestamp_millis();
-    let version = xai_grok_version::VERSION;
-    let object_path = format!("auth-diagnostics/{version}/{user_id}/{ts}.jsonl");
-    let config = crate::session::repo_changes::TraceExportConfig {
-        bucket_url: None,
-        service_account_key: None,
-        upload_method: upload_method.clone(),
-        prefix_dir: None,
-        gcs_prefix: None,
-        absolute_paths: false,
-        archive_name_override: None,
-    };
-    match xai_file_utils::gcs::upload_bytes(
-        &config.with_auth(Some(auth_manager)),
-        &object_path,
-        log_bytes,
-        "application/x-ndjson",
-    )
-    .await
-    {
-        Ok(_) => {
-            tracing::info!(
-                version = version,
-                "uploaded diagnostic log to auth-diagnostics"
-            );
-        }
-        Err(e) => {
-            tracing::warn!(
-                error = % e, "failed to upload diagnostic log to auth-diagnostics"
-            );
-        }
-    }
+    // Auth-diagnostics upload removed: 401/404 error traces and auth
+    // refresh failure logs stay on the local machine.
 }

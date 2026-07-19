@@ -818,30 +818,21 @@ pub enum StorageMode {
     Writeback,
 }
 impl StorageMode {
-    /// Resolve from all sources: CLI > env var > remote settings > default (Local).
+    /// Pinned to `Local`: writeback flushed session content to the
+    /// cli-chat-proxy (xAI infrastructure), which this build never
+    /// contacts — no CLI flag, env var, or remote setting re-enables it.
     pub fn resolve(
         cli_override: Option<&str>,
         remote: Option<&crate::util::config::RemoteSettings>,
     ) -> Self {
-        if let Some(mode) = cli_override {
-            match mode {
-                "writeback" => return Self::Writeback,
-                "local" => return Self::Local,
-                other => {
-                    tracing::warn!(mode = other, "unknown --storage-mode value, ignoring");
-                }
-            }
-        }
-        match std::env::var("GROK_STORAGE_MODE").as_deref() {
-            Ok("writeback") => return Self::Writeback,
-            Ok("local") => return Self::Local,
-            _ => {}
-        }
-        if let Some(remote) = remote
-            && remote.writeback_enabled == Some(true)
+        if matches!(cli_override, Some("writeback"))
+            || std::env::var("GROK_STORAGE_MODE").as_deref() == Ok("writeback")
         {
-            return Self::Writeback;
+            tracing::warn!(
+                "storage-mode writeback removed (synced sessions to xAI); staying local"
+            );
         }
+        let _ = remote;
         Self::Local
     }
     /// Returns true if this mode syncs to the backend.

@@ -1498,19 +1498,10 @@ pub(crate) async fn run(
         if process_effects(effs, &mut tasks, &mut app, &progress_tx) {
             return Ok(make_run_result(&app));
         }
-        // Fetch billing early so the welcome screen can show a credit warning.
-        if app.usage_visible {
-            let effs = vec![super::actions::Effect::FetchAppBilling];
-            if process_effects(effs, &mut tasks, &mut app, &progress_tx) {
-                return Ok(make_run_result(&app));
-            }
-        }
-        // Fetch changelog off the render path so the welcome screen
-        // can display bullets and /release-notes uses the cached result.
-        let effs = vec![super::actions::Effect::FetchChangelog];
-        if process_effects(effs, &mut tasks, &mut app, &progress_tx) {
-            return Ok(make_run_result(&app));
-        }
+        // Billing prefetch removed: it queried xAI account APIs, which
+        // this build never contacts.
+        // Startup changelog prefetch removed: it pulled x.ai on every
+        // launch. `/release-notes` still fetches on demand.
         if !app.has_access() {
             gate_poll_at = Some(Instant::now() + GATE_POLL_INTERVAL);
         }

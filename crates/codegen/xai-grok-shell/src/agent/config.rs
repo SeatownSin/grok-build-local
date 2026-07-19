@@ -2049,42 +2049,15 @@ impl Config {
         self.resolve_two_pass_compaction().value
     }
     pub(crate) fn resolve_telemetry_mode(&self) -> Resolved<TelemetryMode> {
-        if let Some(mode) = self.requirements.telemetry.pinned() {
-            return Resolved::new(mode, ConfigSource::Requirement);
-        }
-        if let Some(mode) = env_telemetry_mode("GROK_TELEMETRY_ENABLED") {
-            return Resolved::new(mode, ConfigSource::Env);
-        }
-        if let Some(mode) = self.features.telemetry {
-            return Resolved::new(mode, ConfigSource::Config);
-        }
-        if let Some(rs) = self.remote_settings.as_ref() {
-            if let Some(mode_str) = rs.telemetry_mode.as_deref()
-                && let Some(mode) = TelemetryMode::parse(mode_str)
-            {
-                return Resolved::new(mode, ConfigSource::Remote);
-            }
-            if let Some(val) = rs.telemetry_enabled {
-                return Resolved::new(TelemetryMode::from(val), ConfigSource::Remote);
-            }
-        }
+        // Telemetry removed: pinned to Disabled regardless of requirement,
+        // env, config, or remote settings. No analytics client is ever
+        // installed and no session metrics or spans leave the machine.
         Resolved::new(TelemetryMode::Disabled, ConfigSource::Default)
     }
     pub(crate) fn resolve_trace_upload(&self) -> Resolved<bool> {
-        let mode = self.resolve_telemetry_mode();
-        let ff = if mode.value.is_disabled() {
-            None
-        } else {
-            self.remote_settings
-                .as_ref()
-                .and_then(|s| s.trace_upload_enabled)
-        };
-        BoolFlag::env("GROK_TELEMETRY_TRACE_UPLOAD")
-            .requirement(self.requirements.trace_upload.pinned())
-            .config(self.telemetry.trace_upload)
-            .feature_flag(ff)
-            .default(mode.value.is_enabled())
-            .resolve()
+        // Trace-artifact upload (per-turn request/response payloads to GCS)
+        // removed: pinned off regardless of any configuration layer.
+        Resolved::new(false, ConfigSource::Default)
     }
     /// Resolve jemalloc heap-profile config from stored remote settings + gates.
     pub fn resolve_jemalloc_heap_profile(
@@ -2145,7 +2118,7 @@ impl Config {
             .requirement(self.requirements.feedback.pinned())
             .config(self.features.feedback)
             .feature_flag(ff)
-            .default(true)
+            .default(false)
             .resolve()
     }
     pub(crate) fn resolve_two_pass_compaction(&self) -> Resolved<bool> {
@@ -2275,7 +2248,10 @@ impl Config {
             .requirement(self.requirements.voice_mode.pinned())
             .config(self.features.voice_mode)
             .feature_flag(ff)
-            .default(true)
+            // Off by default: the stock STT endpoint was xAI-hosted, which
+            // this build never contacts. Opt back in with a local STT
+            // server via `[features] voice_mode` + `[voice].api_base`.
+            .default(false)
             .resolve()
     }
     /// `image_gen` tool gate. Default on; gated only by the `GROK_IMAGE_GEN`
@@ -3248,6 +3224,26 @@ pub fn resolve_model_list(
     for entry in resolved.values_mut() {
         entry.info.derive_reasoning_effort_fields();
     }
+    // This build never contacts xAI, and Grok models are unusable here, so
+    // hide every xAI-hosted entry (the built-in defaults) from the picker.
+    //
+    // Marking `hidden` (rather than removing) is deliberate: the catalog
+    // machinery relies on "a default model always resolves", and
+    // `available_models` / `resolve_default_model` already exclude hidden
+    // entries from the menu and prefer visible ones. So the models vanish
+    // from the picker while the invariant stays intact. The hard "no bytes
+    // to xAI" guarantee is still enforced separately at the network boundary
+    // (`SamplingClient::new` and every fetch/backend refuse xAI URLs).
+    for entry in resolved.values_mut() {
+        if crate::util::is_xai_infrastructure_url(&entry.info.base_url)
+            || entry
+                .api_base_url
+                .as_deref()
+                .is_some_and(crate::util::is_xai_infrastructure_url)
+        {
+            entry.info.hidden = true;
+        }
+    }
     resolved
 }
 /// Layer 6 of [`resolve_model_list`]: fold the global `[models].extra_headers`
@@ -3407,7 +3403,8 @@ fn default_models(endpoints: &EndpointsConfig) -> IndexMap<String, ModelEntryCon
                 api_base_url: Some(endpoints.xai_api_base_url.clone()),
                 name: m.name,
                 description: m.description,
-                context_window,
+                context_window: Some(context_window),
+                no_auth: false,
                 auto_compact_threshold_percent: m.auto_compact_threshold_percent,
                 system_prompt_label: m.system_prompt_label,
                 temperature: m.temperature,
@@ -3472,6 +3469,14 @@ pub struct ModelEntryConfig {
     /// Values: "chat_completions" (default), "responses"
     #[serde(default)]
     pub api_backend: ApiBackend,
+    /// This endpoint requires no authentication (local model servers such as
+    /// Ollama, llama.cpp, LM Studio, or vLLM). When true — or when
+    /// `base_url` points at a loopback address — no API key is required, no
+    /// warning is logged for the missing key, and no session token is ever
+    /// sent to the endpoint. Also satisfies the startup auth gate, so no
+    /// login is needed when such a model is configured.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_auth: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth_scheme: Option<AuthScheme>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3489,8 +3494,10 @@ pub struct ModelEntryConfig {
     pub extra_headers: IndexMap<String, String>,
     /// The total context window size in tokens for this model.
     /// Used for auto-compact threshold calculations.
-    /// Required — BYOK users must explicitly set this in config.toml.
-    pub context_window: NonZeroU64,
+    /// Optional — defaults to 200k when omitted (local/BYOK convenience);
+    /// set it explicitly for accurate auto-compact behavior.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<NonZeroU64>,
     /// Per-model auto-compact threshold (0-100). When the session's token
     /// usage exceeds this percentage of `context_window`, the conversation
     /// is summarized. Resolver precedence:
@@ -3587,6 +3594,8 @@ pub struct ConfigModelOverride {
     pub temperature: Option<f32>,
     pub top_p: Option<f32>,
     pub api_backend: Option<ApiBackend>,
+    /// Marks the endpoint as needing no authentication (local model servers).
+    pub no_auth: Option<bool>,
     #[serde(default)]
     pub extra_headers: IndexMap<String, String>,
     pub context_window: Option<u64>,
@@ -3649,6 +3658,9 @@ impl ConfigModelOverride {
         }
         if let Some(ref v) = self.api_backend {
             entry.info.api_backend = v.clone();
+        }
+        if let Some(v) = self.no_auth {
+            entry.info.no_auth = v;
         }
         if !self.extra_headers.is_empty() {
             entry.info.extra_headers = self.extra_headers.clone();
@@ -3738,6 +3750,11 @@ pub struct ModelInfo {
     pub top_p: Option<f32>,
     pub api_backend: ApiBackend,
     pub auth_scheme: AuthScheme,
+    /// Endpoint requires no authentication (local model servers). See
+    /// [`ModelEntryConfig::no_auth`]; loopback `base_url`s are treated as
+    /// no-auth even when this is false.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_auth: bool,
     pub extra_headers: IndexMap<String, String>,
     pub context_window: NonZeroU64,
     /// Per-model auto-compact threshold (0-100). `None` defers to the
@@ -3803,6 +3820,7 @@ impl ModelInfo {
             top_p: None,
             api_backend: ApiBackend::default(),
             auth_scheme: Default::default(),
+            no_auth: false,
             extra_headers: IndexMap::new(),
             context_window: NonZeroU64::new(200_000).unwrap(),
             auto_compact_threshold_percent: None,
@@ -3838,8 +3856,11 @@ impl ModelInfo {
             top_p: entry.top_p,
             api_backend: entry.api_backend.clone(),
             auth_scheme: entry.auth_scheme.unwrap_or_default(),
+            no_auth: entry.no_auth,
             extra_headers: entry.extra_headers.clone(),
-            context_window: entry.context_window,
+            context_window: entry
+                .context_window
+                .unwrap_or_else(|| NonZeroU64::new(200_000).unwrap()),
             auto_compact_threshold_percent: entry.auto_compact_threshold_percent,
             system_prompt_label: entry.system_prompt_label.clone(),
             use_concise: entry.use_concise,
@@ -3933,6 +3954,13 @@ impl ModelEntry {
     /// Probes `std::env::var` at call time — result is not stable across env changes.
     pub fn has_own_credentials(&self) -> bool {
         self.own_credential().is_some()
+    }
+    /// `true` when this endpoint needs no authentication: either explicitly
+    /// marked `no_auth = true` in config, or the `base_url` points at a
+    /// loopback address (localhost / 127.0.0.1 / [::1]) — local model
+    /// servers like Ollama, llama.cpp, LM Studio, and vLLM.
+    pub fn requires_no_auth(&self) -> bool {
+        self.info.no_auth || crate::util::is_loopback_url(&self.info.base_url)
     }
 }
 impl std::ops::Deref for ModelEntry {
@@ -4312,6 +4340,19 @@ pub(crate) fn first_own_credential(
 /// When `env_key` lists multiple names, the first set non-empty value is used.
 pub fn resolve_credentials(model: &ModelEntry, session_key: Option<&str>) -> ResolvedCredentials {
     let info = model.info();
+    // No-auth endpoints (local model servers) get no credential at all —
+    // in particular the session token must never fall through to them.
+    if model.requires_no_auth() && model.own_credential().is_none() {
+        tracing::debug!(
+            model = % info.model, "no-auth endpoint: resolved without credentials"
+        );
+        return ResolvedCredentials {
+            api_key: None,
+            base_url: info.base_url.clone(),
+            auth_type: xai_chat_state::AuthType::ApiKey,
+            auth_scheme: info.auth_scheme,
+        };
+    }
     let (api_key, base_url, auth_type) = if let Some(key) = model.own_credential() {
         (
             Some(key),
@@ -4523,6 +4564,7 @@ pub fn resolve_aux_model_sampling_config(
                 top_p: None,
                 api_backend: ApiBackend::Responses,
                 auth_scheme: Default::default(),
+                no_auth: false,
                 extra_headers: IndexMap::new(),
                 context_window: NonZeroU64::new(200_000).unwrap(),
                 auto_compact_threshold_percent: None,
@@ -4745,6 +4787,7 @@ fn resolve_hidden_default_web_search_sampling_config(
             top_p: None,
             api_backend: ApiBackend::Responses,
             auth_scheme: Default::default(),
+            no_auth: false,
             extra_headers: IndexMap::new(),
             context_window: NonZeroU64::new(200_000).unwrap(),
             auto_compact_threshold_percent: None,
@@ -5388,6 +5431,7 @@ reasoning_effort = "low"
     ) -> ModelEntry {
         ModelEntry {
             info: ModelInfo {
+                no_auth: false,
                 user_selectable: true,
                 id: None,
                 model: model.to_string(),
@@ -6407,6 +6451,7 @@ reasoning_effort = "low"
     #[test]
     fn model_info_from_config_propagates_use_concise() {
         let entry = ModelEntryConfig {
+            no_auth: false,
             id: None,
             model: "test".to_string(),
             base_url: "https://test.api/v1".to_string(),
@@ -6420,7 +6465,7 @@ reasoning_effort = "low"
             api_backend: ApiBackend::default(),
             auth_scheme: None,
             extra_headers: IndexMap::new(),
-            context_window: NonZeroU64::new(200_000).unwrap(),
+            context_window: Some(NonZeroU64::new(200_000).unwrap()),
             auto_compact_threshold_percent: None,
             system_prompt_label: None,
             api_base_url: None,
@@ -6566,6 +6611,7 @@ reasoning_effort = "low"
     #[test]
     fn model_info_from_config_propagates_agent_type() {
         let entry = ModelEntryConfig {
+            no_auth: false,
             id: None,
             model: "test".to_string(),
             base_url: "https://test.api/v1".to_string(),
@@ -6579,7 +6625,7 @@ reasoning_effort = "low"
             api_backend: ApiBackend::default(),
             auth_scheme: None,
             extra_headers: IndexMap::new(),
-            context_window: NonZeroU64::new(200_000).unwrap(),
+            context_window: Some(NonZeroU64::new(200_000).unwrap()),
             auto_compact_threshold_percent: None,
             system_prompt_label: None,
             api_base_url: None,
@@ -6807,12 +6853,12 @@ reasoning_effort = "low"
             r#"
             [model.visible-model]
             model = "visible-model"
-            base_url = "https://api.x.ai/v1"
+            base_url = "https://api.openai.com/v1"
             context_window = 200000
 
             [model.hidden-model]
             model = "hidden-model"
-            base_url = "https://api.x.ai/v1"
+            base_url = "https://api.openai.com/v1"
             context_window = 200000
             hidden = true
             "#,
@@ -6955,13 +7001,13 @@ reasoning_effort = "low"
             r#"
             [model.oauth-only-model]
             model = "oauth-only-model"
-            base_url = "https://api.x.ai/v1"
+            base_url = "https://api.openai.com/v1"
             context_window = 200000
             supported_in_api = false
 
             [model.public-model]
             model = "public-model"
-            base_url = "https://api.x.ai/v1"
+            base_url = "https://api.openai.com/v1"
             context_window = 200000
             "#,
         )
@@ -7017,6 +7063,7 @@ reasoning_effort = "low"
     #[test]
     fn inference_idle_timeout_propagates_to_model_info() {
         let entry = ModelEntryConfig {
+            no_auth: false,
             id: None,
             model: "test".to_string(),
             base_url: "https://test.api/v1".to_string(),
@@ -7030,7 +7077,7 @@ reasoning_effort = "low"
             api_backend: ApiBackend::default(),
             auth_scheme: None,
             extra_headers: IndexMap::new(),
-            context_window: NonZeroU64::new(200_000).unwrap(),
+            context_window: Some(NonZeroU64::new(200_000).unwrap()),
             auto_compact_threshold_percent: None,
             system_prompt_label: None,
             api_base_url: None,
@@ -7839,12 +7886,15 @@ reasoning_effort = "low"
     }
     #[test]
     #[serial]
-    fn resolve_feedback_defaults_to_true_when_unset() {
+    fn resolve_feedback_defaults_to_false_when_unset() {
         unsafe { std::env::remove_var("GROK_FEEDBACK_ENABLED") };
         unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
         let cfg = Config::default();
         let r = cfg.resolve_feedback();
-        assert!(r.value, "feedback should be true by default");
+        assert!(
+            !r.value,
+            "feedback is off by default (backend egress removed)"
+        );
         assert_eq!(r.source, ConfigSource::Default);
     }
     #[test]
@@ -8125,61 +8175,27 @@ reasoning_effort = "low"
     }
     #[test]
     #[serial]
-    fn resolve_trace_upload_explicit_config_wins_over_telemetry_off() {
-        unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
-        unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
-        let mut cfg = Config::default();
-        cfg.features.telemetry = Some(TelemetryMode::Disabled);
-        cfg.telemetry.trace_upload = Some(true);
-        let r = cfg.resolve_trace_upload();
-        assert!(
-            r.value,
-            "explicit trace_upload config wins over telemetry off"
-        );
-        assert_eq!(r.source, ConfigSource::Config);
-        cfg.telemetry.trace_upload = None;
-        cfg.requirements
-            .trace_upload
-            .pin(true, crate::config::RequirementSource::Unknown);
-        assert!(cfg.resolve_trace_upload().value);
-    }
-    #[test]
-    #[serial]
-    fn trace_upload_decision_debug_reports_winning_source() {
-        unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
-        unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
-        let mut cfg = Config::default();
-        cfg.features.telemetry = Some(TelemetryMode::Disabled);
-        cfg.remote_settings = Some(crate::util::config::RemoteSettings {
-            trace_upload_enabled: Some(true),
-            ..Default::default()
-        });
-        let d = cfg.trace_upload_decision_debug();
-        assert_eq!(d["trace_upload"], serde_json::json!(false));
-        assert_eq!(d["trace_upload_source"], serde_json::json!("default"));
-        assert_eq!(d["telemetry_mode"], serde_json::json!("false"));
-        assert_eq!(d["in_remote_trace_upload_enabled"], serde_json::json!(true));
-        assert_eq!(d["has_remote_settings"], serde_json::json!(true));
-        cfg.telemetry.trace_upload = Some(true);
-        let d = cfg.trace_upload_decision_debug();
-        assert_eq!(d["trace_upload"], serde_json::json!(true));
-        assert_eq!(d["trace_upload_source"], serde_json::json!("config"));
-        assert_eq!(d["in_cfg_telemetry_trace_upload"], serde_json::json!(true));
-    }
-    #[test]
-    #[serial]
-    fn resolve_trace_upload_honors_config_when_telemetry_on() {
+    fn resolve_trace_upload_pinned_off_despite_all_overrides() {
+        // Trace upload removed: no config, env, requirement, or remote layer
+        // may re-enable it.
         unsafe { std::env::remove_var("GROK_TELEMETRY_ENABLED") };
         unsafe { std::env::remove_var("GROK_TELEMETRY_TRACE_UPLOAD") };
         let mut cfg = Config::default();
         cfg.features.telemetry = Some(TelemetryMode::Enabled);
-        cfg.telemetry.trace_upload = Some(false);
+        cfg.telemetry.trace_upload = Some(true);
+        cfg.remote_settings = Some(crate::util::config::RemoteSettings {
+            trace_upload_enabled: Some(true),
+            ..Default::default()
+        });
+        cfg.requirements
+            .trace_upload
+            .pin(true, crate::config::RequirementSource::Unknown);
         let r = cfg.resolve_trace_upload();
-        assert!(!r.value);
-        assert_eq!(r.source, ConfigSource::Config);
-        cfg.telemetry.trace_upload = None;
-        let r = cfg.resolve_trace_upload();
-        assert!(r.value, "defaults on when telemetry fully enabled");
+        assert!(!r.value, "trace upload must stay off — egress removed");
+        assert!(!cfg.is_trace_upload_enabled());
+        let d = cfg.trace_upload_decision_debug();
+        assert_eq!(d["trace_upload"], serde_json::json!(false));
+        assert_eq!(d["trace_upload_source"], serde_json::json!("default"));
     }
     #[test]
     #[serial]
@@ -10575,6 +10591,7 @@ default = "grok-4.5"
     ) -> ModelEntry {
         ModelEntry {
             info: ModelInfo {
+                no_auth: false,
                 user_selectable: true,
                 id: None,
                 model: slug.to_owned(),
@@ -10960,8 +10977,11 @@ default = "grok-4.5"
         let no_p = resolve_model_list(&cfg, None);
         assert!(no_p.contains_key(dm));
     }
+    /// The bundled default is xAI-hosted, so this build auto-hides it from
+    /// the picker (Grok models are unusable here). It stays in the catalog
+    /// (default resolution never panics) but is visible in no auth mode.
     #[test]
-    fn resolve_model_list_prefetch_visibility_matches_auth_and_server_list() {
+    fn resolve_model_list_hides_xai_default_from_picker() {
         let cfg = Config::default();
         let dm = crate::models::default_model();
         let mut defs = default_model_entries(&EndpointsConfig::default());
@@ -10970,16 +10990,31 @@ default = "grok-4.5"
             p.insert(dm.to_string(), e);
         }
         let resolved = resolve_model_list(&cfg, Some(p));
-        let sess: Vec<_> = resolved
-            .values()
-            .filter(|e| e.visible_for_auth(true))
-            .collect();
-        let api: Vec<_> = resolved
-            .values()
-            .filter(|e| e.visible_for_auth(false))
-            .collect();
-        assert_eq!(sess.len(), 1);
-        assert_eq!(api.len(), 1);
+        assert!(resolved.contains_key(dm), "kept in catalog");
+        assert!(resolved[dm].info.hidden, "xAI default must be hidden");
+        assert!(!resolved[dm].visible_for_auth(true), "hidden from session picker");
+        assert!(!resolved[dm].visible_for_auth(false), "hidden from api-key picker");
+    }
+    /// A locally-hosted model configured via `[model.*]` is NOT hidden and
+    /// appears in the picker in both auth modes.
+    #[test]
+    fn resolve_model_list_keeps_local_model_visible() {
+        let cfg = Config::new_from_toml_cfg(
+            &toml::from_str(
+                r#"
+                [model.local]
+                model = "llama"
+                base_url = "http://localhost:11434/v1"
+                context_window = 8192
+                "#,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let resolved = resolve_model_list(&cfg, None);
+        assert!(!resolved["local"].info.hidden);
+        assert!(resolved["local"].visible_for_auth(true));
+        assert!(resolved["local"].visible_for_auth(false));
     }
     #[test]
     fn resolve_model_list_keeps_prefetch_only_entries_and_prunes_defaults() {
@@ -11057,16 +11092,19 @@ default = "grok-4.5"
         let cfg = Config::new_from_toml_cfg(&raw).expect("config should parse");
         let resolved = resolve_model_list(&cfg, None);
         let entry = resolved.get(dm).expect("bundled default must exist");
+        // A plain (non-BYOK) overlay must not touch `supported_in_api`.
         assert_eq!(
-            entry.visible_for_auth(false),
-            bundled.visible_for_auth(false),
+            entry.info.supported_in_api, bundled.info.supported_in_api,
             "non-BYOK config overlay must preserve bundled supported_in_api"
         );
-        assert_eq!(
-            entry.visible_for_auth(true),
-            bundled.visible_for_auth(true),
-            "non-BYOK config overlay must preserve bundled OAuth visibility"
+        // The bundled default is xAI-hosted, so it is auto-hidden from the
+        // picker regardless of the overlay (Grok models are unusable here).
+        assert!(
+            entry.info.hidden,
+            "xAI-hosted bundled default must be hidden after resolve"
         );
+        assert!(!entry.visible_for_auth(true));
+        assert!(!entry.visible_for_auth(false));
     }
     #[test]
     #[serial]

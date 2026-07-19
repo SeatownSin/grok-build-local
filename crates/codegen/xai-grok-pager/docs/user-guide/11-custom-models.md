@@ -98,6 +98,12 @@ Grok resolves the API key in this order:
 3. Your signed-in session token (from `grok login`), for a model with no `api_key`/`env_key` of its own
 4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `GROK_CODE_XAI_API_KEY` for backward compatibility)
 
+**Exception — no-auth endpoints:** a model with `no_auth = true`, or any
+model whose `base_url` is a loopback address, skips this chain entirely
+(unless it sets its own `api_key`/`env_key`): requests are sent with no
+`Authorization` header, and your session token is never forwarded to the
+local server.
+
 ### Context Window
 
 The `context_window` value tells Grok when to trigger auto-compaction. When you override a known model, Grok inherits that model's context window. When you define a new model and omit `context_window`, Grok defaults to 200,000 tokens, so set it explicitly to match your provider.
@@ -214,6 +220,22 @@ name = "CodeLlama (Ollama)"
 
 Make sure Ollama is running (`ollama serve`) and the model is pulled (`ollama pull codellama`).
 
+Loopback endpoints (`localhost`, `127.0.0.1`, `[::1]`) are automatically
+treated as **no-auth**: no API key is required, no login is needed at
+startup, and your session token is never sent to the local server. This
+works out of the box for Ollama, llama.cpp, LM Studio, and vLLM. For a
+non-loopback endpoint that also needs no authentication (for example a
+model server on your LAN), set `no_auth = true` explicitly:
+
+```toml
+[model.lan-llama]
+model = "llama-3.1-70b"
+base_url = "http://192.168.1.50:8080/v1"
+name = "LAN Llama"
+no_auth = true
+context_window = 128000
+```
+
 ### Together AI
 
 ```toml
@@ -226,7 +248,8 @@ env_key = "TOGETHER_API_KEY"
 
 ### Local OpenAI-Compatible Server
 
-Any server that implements the OpenAI Chat Completions or Responses API:
+Any server that implements the OpenAI Chat Completions or Responses API
+(llama.cpp `llama-server`, LM Studio, vLLM, …):
 
 ```toml
 [model.local-llama]
@@ -235,6 +258,41 @@ base_url = "http://localhost:8080/v1"
 name = "Local Llama"
 temperature = 0.8
 ```
+
+No `api_key`, `env_key`, or login is needed for loopback endpoints, and
+`context_window` defaults to 200,000 when omitted — set it to your model's
+real window (e.g. `8192` for many small local models), otherwise
+auto-compaction will never trigger and long sessions will overflow the
+server's context. Streaming, tool calls, and reasoning content all work
+over the default `chat_completions` backend.
+
+To make a local model the default for new sessions:
+
+```toml
+[models]
+default = "local-llama"
+```
+
+### Fully Offline
+
+With no Grok login and only local models configured, the CLI makes no
+network requests at startup. If you *are* signed in but want to suppress
+the remaining startup fetch of the hosted model catalog, disable remote
+fetches in `~/.grok/config.toml` (deliberately config-only — no env var
+can re-arm it):
+
+```toml
+[features]
+remote_fetch = false
+```
+
+### Caveat: Development Proxies on Localhost
+
+Because loopback endpoints are treated as no-auth, a cli-chat-proxy
+development instance running on `localhost` no longer receives your
+session token automatically. If you proxy Grok traffic through a local
+gateway that requires auth, set an explicit `api_key` on that model
+entry.
 
 ---
 
@@ -247,7 +305,7 @@ Point Grok at a custom OpenAI-compatible `/v1/models` endpoint instead of the de
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GROK_MODELS_BASE_URL` | Yes | Base URL for inference. Grok fetches the model list from `{base_url}/models`. |
-| `XAI_API_KEY` | Yes | API key sent as `Authorization: Bearer`. Grok also accepts `GROK_CODE_XAI_API_KEY`. |
+| `XAI_API_KEY` | No for loopback URLs | API key sent as `Authorization: Bearer`. Grok also accepts `GROK_CODE_XAI_API_KEY`. Loopback endpoints (e.g. `http://localhost:11434/v1`) are queried without auth when no key is set. |
 | `GROK_MODELS_LIST_URL` | No | Override the model-list URL when it differs from `{base_url}/models`. |
 
 ### Setup

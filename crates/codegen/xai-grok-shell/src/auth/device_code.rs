@@ -138,6 +138,13 @@ pub async fn request_device_code(
     scopes: &[String],
     surface: ClientSurface,
 ) -> Result<DeviceCode, DeviceCodeError> {
+    // This build never contacts xAI infrastructure; the device-code login
+    // flow targets the Grok OAuth issuer. Non-xAI issuers still work.
+    if crate::util::is_xai_infrastructure_url(issuer) {
+        return Err(DeviceCodeError::Other(anyhow::anyhow!(
+            "OIDC issuer '{issuer}' targets xAI infrastructure, which this build never contacts"
+        )));
+    }
     let client = crate::http::shared_client();
     let url = format!("{}/oauth2/device/code", issuer.trim_end_matches('/'));
     let scope_str = scopes.join(" ");

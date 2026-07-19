@@ -13903,7 +13903,6 @@ dependencies = [
  "xai-grok-env",
  "xai-grok-sampler",
  "xai-grok-secrets",
- "xai-mixpanel",
  "xai-token-estimation",
 ]
 
@@ -14227,17 +14226,6 @@ name = "xai-interjection-core"
 version = "0.1.0"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "xai-mixpanel"
-version = "0.1.0"
-dependencies = [
- "base64",
- "reqwest 0.12.24",
- "serde_json",
- "thiserror 2.0.18",
- "xai-grok-secrets",
 ]
 
 [[package]]

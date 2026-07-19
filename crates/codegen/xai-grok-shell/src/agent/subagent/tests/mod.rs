@@ -3250,6 +3250,7 @@ fn record_pre_spawn_failure_clears_stale_pending_entry() {
 fn test_model_entry(model_id: &str) -> crate::agent::config::ModelEntry {
     crate::agent::config::ModelEntry {
         info: crate::agent::config::ModelInfo {
+        no_auth: false,
             user_selectable: true,
             id: None,
             model: model_id.to_string(),

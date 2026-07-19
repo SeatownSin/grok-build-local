@@ -391,6 +391,30 @@ pub fn user_agent_string_for(origin: &OriginClientInfo) -> String {
 // SamplingClient
 // =============================================================================
 
+/// `true` when the URL targets xAI-operated infrastructure (`x.ai`,
+/// `grok.com`, or any subdomain). This build never sends bytes to xAI:
+/// [`SamplingClient::new`] refuses such endpoints outright, so neither
+/// defaults nor user configuration can route inference there. Kept local
+/// to this crate (mirrored in `xai-grok-shell-base::util`) so the sampler
+/// stays dependency-free.
+pub(crate) fn is_xai_infrastructure_url(url: &str) -> bool {
+    let Ok(parsed) = reqwest::Url::parse(url) else {
+        return false;
+    };
+    match parsed.host_str() {
+        Some(host) => {
+            let host = host.to_ascii_lowercase();
+            for blocked in ["x.ai", "grok.com"] {
+                if host == blocked || host.ends_with(&format!(".{blocked}")) {
+                    return true;
+                }
+            }
+            false
+        }
+        None => false,
+    }
+}
+
 impl SamplingClient {
     /// Construct a sampling client from a [`SamplerConfig`].
     ///
@@ -398,7 +422,18 @@ impl SamplingClient {
     /// default, HTTP/1.1 when `config.force_http1` is set) and
     /// pre-computes the default request headers. This does not perform
     /// any network I/O.
+    ///
+    /// Fails for xAI-operated endpoints: this build is local/BYOK-only
+    /// and never contacts xAI infrastructure.
     pub fn new(config: SamplerConfig) -> Result<Self> {
+        if is_xai_infrastructure_url(&config.base_url) {
+            return Err(SamplingError::Auth(format!(
+                "endpoint '{}' targets xAI infrastructure, which this build never \
+                 contacts. Configure a local or third-party model (see the \
+                 custom-models guide).",
+                config.base_url
+            )));
+        }
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         if let Some(ref api_key) = config.api_key {
@@ -1925,6 +1960,47 @@ mod tests {
             compaction_at_tokens: None,
             doom_loop_recovery: None,
             header_injector: None,
+        }
+    }
+
+    /// The xAI-infrastructure block is absolute: construction fails for
+    /// `x.ai` / `grok.com` and all subdomains, while local and third-party
+    /// endpoints (including spoof-shaped hostnames) stay allowed.
+    #[test]
+    fn xai_infrastructure_endpoints_are_refused() {
+        for blocked in [
+            "https://api.x.ai/v1",
+            "https://x.ai",
+            "https://cli-chat-proxy.grok.com/v1",
+            "https://grok.com/v1",
+            "http://API.X.AI/v1",
+        ] {
+            assert!(is_xai_infrastructure_url(blocked), "{blocked}");
+            let cfg = SamplerConfig {
+                base_url: blocked.to_string(),
+                ..minimal_config()
+            };
+            assert!(
+                SamplingClient::new(cfg).is_err(),
+                "constructing a client for {blocked} must fail"
+            );
+        }
+        for allowed in [
+            "http://localhost:11434/v1",
+            "https://api.openai.com/v1",
+            "https://example.test",
+            "https://evil-x.ai.attacker.com/v1", // subdomain spoof: host is attacker.com's
+            "https://notgrok.com/v1",
+        ] {
+            assert!(!is_xai_infrastructure_url(allowed), "{allowed}");
+            let cfg = SamplerConfig {
+                base_url: allowed.to_string(),
+                ..minimal_config()
+            };
+            assert!(
+                SamplingClient::new(cfg).is_ok(),
+                "constructing a client for {allowed} must succeed"
+            );
         }
     }
 
