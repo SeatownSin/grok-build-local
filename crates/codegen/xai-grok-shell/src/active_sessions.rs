@@ -119,7 +119,10 @@ where
             let _ = lock_file.unlock();
             result.map(Some)
         }
-        Err(e) if e.kind() == io::ErrorKind::WouldBlock => Ok(None),
+        // Cross-platform contention: Unix `WouldBlock` and Windows raw
+        // `ERROR_LOCK_VIOLATION` (33) both mean "another handle holds it" →
+        // skip gracefully (the orphan is reaped by `collect_crashed` later).
+        Err(e) if crate::util::is_lock_contention(&e) => Ok(None),
         Err(e) => Err(e),
     }
 }

@@ -75,9 +75,44 @@ fn is_process_alive(pid: u32) -> bool {
     err.raw_os_error() != Some(libc::ESRCH)
 }
 
-#[cfg(not(unix))]
+/// Windows liveness via `OpenProcess` + `WaitForSingleObject`.
+///
+/// Mirrors the Unix semantics: a process that cannot be found is dead (so its
+/// stale lock is reclaimable), while one that exists but we cannot query is
+/// treated as alive (conservative, like Unix `EPERM`). Same-user holders — the
+/// only ones that take `auth.json.lock` — are always queryable with
+/// `PROCESS_QUERY_LIMITED_INFORMATION`.
+#[cfg(windows)]
+fn is_process_alive(pid: u32) -> bool {
+    use windows::Win32::Foundation::{CloseHandle, ERROR_ACCESS_DENIED, WAIT_OBJECT_0};
+    use windows::Win32::System::Threading::{
+        OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION, WaitForSingleObject,
+    };
+    // SAFETY: FFI to Win32. The handle from a successful `OpenProcess` is
+    // always closed before returning; no handle escapes this scope. Invalid
+    // ids (0 = System Idle, or any nonexistent PID) fail `OpenProcess` with
+    // `ERROR_INVALID_PARAMETER` and fall to the `Err` arm → dead, matching the
+    // Unix path and the shared `test_is_process_alive`.
+    unsafe {
+        match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+            Ok(handle) => {
+                // The process object is signaled once the process exits, so
+                // `WAIT_OBJECT_0` == exited and `WAIT_TIMEOUT` == still running.
+                let status = WaitForSingleObject(handle, 0);
+                let _ = CloseHandle(handle);
+                status != WAIT_OBJECT_0
+            }
+            // Access-denied → it exists but we can't query it → assume alive
+            // (matches Unix `EPERM`). Anything else — chiefly
+            // `ERROR_INVALID_PARAMETER` for a nonexistent PID — → dead.
+            Err(e) => e.code() == ERROR_ACCESS_DENIED.to_hresult(),
+        }
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
 fn is_process_alive(_pid: u32) -> bool {
-    true // conservative fallback — skip liveness check on non-Unix
+    true // conservative fallback — skip liveness check on exotic targets
 }
 
 /// `fstat(fd)` vs `stat(path)` inode comparison.  Detects a concurrent
@@ -271,8 +306,12 @@ fn try_acquire_once(lock_path: &Path) -> LockAttempt {
             }
         }
 
-        // Step 4: EWOULDBLOCK — lock is held by someone else.
-        Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+        // Step 4: contention — lock is held by someone else. Unix reports
+        // `WouldBlock`; Windows `LockFileEx` reports raw `ERROR_LOCK_VIOLATION`
+        // (33). Match both so the stale-recovery path (mtime-based on the
+        // locked file, which does not require reading its contents) is reached
+        // on Windows instead of falling through to `Failed`.
+        Err(e) if crate::util::is_lock_contention(&e) => {
             if is_holder_stale(&mut file) {
                 match std::fs::remove_file(lock_path) {
                     Ok(()) => LockAttempt::StaleUnlinked,
@@ -611,7 +650,9 @@ mod tests {
         drop(lock1);
     }
 
-    #[cfg(unix)]
+    /// Cross-platform: the Unix (`kill(pid,0)`) and Windows (`OpenProcess`)
+    /// liveness paths must agree on these — the current process is alive; 0,
+    /// `u32::MAX`, and the odd `i32::MAX` are not valid live PIDs on either OS.
     #[test]
     fn test_is_process_alive() {
         assert!(is_process_alive(std::process::id()));
