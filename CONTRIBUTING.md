@@ -1,19 +1,33 @@
 # Contributing
 
-This repository does **not** accept external pull requests or unsolicited
-patches.
+**grok-build-local** is a personal, local-first fork of xAI's Grok Build (see
+[Relationship to upstream](README.md#relationship-to-upstream)). It is **not**
+the upstream project, and it is maintained on a best-effort basis with no
+support guarantees.
 
-SpaceXAI develops this software internally. The public tree is published for
-source transparency and local builds under the terms of the Apache License,
-Version 2.0 (see [`LICENSE`](LICENSE)).
+## Issues and pull requests
 
-## Security reports
+Bug reports and small, focused pull requests against this fork are welcome, with
+a few caveats:
 
-Please report security issues through the process described in
-[`SECURITY.md`](SECURITY.md). Do not open a public issue for vulnerabilities.
+- This is a personal project, not a supported product — review and merges happen
+  when time allows, and there is no response-time commitment.
+- Changes concerning the **upstream** product itself (not this fork's
+  modifications) belong upstream, not here — see
+  [Relationship to upstream](README.md#relationship-to-upstream).
+- Keep the fork's purpose in mind: it must not reintroduce network calls to xAI
+  infrastructure. See the README's
+  [What's different](README.md#whats-different-from-upstream).
+- By contributing, you agree your contribution is licensed under the
+  [Apache License, Version 2.0](LICENSE), the same terms as this repository.
+
+## Security
+
+Do **not** open public issues for security problems — follow
+[`SECURITY.md`](SECURITY.md).
 
 ## Licensing of this source
 
-By downloading or using this source, you agree that your use is governed by
-the Apache License, Version 2.0. No contributor license agreement is offered
-because external contributions are not accepted.
+This repository is a modified fork of xAI's Apache-2.0-licensed source. By
+downloading or using it, you agree that your use is governed by the
+[Apache License, Version 2.0](LICENSE).
