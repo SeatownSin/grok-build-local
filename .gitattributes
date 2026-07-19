@@ -1,0 +1,20 @@
+# This repository originates from a Linux monorepo; all text files use LF.
+# `text=auto` lets git detect text vs binary; `eol=lf` forces LF on checkout
+# so a Windows checkout (and WSL builds reading it) stay consistent with the
+# pinned LF test fixtures.
+* text=auto eol=lf
+
+# Explicit binary markers (belt-and-suspenders; git also auto-detects these).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.gz binary
+*.zst binary
+*.wasm binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
