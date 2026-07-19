@@ -1,9 +1,9 @@
 # grok-build-local
 
 A **local-first, privacy-focused fork** of **Grok Build** (`grok`) — xAI's
-terminal-based AI coding agent — modified so it **never contacts xAI
-infrastructure** and runs entirely against **local or third-party
-(BYOK) models**.
+terminal-based AI coding agent — modified so it makes **no network calls to
+xAI infrastructure by default** and runs entirely against **local or
+third-party (BYOK) models**.
 
 > **Not affiliated with, endorsed by, or supported by xAI.** This is an
 > independent modification of xAI's Apache-2.0-licensed source. See
@@ -56,6 +56,13 @@ The inference request path itself is unchanged and provider-neutral (OpenAI
 Chat Completions / Responses, or Anthropic Messages) — only *where* it is
 allowed to connect changed.
 
+> **The one xAI-origin path that remains** is the optional plugin marketplace:
+> its official source is `github.com/xai-org/plugin-marketplace` (GitHub, not
+> `x.ai`/`grok.com`). Auto-registration of that source is **off by default**
+> (the remote-config path that could enable it is removed), so it is never
+> fetched unless you explicitly opt in and run a plugin command. Point it at
+> your own source, or don't use it, to stay fully clear of xAI-origin content.
+
 ## Building from source
 
 Requirements:
@@ -76,8 +83,12 @@ cargo build -p xai-grok-pager-bin --release  # release binary: target/release/xa
 cargo check -p xai-grok-pager-bin            # fast validation
 ```
 
-On first launch there is **no login** — configure a local or BYOK model (below)
-and start a session. There is no browser auth flow to xAI in this build.
+**Configure a model before launching.** Add a local or BYOK model to
+`~/.grok/config.toml` ([below](#configuring-a-local-model)) **first** — with one
+present, the TUI starts straight into a session with no login. Without any model
+configured, it still shows the upstream login screen, which **cannot complete**
+here (xAI auth is removed), so there is nothing to log into until you add a
+model. There is no browser auth flow to xAI in this build.
 
 ## Configuring a local model
 
