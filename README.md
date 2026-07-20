@@ -47,6 +47,9 @@ servers, and adds first-class support for local models. The changes:
   [Configuring a local model](#configuring-a-local-model).
 - **Grok models hidden.** The xAI-hosted default models are hidden from the
   picker (they're unusable here); your local/BYOK models are all that show.
+- **First-run setup wizard.** With no model configured, launch drops into a
+  short wizard that scans `localhost` for a running model server and writes the
+  config for you — replacing the (removed) login screen.
 - **Windows build support.** The proto codegen no longer depends on
   `/dev/stdout`, so the workspace builds natively on Windows.
 - **Updates from this repo.** `grok update` pulls GitHub Releases from
@@ -83,17 +86,20 @@ cargo build -p xai-grok-pager-bin --release  # release binary: target/release/xa
 cargo check -p xai-grok-pager-bin            # fast validation
 ```
 
-**Configure a model before launching.** Add a local or BYOK model to
-`~/.grok/config.toml` ([below](#configuring-a-local-model)) **first** — with one
-present, the TUI starts straight into a session with no login. Without any model
-configured, it still shows the upstream login screen, which **cannot complete**
-here (xAI auth is removed), so there is nothing to log into until you add a
-model. There is no browser auth flow to xAI in this build.
+**First launch.** With no model configured, the first run drops into a short
+setup wizard: it scans `localhost` for a running model server (Ollama, LM
+Studio, llama.cpp, vLLM), lets you pick a detected model or enter an endpoint
+manually, writes it to `~/.grok/config.toml`, and starts straight into a
+session. Quit the wizard and it exits cleanly. Prefer to set things up ahead of
+time? Configure a model up front ([below](#configuring-a-local-model)) and
+launch goes directly to a session — no wizard, no login. There is no browser
+auth flow to xAI in this build.
 
 ## Configuring a local model
 
-Add a model to `~/.grok/config.toml`. A loopback endpoint needs nothing else —
-no key, no login:
+The first-run wizard writes this for you, but you can also add or edit models in
+`~/.grok/config.toml` by hand. A loopback endpoint needs nothing else — no key,
+no login:
 
 ```toml
 [model.local]
