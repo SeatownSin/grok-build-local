@@ -1,8 +1,8 @@
 //! Syntax highlighting initialization.
 //!
 //! Provides lazily-initialized `Syntect` instances for code highlighting.
-//! Dark themes (GrokNight, TokyoNight) share `grok-night.tmTheme`;
-//! GrokDay uses `grok-day.tmTheme` with deepened colors for light backgrounds.
+//! Dark themes (GrokNight, TokyoNight) share `axon-night.tmTheme`;
+//! GrokDay uses `axon-day.tmTheme` with deepened colors for light backgrounds.
 
 use std::sync::OnceLock;
 
@@ -70,10 +70,10 @@ pub fn get_syntect() -> &'static Syntect {
         | ThemeKind::RosePineMoon
         | ThemeKind::OscuraMidnight
         | ThemeKind::Auto => SYNTECT_GROKNIGHT
-            .get_or_init(|| Syntect::new(include_bytes!("../assets/grok-night.tmTheme"))),
+            .get_or_init(|| Syntect::new(include_bytes!("../assets/axon-night.tmTheme"))),
         ThemeKind::TokyoNight => SYNTECT_TOKYONIGHT
             .get_or_init(|| Syntect::new(include_bytes!("../assets/tokyo-night.tmTheme"))),
         ThemeKind::GrokDay => SYNTECT_GROKDAY
-            .get_or_init(|| Syntect::new(include_bytes!("../assets/grok-day.tmTheme"))),
+            .get_or_init(|| Syntect::new(include_bytes!("../assets/axon-day.tmTheme"))),
     }
 }

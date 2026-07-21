@@ -513,7 +513,7 @@ pub(super) mod paste_key_tests {
         agent.set_active_pane(ActivePane::Prompt, true);
         let registry = ActionRegistry::defaults();
         let outcome = agent.handle_input(
-            &Event::Paste("GROK_WRAP_IMG\nimage/png\n!!!".to_string()),
+            &Event::Paste("AXON_WRAP_IMG\nimage/png\n!!!".to_string()),
             &registry,
         );
         assert!(matches!(outcome, InputOutcome::Unchanged));

@@ -885,7 +885,7 @@ mod tests {
 
     /// CROSS-CRATE REGRESSION GUARD:
     ///
-    /// Enterprise/BYOK configs (e.g. an enterprise `~/.grok/config.toml` with a
+    /// Enterprise/BYOK configs (e.g. an enterprise `~/.axon/config.toml` with a
     /// `[model.*]` table containing `env_key = "ANTHROPIC_AUTH_TOKEN"`) MUST
     /// NOT send the user to the login screen at startup.
     ///
@@ -945,10 +945,10 @@ mod tests {
     /// either passes or fails on a meaningful new code path.
     #[test]
     fn startup_auth_xai_api_key_not_first_still_requires_login() {
-        use axon_shell::agent::auth_method::{GROK_COM_METHOD_ID, XAI_API_KEY_METHOD_ID};
+        use axon_shell::agent::auth_method::{AXON_COM_METHOD_ID, XAI_API_KEY_METHOD_ID};
 
         let methods = vec![
-            make_auth_method(GROK_COM_METHOD_ID, "Grok", None),
+            make_auth_method(AXON_COM_METHOD_ID, "Grok", None),
             make_auth_method(XAI_API_KEY_METHOD_ID, "xai.api_key", None),
         ];
         let (needs, _, _, _) = startup_auth_metadata(&methods);

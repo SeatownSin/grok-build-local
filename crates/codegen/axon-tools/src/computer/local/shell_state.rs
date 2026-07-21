@@ -23,14 +23,14 @@ use tokio::io::AsyncReadExt;
 // Marker constants
 // ============================================================================
 
-const BASH_STATE_START_MARKER: &str = "__GROK_BASH_STATE_START__";
-const BASH_STATE_END_MARKER: &str = "__GROK_BASH_STATE_END__";
-const ZSH_STATE_START_MARKER: &str = "__GROK_ZSH_STATE_START__";
-const ZSH_STATE_END_MARKER: &str = "__GROK_ZSH_STATE_END__";
+const BASH_STATE_START_MARKER: &str = "__AXON_BASH_STATE_START__";
+const BASH_STATE_END_MARKER: &str = "__AXON_BASH_STATE_END__";
+const ZSH_STATE_START_MARKER: &str = "__AXON_ZSH_STATE_START__";
+const ZSH_STATE_END_MARKER: &str = "__AXON_ZSH_STATE_END__";
 
 /// Marker emitted by the init path to separate login-shell noise (MOTD, etc.)
 /// from the actual state dump on stdout.
-const INIT_STATE_MARKER: &str = "__GROK_INIT_STATE_MARKER__";
+const INIT_STATE_MARKER: &str = "__AXON_INIT_STATE_MARKER__";
 
 /// Maximum time to wait for a shell state init (login shell + rc files).
 const INIT_TIMEOUT: Duration = Duration::from_secs(15);
@@ -50,8 +50,8 @@ pub fn shell_env_overrides() -> HashMap<String, String> {
         // Re-applied last via [`crate::util::apply_grok_agent_marker`] so request
         // env cannot clear it.
         (
-            crate::util::GROK_AGENT_ENV.to_string(),
-            crate::util::GROK_AGENT_ENV_VALUE.to_string(),
+            crate::util::AXON_AGENT_ENV.to_string(),
+            crate::util::AXON_AGENT_ENV_VALUE.to_string(),
         ),
     ])
 }
@@ -88,20 +88,20 @@ dump_bash_state() {
     local content="$1"
     local var_name="$2"
     if [[ -n "$content" ]]; then
-      builtin printf 'grok_snap_%s=$(command base64 -d <<'"'"'GROK_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
+      builtin printf 'grok_snap_%s=$(command base64 -d <<'"'"'AXON_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
       command base64 <<<"$content" | command tr -d '\n'
-      builtin printf '\nGROK_SNAP_EOF_%s\n' "$var_name"
+      builtin printf '\nAXON_SNAP_EOF_%s\n' "$var_name"
       builtin printf ')\n'
       builtin printf 'eval "$grok_snap_%s"\n' "$var_name"
     fi
   }
 
-  _emit "__GROK_BASH_STATE_START__"
+  _emit "__AXON_BASH_STATE_START__"
 
   _emit "$PWD"
 
   local env_vars
-  env_vars=$(builtin export -p 2>/dev/null | command grep -viE '_proxy=|GROK_SANDBOX|GROK_AGENT=|SUDO_ASKPASS|GROK_ASKPASS|ELECTRON_RUN_AS_NODE|SSH_AUTH_SOCK|DBUS_SESSION_BUS_ADDRESS|XDG_RUNTIME_DIR|WAYLAND_DISPLAY|GPG_TTY' || true)
+  env_vars=$(builtin export -p 2>/dev/null | command grep -viE '_proxy=|AXON_SANDBOX|AXON_AGENT=|SUDO_ASKPASS|AXON_ASKPASS|ELECTRON_RUN_AS_NODE|SSH_AUTH_SOCK|DBUS_SESSION_BUS_ADDRESS|XDG_RUNTIME_DIR|WAYLAND_DISPLAY|GPG_TTY' || true)
   _emit_encoded "$env_vars" "ENV_VARS_B64"
 
   # errexit/pipefail here are this function's own `set -euo pipefail` (set is
@@ -123,7 +123,7 @@ dump_bash_state() {
   _emit_encoded "$aliases" "ALIASES_B64"
 
   _emit "# end of bash state dump"
-  _emit "__GROK_BASH_STATE_END__"
+  _emit "__AXON_BASH_STATE_END__"
 }
 "##;
 
@@ -144,20 +144,20 @@ function dump_zsh_state() {
     local content="$1"
     local var_name="$2"
     if [[ -n "$content" ]]; then
-      builtin printf 'grok_snap_%s=$(command base64 -d <<'"'"'GROK_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
+      builtin printf 'grok_snap_%s=$(command base64 -d <<'"'"'AXON_SNAP_EOF_%s'"'"'\n' "$var_name" "$var_name"
       command base64 <<<"$content" | command tr -d '\n'
-      builtin printf '\nGROK_SNAP_EOF_%s\n' "$var_name"
+      builtin printf '\nAXON_SNAP_EOF_%s\n' "$var_name"
       builtin printf ')\n'
       builtin printf 'eval "$grok_snap_%s"\n' "$var_name"
     fi
   }
 
-  _emit "__GROK_ZSH_STATE_START__"
+  _emit "__AXON_ZSH_STATE_START__"
 
   _emit "$PWD"
 
   local env_vars
-  env_vars=$(builtin typeset -xp 2>/dev/null | command grep -viE '_proxy=|GROK_SANDBOX|GROK_AGENT=|SUDO_ASKPASS|GROK_ASKPASS|ELECTRON_RUN_AS_NODE|SSH_AUTH_SOCK|DBUS_SESSION_BUS_ADDRESS|XDG_RUNTIME_DIR|WAYLAND_DISPLAY|GPG_TTY' || true)
+  env_vars=$(builtin typeset -xp 2>/dev/null | command grep -viE '_proxy=|AXON_SANDBOX|AXON_AGENT=|SUDO_ASKPASS|AXON_ASKPASS|ELECTRON_RUN_AS_NODE|SSH_AUTH_SOCK|DBUS_SESSION_BUS_ADDRESS|XDG_RUNTIME_DIR|WAYLAND_DISPLAY|GPG_TTY' || true)
   _emit_encoded "$env_vars" "ENV_VARS_B64"
 
   # errreturn/pipefail here are this function's own `emulate -L` options
@@ -176,7 +176,7 @@ function dump_zsh_state() {
   _emit_encoded "$aliases" "ALIASES_B64"
 
   _emit "# end of zsh state dump"
-  _emit "__GROK_ZSH_STATE_END__"
+  _emit "__AXON_ZSH_STATE_END__"
 }
 "##;
 
@@ -405,13 +405,13 @@ impl ShellState {
                 // up as `Y\nX\n` instead of the chronological `X\nY\n`.
                 // Shell-level diagnostics (eval syntax errors, etc.) still
                 // land on the outer shell's stderr — those are unaffected.
-                // Re-export GROK_AGENT=1 after snapshot eval so agent-definition
+                // Re-export AXON_AGENT=1 after snapshot eval so agent-definition
                 // selectors (or other values) from prior shells cannot clear the
                 // agent sentinel (process env alone is insufficient).
                 "{dump_script} \
                  snap=$(command cat <&3) && builtin shopt -s extglob && builtin eval -- \"$snap\" && \
                  {{ builtin set +u 2>/dev/null || true; \
-                 builtin export GROK_AGENT=1; \
+                 builtin export AXON_AGENT=1; \
                  builtin export PWD=\"$(builtin pwd)\"; \
                  builtin shopt -s expand_aliases 2>/dev/null; {sudo_inject}{search_inject}\
                  builtin printf '%s' \"${{2:-}}\"; \
@@ -427,7 +427,7 @@ impl ShellState {
                  builtin eval \"$snap\" && \
                  {{ builtin unsetopt nounset 2>/dev/null || true; \
                  builtin setopt nonomatch 2>/dev/null || true; \
-                 builtin export GROK_AGENT=1; \
+                 builtin export AXON_AGENT=1; \
                  builtin export PWD=\"$(builtin pwd)\"; \
                  builtin setopt aliases 2>/dev/null; {sudo_inject}{search_inject}\
                  builtin printf '%s' \"${{2:-}}\"; \
@@ -690,8 +690,8 @@ mod tests {
     fn shell_env_overrides_marks_agent_terminal() {
         let env = shell_env_overrides();
         assert_eq!(
-            env.get(crate::util::GROK_AGENT_ENV).map(String::as_str),
-            Some(crate::util::GROK_AGENT_ENV_VALUE)
+            env.get(crate::util::AXON_AGENT_ENV).map(String::as_str),
+            Some(crate::util::AXON_AGENT_ENV_VALUE)
         );
         assert_eq!(env.get("TERM").map(String::as_str), Some("dumb"));
         assert_eq!(env.get("NO_COLOR").map(String::as_str), Some("1"));
@@ -699,11 +699,11 @@ mod tests {
 
     #[test]
     fn parse_dump_valid_bash() {
-        let raw = "__GROK_BASH_STATE_START__\n\
+        let raw = "__AXON_BASH_STATE_START__\n\
                     /home/user/project\n\
                     export FOO=bar\n\
                     # end of bash state dump\n\
-                    __GROK_BASH_STATE_END__\n";
+                    __AXON_BASH_STATE_END__\n";
         let (cwd, rest) = parse_dump(ShellKind::Bash, raw).unwrap();
         assert_eq!(cwd, PathBuf::from("/home/user/project"));
         assert!(rest.contains("export FOO=bar"));
@@ -711,11 +711,11 @@ mod tests {
 
     #[test]
     fn parse_dump_valid_zsh() {
-        let raw = "__GROK_ZSH_STATE_START__\n\
+        let raw = "__AXON_ZSH_STATE_START__\n\
                     /tmp\n\
                     typeset -x FOO=bar\n\
                     # end of zsh state dump\n\
-                    __GROK_ZSH_STATE_END__\n";
+                    __AXON_ZSH_STATE_END__\n";
         let (cwd, rest) = parse_dump(ShellKind::Zsh, raw).unwrap();
         assert_eq!(cwd, PathBuf::from("/tmp"));
         assert!(rest.contains("typeset -x FOO=bar"));
@@ -723,28 +723,28 @@ mod tests {
 
     #[test]
     fn parse_dump_missing_start_marker() {
-        let raw = "/home/user\nexport FOO=bar\n__GROK_BASH_STATE_END__\n";
+        let raw = "/home/user\nexport FOO=bar\n__AXON_BASH_STATE_END__\n";
         assert!(parse_dump(ShellKind::Bash, raw).is_none());
     }
 
     #[test]
     fn parse_dump_missing_end_marker() {
-        let raw = "__GROK_BASH_STATE_START__\n/home/user\nexport FOO=bar\n";
+        let raw = "__AXON_BASH_STATE_START__\n/home/user\nexport FOO=bar\n";
         assert!(parse_dump(ShellKind::Bash, raw).is_none());
     }
 
     #[test]
     fn parse_dump_wrong_shell_markers() {
-        let raw = "__GROK_ZSH_STATE_START__\n/tmp\nstuff\n__GROK_ZSH_STATE_END__\n";
+        let raw = "__AXON_ZSH_STATE_START__\n/tmp\nstuff\n__AXON_ZSH_STATE_END__\n";
         assert!(parse_dump(ShellKind::Bash, raw).is_none());
     }
 
     #[test]
     fn parse_dump_empty_snapshot() {
-        let raw = "__GROK_BASH_STATE_START__\n\
+        let raw = "__AXON_BASH_STATE_START__\n\
                     /home/user\n\
                     # end of bash state dump\n\
-                    __GROK_BASH_STATE_END__\n";
+                    __AXON_BASH_STATE_END__\n";
         let (cwd, rest) = parse_dump(ShellKind::Bash, raw).unwrap();
         assert_eq!(cwd, PathBuf::from("/home/user"));
         assert!(rest.contains("# end of bash state dump"));
@@ -752,15 +752,15 @@ mod tests {
 
     #[test]
     fn parse_after_marker_found() {
-        let output = "Welcome to Ubuntu\nMOTD line\n__GROK_INIT_STATE_MARKER__\nactual data\n";
-        let result = parse_after_marker(output, "__GROK_INIT_STATE_MARKER__");
+        let output = "Welcome to Ubuntu\nMOTD line\n__AXON_INIT_STATE_MARKER__\nactual data\n";
+        let result = parse_after_marker(output, "__AXON_INIT_STATE_MARKER__");
         assert_eq!(result, "actual data\n");
     }
 
     #[test]
     fn parse_after_marker_not_found() {
         let output = "just some output\n";
-        let result = parse_after_marker(output, "__GROK_INIT_STATE_MARKER__");
+        let result = parse_after_marker(output, "__AXON_INIT_STATE_MARKER__");
         assert_eq!(result, output);
     }
 
@@ -808,11 +808,11 @@ mod tests {
             shell: ShellKind::Bash,
         };
 
-        let dump = "__GROK_BASH_STATE_START__\n\
+        let dump = "__AXON_BASH_STATE_START__\n\
                      /new/dir\n\
                      export X=1\n\
                      # end of bash state dump\n\
-                     __GROK_BASH_STATE_END__\n";
+                     __AXON_BASH_STATE_END__\n";
         assert!(state.update_from_dump(dump));
         assert_eq!(state.cwd, PathBuf::from("/new/dir"));
         assert!(state.snapshot.contains("export X=1"));
@@ -860,10 +860,10 @@ mod tests {
         let cwd = std::env::current_dir().unwrap();
         let mut state = ShellState::init(ShellKind::Bash, &cwd).await.unwrap();
 
-        // Run "export GROK_TEST_VAR=hello" and capture the new state
+        // Run "export AXON_TEST_VAR=hello" and capture the new state
         let prep = state
             .prepare_command(
-                "export GROK_TEST_VAR=hello",
+                "export AXON_TEST_VAR=hello",
                 None,
                 crate::computer::local::SearchShadowConfig::default(),
                 None,

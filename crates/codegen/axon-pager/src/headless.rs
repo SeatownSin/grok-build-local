@@ -1058,7 +1058,7 @@ pub async fn run_single_turn(
     );
 
     // Debug: track headless sessions in active_sessions.json when env var is set.
-    let track_active = std::env::var("GROK_TRACK_HEADLESS").is_ok();
+    let track_active = std::env::var("AXON_TRACK_HEADLESS").is_ok();
     if track_active {
         let _ = axon_shell::active_sessions::register(
             axon_shell::active_sessions::ActiveSession {
@@ -1279,7 +1279,7 @@ pub async fn run_single_turn(
 
     // Handle result
     if track_active {
-        // Non-blocking flock so a slow/network ~/.grok can't hang exit.
+        // Non-blocking flock so a slow/network ~/.axon can't hang exit.
         let _ = axon_shell::active_sessions::try_unregister(&session_id);
     }
     cancel.cancel();

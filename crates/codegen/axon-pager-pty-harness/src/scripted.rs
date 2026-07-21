@@ -130,7 +130,7 @@ pub struct EnvironmentConfig {
     /// Extra CLI args passed to the pager binary.
     #[serde(default)]
     pub args: Vec<String>,
-    /// Optional `config.toml` written into the run's isolated `$GROK_HOME`
+    /// Optional `config.toml` written into the run's isolated `$AXON_HOME`
     /// before spawn (e.g. `[ui] keep_text_selection` so selection
     /// highlights survive long enough to assert on).
     #[serde(default)]
@@ -536,9 +536,9 @@ impl ScriptedScenarioRunner {
         }
 
         if let Some(config_toml) = &scenario.environment.config_toml {
-            let grok_home = content.home().join(".grok");
+            let grok_home = content.home().join(".axon");
             fs::create_dir_all(&grok_home)
-                .with_context(|| format!("create scenario GROK_HOME {}", grok_home.display()))?;
+                .with_context(|| format!("create scenario AXON_HOME {}", grok_home.display()))?;
             fs::write(grok_home.join("config.toml"), config_toml)
                 .context("write scenario config.toml")?;
         }

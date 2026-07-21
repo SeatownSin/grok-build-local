@@ -211,9 +211,9 @@ const SESSION_START_AUTH_DEADLINE: std::time::Duration = std::time::Duration::fr
 const PURGE_LOCK_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(100);
 
 /// Exponential backoff for retry `attempt` (caller guarantees `attempt >= 1`).
-/// Base is 1s; `GROK_DEPLOYMENT_CONFIG_BACKOFF_MS` overrides it for tests.
+/// Base is 1s; `AXON_DEPLOYMENT_CONFIG_BACKOFF_MS` overrides it for tests.
 fn retry_backoff(attempt: u32) -> std::time::Duration {
-    let base = std::env::var("GROK_DEPLOYMENT_CONFIG_BACKOFF_MS")
+    let base = std::env::var("AXON_DEPLOYMENT_CONFIG_BACKOFF_MS")
         .ok()
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(1000);
@@ -373,10 +373,10 @@ async fn fetch_managed_config_once(
         .map_err(|e| ManagedConfigError::InvalidResponse(e.to_string()))
 }
 
-/// Override with `GROK_DEPLOYMENT_CONFIG_REFRESH_INTERVAL_SECS`. Clamped to
+/// Override with `AXON_DEPLOYMENT_CONFIG_REFRESH_INTERVAL_SECS`. Clamped to
 /// >= 1s: `tokio::time::interval` panics on a zero period.
 fn managed_config_sync_interval() -> std::time::Duration {
-    if let Ok(s) = std::env::var("GROK_DEPLOYMENT_CONFIG_REFRESH_INTERVAL_SECS")
+    if let Ok(s) = std::env::var("AXON_DEPLOYMENT_CONFIG_REFRESH_INTERVAL_SECS")
         && let Ok(secs) = s.parse::<u64>()
     {
         return std::time::Duration::from_secs(secs.max(1));
@@ -432,7 +432,7 @@ pub fn resolve_deployment_id(deployment_key: Option<&str>) -> Option<String> {
         .or_else(|| Some(crate::agent::config::deployment_id_from_key(key)))
 }
 
-/// Resolve deployment key from `GROK_DEPLOYMENT_KEY` env var, then config files.
+/// Resolve deployment key from `AXON_DEPLOYMENT_KEY` env var, then config files.
 pub fn resolve_deployment_key() -> Option<String> {
     let config_val = crate::config::load_effective_config()
         .map_err(|e| tracing::warn!("failed to load config files for deployment key: {e}"))
@@ -445,7 +445,7 @@ pub fn resolve_deployment_key() -> Option<String> {
         });
     crate::agent::config::resolve_string_flag(
         None,
-        "GROK_DEPLOYMENT_KEY",
+        "AXON_DEPLOYMENT_KEY",
         config_val.as_deref(),
         None,
     )
@@ -461,7 +461,7 @@ fn deployment_key_fingerprint(key: &str) -> String {
 /// Whether managed config fetching is enabled (env > config.toml > default true).
 /// Callers doing auto-fetch should check this; explicit user actions (grok setup) skip it.
 pub fn is_fetch_enabled() -> bool {
-    if let Some(v) = crate::agent::config::env_bool("GROK_MANAGED_CONFIG") {
+    if let Some(v) = crate::agent::config::env_bool("AXON_MANAGED_CONFIG") {
         return v;
     }
     crate::config::load_effective_config()
@@ -470,7 +470,7 @@ pub fn is_fetch_enabled() -> bool {
         .unwrap_or(true)
 }
 
-/// Fetch managed config + requirements and write to `~/.grok/`, trying the
+/// Fetch managed config + requirements and write to `~/.axon/`, trying the
 /// deployment key first, then a signed-in team. `Ok(false)` when neither applies.
 pub async fn sync() -> Result<bool, ManagedConfigError> {
     Ok(sync_with_budget(SyncBudget::Standard, None).await?.wrote)
@@ -1016,7 +1016,7 @@ fn managed_policy_gate_decision(
 /// and exit codes stay out of the library.
 #[derive(Debug)]
 pub enum SetupOutcome {
-    /// Config was written to `~/.grok`.
+    /// Config was written to `~/.axon`.
     Installed,
     /// The principal is valid but the server has no config for it.
     NothingConfigured,

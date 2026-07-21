@@ -90,7 +90,7 @@ Grok writes to the clipboard through up to three routes, shown in the **Clipboar
 - **tmux buffer** — inside tmux, Grok also writes to the tmux paste buffer (`tmux load-buffer`).
 - **OSC 52** — Grok emits the OSC 52 escape sequence so the outer terminal updates its clipboard. Grok always emits OSC 52 inside tmux. Outside tmux, it emits OSC 52 on Linux, over SSH, or in a container without a display.
 
-**Linux Wayland**: on compositors that support the data-control protocol (GNOME 48+, KDE, Sway, Hyprland — the **Clipboard** section shows `data-control on`; the line is omitted off Wayland) copies work even if the terminal loses focus mid-copy. On older compositors (GNOME 46/47), keep the terminal focused until the copy toast confirms, and install the `wl-clipboard` package (provides `wl-copy`) for the most reliable route — Grok shows a startup warning when this applies. If data-control misbehaves on your compositor, set `GROK_CLIPBOARD_NO_DATA_CONTROL=1` to stop Grok from speaking that protocol entirely — copies then go through the CLI tools (`wl-copy`/`xclip`).
+**Linux Wayland**: on compositors that support the data-control protocol (GNOME 48+, KDE, Sway, Hyprland — the **Clipboard** section shows `data-control on`; the line is omitted off Wayland) copies work even if the terminal loses focus mid-copy. On older compositors (GNOME 46/47), keep the terminal focused until the copy toast confirms, and install the `wl-clipboard` package (provides `wl-copy`) for the most reliable route — Grok shows a startup warning when this applies. If data-control misbehaves on your compositor, set `AXON_CLIPBOARD_NO_DATA_CONTROL=1` to stop Grok from speaking that protocol entirely — copies then go through the CLI tools (`wl-copy`/`xclip`).
 
 **Linux X11 selections**: X11 **PRIMARY** and **CLIPBOARD** are separate. Selecting text usually fills PRIMARY; an explicit Copy action fills CLIPBOARD. In Grok:
 
@@ -109,7 +109,7 @@ Apple Terminal ignores OSC 52, so copying from a Grok session over SSH can't rea
 
 `grok wrap` also protects your local terminal from dirty disconnects: if the wrapped command dies while a remote TUI has mouse reporting, the alternate screen, or similar modes enabled (for example the SSH connection drops mid-session), wrap resets those modes on exit instead of leaving the terminal spraying mouse escape codes.
 
-When Grok starts inside an SSH session that isn't already running under `grok wrap`, a one-time contextual tip above the prompt recommends `grok wrap ssh <host>` (it stops appearing on its own once you launch through wrap). To turn it off, set `ssh_wrap = false` under `[ui.contextual_hints]` in `~/.grok/config.toml`, or use `/settings` → **Show contextual hints** → **SSH wrap**.
+When Grok starts inside an SSH session that isn't already running under `grok wrap`, a one-time contextual tip above the prompt recommends `grok wrap ssh <host>` (it stops appearing on its own once you launch through wrap). To turn it off, set `ssh_wrap = false` under `[ui.contextual_hints]` in `~/.axon/config.toml`, or use `/settings` → **Show contextual hints** → **SSH wrap**.
 
 > **Warning**: `grok wrap` is **experimental** and may misbehave in some setups.
 
@@ -131,7 +131,7 @@ This setting is off by default for security reasons. Without it, OSC 52 writes f
 
 **Fix**:
 - In Zellij or control mode, Grok intentionally runs inline (no alt screen).
-- Set `[terminal] alt_screen = "always"` in `~/.grok/pager.toml` to force fullscreen.
+- Set `[terminal] alt_screen = "always"` in `~/.axon/pager.toml` to force fullscreen.
 - Use the CLI flag `--no-alt-screen` to disable alt-screen mode entirely (useful for debugging or when the alternate screen causes issues in your terminal).
 
 ### Problem: Zellij keybindings interfere with Grok (Ctrl+g, Ctrl+o, etc.)

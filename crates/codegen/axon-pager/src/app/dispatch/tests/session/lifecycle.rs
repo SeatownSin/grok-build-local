@@ -349,7 +349,7 @@ fn worktree_session_preserves_subdirectory_offset() {
         &mut app,
     );
     let id = AgentId(0);
-    let worktree_root = PathBuf::from("/home/user/.grok/worktrees/repo/pager-123");
+    let worktree_root = PathBuf::from("/home/user/.axon/worktrees/repo/pager-123");
     let session_cwd = worktree_root.join("crates/codegen/axon-pager");
     let effects = dispatch(
         Action::TaskComplete(TaskResult::WorktreeSessionCreated {
@@ -924,13 +924,13 @@ fn finish_trust_resolves_and_replays_startup() {
     );
 }
 /// Accepting the trust question persists the grant to the store and resolves
-/// trust. GROK_HOME-isolated so the write hits a temp store, not the real one.
-#[serial_test::serial(GROK_HOME)]
+/// trust. AXON_HOME-isolated so the write hits a temp store, not the real one.
+#[serial_test::serial(AXON_HOME)]
 #[test]
 fn trust_folder_grants_and_resolves() {
     use axon_workspace::trust::{TrustStore, workspace_key};
     let home = tempfile::tempdir().expect("home tempdir");
-    unsafe { std::env::set_var("GROK_HOME", home.path()) };
+    unsafe { std::env::set_var("AXON_HOME", home.path()) };
     simulate_release_build();
     let repo = tempfile::tempdir().expect("repo tempdir");
     let workspace = workspace_key(repo.path());
@@ -1854,7 +1854,7 @@ fn set_plan_mode_on_from_off_emits_set_session_mode() {
 /// does. Verifies the selection moves to the next row AND the peek
 /// follows it — the path the direct-`dispatch_dashboard_stop` tests
 /// above don't exercise.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(AXON_AGENT_DASHBOARD)]
 #[test]
 fn dashboard_stop_with_peek_open_moves_selection_and_peek_down_one() {
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
@@ -1945,7 +1945,7 @@ fn dashboard_stop_with_peek_open_moves_selection_and_peek_down_one() {
 /// just-armed `stop_confirm`. The dispatcher then sees a fresh
 /// state and re-arms instead of closing. The session never closes
 /// no matter how many times the user presses Ctrl+X.
-#[serial_test::serial(GROK_AGENT_DASHBOARD)]
+#[serial_test::serial(AXON_AGENT_DASHBOARD)]
 #[test]
 fn dashboard_stop_double_press_via_handle_key_closes_top_level() {
     use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};

@@ -1,4 +1,4 @@
-# xai-crash-handler
+# axon-crash-handler
 
 Crash handler for SIGBUS/SIGSEGV with best-effort backtrace capture.
 

@@ -25,7 +25,7 @@ use crate::process::spawn_piped_with_stderr_capture;
 /// hermeticity setup exists exactly once for the typed ([`GrokStdioClient`])
 /// and raw ([`RawStdioClient`]) harnesses. `leading_args` go before the
 /// `agent stdio` subcommand (global flags); `extra_env` is applied after the
-/// kill-list so a test can still set e.g. `GROK_DEBUG_LOG=1` explicitly.
+/// kill-list so a test can still set e.g. `AXON_DEBUG_LOG=1` explicitly.
 fn spawn_agent_process(
     server: &MockInferenceServer,
     cwd: &Path,
@@ -44,10 +44,10 @@ fn spawn_agent_process(
     // controls logging only via `extra_env` / `leading_args` (mirrors the
     // headless `debug_cmd`).
     for k in [
-        "GROK_DEBUG_LOG",
-        "GROK_LOG_FILE",
-        "GROK_LOG_SAMPLING",
-        "GROK_HOOKS_LOG",
+        "AXON_DEBUG_LOG",
+        "AXON_LOG_FILE",
+        "AXON_LOG_SAMPLING",
+        "AXON_HOOKS_LOG",
     ] {
         cmd.env_remove(k);
     }

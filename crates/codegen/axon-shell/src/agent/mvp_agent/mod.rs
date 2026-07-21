@@ -550,10 +550,10 @@ fn announcements_push_payload(
     };
     push.then_some(current)
 }
-/// Override with `GROK_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS`. Clamped to
+/// Override with `AXON_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS`. Clamped to
 /// >= 1s: `tokio::time::interval` panics on a zero period.
 fn announcements_refresh_interval() -> std::time::Duration {
-    if let Ok(s) = std::env::var("GROK_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS")
+    if let Ok(s) = std::env::var("AXON_ANNOUNCEMENTS_REFRESH_INTERVAL_SECS")
         && let Ok(secs) = s.parse::<u64>()
     {
         return std::time::Duration::from_secs(secs.max(1));
@@ -711,7 +711,7 @@ pub struct MvpAgent {
     /// the session's cwd to the watcher task spawned in
     /// `agent/app.rs`, which calls
     /// [`crate::config::watcher::ConfigFileWatcher::watch_path`] (a
-    /// **non-recursive** watch on `<cwd>/` and `<cwd>/.grok/`).
+    /// **non-recursive** watch on `<cwd>/` and `<cwd>/.axon/`).
     ///
     /// `None` outside leader mode and in tests — the registration is a
     /// no-op in that case, which is fine: the existing per-extra-path
@@ -2147,7 +2147,7 @@ impl MvpAgent {
     ///    initialize + cached_token + oidc fired in quick succession before
     ///    the first sync's tar extract finished), drop this call to avoid
     ///    racing concurrent extracts that would interleave per-file writes
-    ///    against `~/.grok/bundled/` and the manifest.
+    ///    against `~/.axon/bundled/` and the manifest.
     pub(crate) fn maybe_sync_bundle_in_background(&self, force: bool) {
         use crate::extensions::bundle::{
             BUNDLE_SYNC_TTL, bundle_cache_is_fresh, has_bundle_credentials,

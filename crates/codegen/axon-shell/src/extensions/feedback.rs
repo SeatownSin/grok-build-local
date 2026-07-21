@@ -82,7 +82,7 @@ async fn handle_btw(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
 async fn handle_feedback(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult {
     if !agent.cfg.borrow().is_feedback_enabled() {
         return Err(acp::Error::internal_error().data(
-            "Feedback is disabled. To enable, set GROK_FEEDBACK_ENABLED=true or \
+            "Feedback is disabled. To enable, set AXON_FEEDBACK_ENABLED=true or \
              [features] feedback = true in config.toml.",
         ));
     }
@@ -149,7 +149,7 @@ async fn handle_feedback(agent: &MvpAgent, args: &acp::ExtRequest) -> ExtResult 
             let turn_number = submission.turn_number;
 
             if let Some(user_meta) =
-                crate::agent::mvp_agent::parse_json_object_env("GROK_USER_METADATA")
+                crate::agent::mvp_agent::parse_json_object_env("AXON_USER_METADATA")
             {
                 submission.merge_metadata(user_meta);
             }

@@ -12,7 +12,7 @@
 //!   * the persisted recommendation reaches the rendered continuation
 //!     directive via the real `run_goal_round_end` seam.
 //!
-//! Tests mutate `GROK_GOAL_CLASSIFIER` so they carry `serial`.
+//! Tests mutate `AXON_GOAL_CLASSIFIER` so they carry `serial`.
 
 use super::support::*;
 use super::*;
@@ -26,7 +26,7 @@ use axon_tools::implementations::grok_build::task::types::{
 };
 use axon_tools::implementations::grok_build::update_goal::UpdateGoalInput;
 
-const ENV_FLAG: &str = "GROK_GOAL_CLASSIFIER";
+const ENV_FLAG: &str = "AXON_GOAL_CLASSIFIER";
 
 /// How the stub answers a strategist spawn.
 #[derive(Clone, Copy)]

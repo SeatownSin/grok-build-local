@@ -69,17 +69,17 @@ pub struct GrokComConfig {
     /// External auth provider command (stdout = token, stderr = user UX, exit 0 = success).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth_provider_command: Option<String>,
-    /// Login button label (env: `GROK_AUTH_PROVIDER_LABEL`).
+    /// Login button label (env: `AXON_AUTH_PROVIDER_LABEL`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth_provider_label: Option<String>,
     /// Token TTL in seconds for external auth providers that output bare
     /// tokens without `expires_in`. Synthesizes `expires_at` so proactive
-    /// refresh works. Env: `GROK_AUTH_TOKEN_TTL`.
+    /// refresh works. Env: `AXON_AUTH_TOKEN_TTL`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth_token_ttl: Option<u64>,
     /// Admin kill switch: when `Some(true)`, the `xai.api_key` auth method is
     /// neither advertised nor accepted, so `XAI_API_KEY`/per-model credentials
-    /// can't bypass the deployment's IdP login. Env: `GROK_DISABLE_API_KEY_AUTH`.
+    /// can't bypass the deployment's IdP login. Env: `AXON_DISABLE_API_KEY_AUTH`.
     /// Parity with common force-login-method admin knobs.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disable_api_key_auth: Option<bool>,
@@ -112,7 +112,7 @@ pub struct OidcAuthConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audience: Option<String>,
 }
-/// OAuth2 provider configuration (`GROK_OAUTH2_ISSUER` / `GROK_OAUTH2_CLIENT_ID`).
+/// OAuth2 provider configuration (`AXON_OAUTH2_ISSUER` / `AXON_OAUTH2_CLIENT_ID`).
 ///
 /// Uses the standard OAuth 2.1 Auth Code + PKCE flow via [`OidcAuthConfig`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -166,15 +166,15 @@ pub fn accounts_app_cors_layer(method: axum::http::Method) -> tower_http::cors::
 /// Local-dev OAuth2 issuer (accounts-app running on localhost).
 const XAI_OAUTH2_LOCAL_ISSUER: &str = "http://localhost:22255";
 const DEFAULT_OAUTH2_REFERRER: &str = "grok-build";
-/// Returns `true` when `GROK_LOCAL_AUTH=1` is set,
+/// Returns `true` when `AXON_LOCAL_AUTH=1` is set,
 /// indicating the local accounts-app should be used as the OAuth2 issuer.
 pub fn use_local_auth() -> bool {
-    std::env::var("GROK_LOCAL_AUTH")
+    std::env::var("AXON_LOCAL_AUTH")
         .map(|v| !v.is_empty() && v != "0")
         .unwrap_or(false)
 }
 /// Returns the active xAI OAuth2 issuer — the local-dev issuer when
-/// `GROK_LOCAL_AUTH=1` is set, otherwise the production issuer.
+/// `AXON_LOCAL_AUTH=1` is set, otherwise the production issuer.
 pub fn xai_oauth2_issuer() -> &'static str {
     if use_local_auth() {
         XAI_OAUTH2_LOCAL_ISSUER
@@ -196,7 +196,7 @@ impl GrokComConfig {
     /// Whether `xai.api_key` auth is disabled. Pinning a team
     /// (`force_login_team_uuid`) implies this — team membership can't be verified
     /// from a bare API key, so it must go through IdP login. The
-    /// `GROK_DISABLE_API_KEY_AUTH` env lockdown is sticky: because the env value
+    /// `AXON_DISABLE_API_KEY_AUTH` env lockdown is sticky: because the env value
     /// seeds `default()` (the merge base), a lower-trust user `config.toml` could
     /// otherwise set `disable_api_key_auth = false` and override it — so the env
     /// is OR-ed in here and cannot be turned back off by a user layer. Trusted
@@ -229,10 +229,10 @@ impl OAuth2ProviderConfig {
         self.principal_type.as_deref() == Some(TEAM_PRINCIPAL_TYPE)
     }
     pub fn from_env() -> Option<Self> {
-        let issuer = std::env::var("GROK_OAUTH2_ISSUER").ok()?;
-        let client_id = std::env::var("GROK_OAUTH2_CLIENT_ID").ok()?;
-        let principal_type = std::env::var("GROK_OAUTH2_PRINCIPAL_TYPE").ok();
-        let principal_id = std::env::var("GROK_OAUTH2_PRINCIPAL_ID").ok();
+        let issuer = std::env::var("AXON_OAUTH2_ISSUER").ok()?;
+        let client_id = std::env::var("AXON_OAUTH2_CLIENT_ID").ok()?;
+        let principal_type = std::env::var("AXON_OAUTH2_PRINCIPAL_TYPE").ok();
+        let principal_id = std::env::var("AXON_OAUTH2_PRINCIPAL_ID").ok();
         let default_scopes = match principal_type.as_deref() {
             Some(TEAM_PRINCIPAL_TYPE) => default_team_oauth2_scopes(),
             _ => default_oauth2_scopes(),
@@ -240,13 +240,13 @@ impl OAuth2ProviderConfig {
         Some(Self {
             issuer,
             client_id,
-            scopes: std::env::var("GROK_OAUTH2_SCOPES")
+            scopes: std::env::var("AXON_OAUTH2_SCOPES")
                 .map(|s| s.split(',').map(|s| s.trim().to_owned()).collect())
                 .unwrap_or(default_scopes),
             principal_type,
             principal_id,
             referrer: Some(
-                std::env::var("GROK_OAUTH2_REFERRER")
+                std::env::var("AXON_OAUTH2_REFERRER")
                     .unwrap_or_else(|_| DEFAULT_OAUTH2_REFERRER.to_owned()),
             ),
         })
@@ -285,19 +285,19 @@ impl Default for GrokComConfig {
             )
         };
         Self {
-            grok_ws_origin: std::env::var("GROK_WS_ORIGIN")
+            grok_ws_origin: std::env::var("AXON_WS_ORIGIN")
                 .unwrap_or_else(|_| PROD_WS_ORIGIN.to_owned()),
-            grok_ws_url: std::env::var("GROK_WS_URL")
+            grok_ws_url: std::env::var("AXON_WS_URL")
                 .unwrap_or_else(|_| PROD_RELAY_WS_URL.to_owned()),
             token_header: "xai-grok-cli".to_owned(),
             oidc,
             oauth2,
-            auth_provider_command: std::env::var("GROK_AUTH_PROVIDER_COMMAND").ok(),
-            auth_provider_label: std::env::var("GROK_AUTH_PROVIDER_LABEL").ok(),
-            auth_token_ttl: std::env::var("GROK_AUTH_TOKEN_TTL")
+            auth_provider_command: std::env::var("AXON_AUTH_PROVIDER_COMMAND").ok(),
+            auth_provider_label: std::env::var("AXON_AUTH_PROVIDER_LABEL").ok(),
+            auth_token_ttl: std::env::var("AXON_AUTH_TOKEN_TTL")
                 .ok()
                 .and_then(|v| v.parse().ok()),
-            disable_api_key_auth: std::env::var("GROK_DISABLE_API_KEY_AUTH")
+            disable_api_key_auth: std::env::var("AXON_DISABLE_API_KEY_AUTH")
                 .ok()
                 .map(|v| env_flag_enabled(&v)),
             force_login_team_uuid: None,
@@ -307,7 +307,7 @@ impl Default for GrokComConfig {
 }
 /// Parse a boolean env-var value for grok's on/off flags. A bare presence
 /// enables the flag, but the common falsy spellings (`0`, `false`, `off`,
-/// `no`, empty) count as disabled — so e.g. `GROK_DISABLE_API_KEY_AUTH=false`
+/// `no`, empty) count as disabled — so e.g. `AXON_DISABLE_API_KEY_AUTH=false`
 /// does NOT turn the kill switch on.
 fn env_flag_enabled(value: &str) -> bool {
     !matches!(
@@ -315,26 +315,26 @@ fn env_flag_enabled(value: &str) -> bool {
         "" | "0" | "false" | "off" | "no"
     )
 }
-/// True when the admin has set `GROK_DISABLE_API_KEY_AUTH` to a truthy value in
+/// True when the admin has set `AXON_DISABLE_API_KEY_AUTH` to a truthy value in
 /// the process environment. Read live (call-time) and OR-ed into
 /// `api_key_auth_disabled()` so the env lockdown is non-overridable by a
 /// user-layer `config.toml`.
 fn env_lockdown_forced() -> bool {
-    std::env::var("GROK_DISABLE_API_KEY_AUTH")
+    std::env::var("AXON_DISABLE_API_KEY_AUTH")
         .ok()
         .is_some_and(|v| env_flag_enabled(&v))
 }
 impl OidcAuthConfig {
     pub fn from_env() -> Option<Self> {
-        let issuer = std::env::var("GROK_OIDC_ISSUER").ok()?;
-        let client_id = std::env::var("GROK_OIDC_CLIENT_ID").ok()?;
+        let issuer = std::env::var("AXON_OIDC_ISSUER").ok()?;
+        let client_id = std::env::var("AXON_OIDC_CLIENT_ID").ok()?;
         Some(Self {
             issuer,
             client_id,
-            scopes: std::env::var("GROK_OIDC_SCOPES")
+            scopes: std::env::var("AXON_OIDC_SCOPES")
                 .map(|s| s.split(',').map(|s| s.trim().to_owned()).collect())
                 .unwrap_or_else(|_| default_oidc_scopes()),
-            audience: std::env::var("GROK_OIDC_AUDIENCE").ok(),
+            audience: std::env::var("AXON_OIDC_AUDIENCE").ok(),
         })
     }
 }

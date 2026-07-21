@@ -4,7 +4,7 @@
 //! start below that floor. With auto-update on, we install
 //! `max(latest, minimum)`; otherwise the user is asked to run `grok update`.
 //!
-//! Set `GROK_TEST_VERSION` to manually exercise either path without producing
+//! Set `AXON_TEST_VERSION` to manually exercise either path without producing
 //! a real out-of-date build.
 
 use crate::auto_update::{get_installer, run_install_script};
@@ -262,7 +262,7 @@ async fn enforce_minimum_version(
 /// Single chokepoint for the pager + tui startup paths. Re-execs after a
 /// floor-driven install. Prints + exits non-zero on `Err`.
 ///
-/// `GROK_TEST_VERSION` lets devs override the running version to skip
+/// `AXON_TEST_VERSION` lets devs override the running version to skip
 /// enforcement on a `cargo run` build.
 pub async fn enforce_minimum_version_or_exit(update_config: &UpdateConfig) {
     let min = match resolve_floor_or_error() {
@@ -365,10 +365,10 @@ mod tests {
     #[test]
     #[serial_test::serial]
     fn version_env_var_flows_through_to_decision() {
-        let saved = std::env::var("GROK_TEST_VERSION").ok();
+        let saved = std::env::var("AXON_TEST_VERSION").ok();
 
         // SAFETY: #[serial] excludes other env-touching tests.
-        unsafe { std::env::set_var("GROK_TEST_VERSION", "0.1.50") };
+        unsafe { std::env::set_var("AXON_TEST_VERSION", "0.1.50") };
         let decision =
             evaluate_minimum_version(&get_installed_grok_version(), Some("0.1.100")).unwrap();
         assert!(matches!(
@@ -377,8 +377,8 @@ mod tests {
         ));
 
         match saved {
-            Some(v) => unsafe { std::env::set_var("GROK_TEST_VERSION", v) },
-            None => unsafe { std::env::remove_var("GROK_TEST_VERSION") },
+            Some(v) => unsafe { std::env::set_var("AXON_TEST_VERSION", v) },
+            None => unsafe { std::env::remove_var("AXON_TEST_VERSION") },
         }
     }
 }

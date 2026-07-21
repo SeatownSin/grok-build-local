@@ -303,7 +303,7 @@ pub fn spawn_writer_thread() -> (
     let sync = WriterSync::with_event_sender(event_tx);
     let thread_sync = sync.clone();
     let writer_thread_sync = sync.clone();
-    let test_delay = std::env::var("GROK_TEST_FRAME_WRITE_DELAY_MS")
+    let test_delay = std::env::var("AXON_TEST_FRAME_WRITE_DELAY_MS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .map(Duration::from_millis);

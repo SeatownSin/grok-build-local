@@ -117,7 +117,7 @@ mod partition_rules_by_scope_tests {
         let files = vec![
             file("/repo/config/AGENTS.md"),
             file("/repo/config/rules/global.md"),
-            file("/repo/config/.grok/rules/project.md"),
+            file("/repo/config/.axon/rules/project.md"),
             file("/repo/config/src/AGENTS.md"),
         ];
         let (workspace, user) = partition_rules_by_scope(
@@ -133,7 +133,7 @@ mod partition_rules_by_scope_tests {
         assert_eq!(
             paths(&workspace),
             vec![
-                "/repo/config/.grok/rules/project.md",
+                "/repo/config/.axon/rules/project.md",
                 "/repo/config/src/AGENTS.md",
             ]
         );

@@ -512,7 +512,7 @@ pub(super) fn set_prompt_suggestions_inner(app: &mut AppView, new: bool) {
 /// SHELL-OWNED: cache mirror + `[ui].prompt_suggestions` via
 /// `Effect::PersistSetting`. Read at turn end (fetch gate) and per frame
 /// (display gate), so toggling applies without a restart. The
-/// `GROK_PROMPT_SUGGESTIONS` env var overrides the effective value.
+/// `AXON_PROMPT_SUGGESTIONS` env var overrides the effective value.
 pub(in crate::app::dispatch) fn set_prompt_suggestions(
     app: &mut AppView,
     new: bool,
@@ -1645,7 +1645,7 @@ pub(in crate::app::dispatch) fn set_default_model(
     // so persisting the human-readable name (e.g. "Grok Build")
     // would silently fail to resolve on the next startup.
     //
-    // Chat (`--chat` / GROK_CHAT_MODE) catalogs use opaque `/rest/modes`
+    // Chat (`--chat` / AXON_CHAT_MODE) catalogs use opaque `/rest/modes`
     // slugs that must not become the global Build `default_model`.
     let mut effects: Vec<Effect> = Vec::new();
     if !axon_shell::agent::chat_modes::process_chat_mode_enabled() {

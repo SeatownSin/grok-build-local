@@ -45,12 +45,12 @@ const THEME_CHOICES: &[EnumChoice] = &[
         description: "Follow system dark/light appearance.",
     },
     EnumChoice {
-        canonical: "groknight",
+        canonical: "axonnight",
         display: "Axon Night",
         description: "Cerebral dark, cool blue-gray base.",
     },
     EnumChoice {
-        canonical: "grokday",
+        canonical: "axonday",
         display: "Axon Day",
         description: "Light theme for bright environments.",
     },
@@ -475,12 +475,12 @@ const VOICE_STT_LANGUAGE_CHOICES: &[EnumChoice] = &[
 /// the user can pair any theme with any system-appearance bucket.
 const CONCRETE_THEME_CHOICES: &[EnumChoice] = &[
     EnumChoice {
-        canonical: "groknight",
+        canonical: "axonnight",
         display: "Axon Night",
         description: "Cerebral dark, cool blue-gray base.",
     },
     EnumChoice {
-        canonical: "grokday",
+        canonical: "axonday",
         display: "Axon Day",
         description: "Light theme for bright environments.",
     },
@@ -684,8 +684,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
                 "light",
             ],
             kind: SettingKind::Enum {
-                // `Option<String>` — `None` resolved to "groknight".
-                default: "groknight",
+                // `Option<String>` — `None` resolved to "axonnight".
+                default: "axonnight",
                 choices: THEME_CHOICES,
                 supports_preview: true,
             },
@@ -700,8 +700,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
             description: "Theme to use when the system is in dark mode (only with theme=auto).",
             keywords: &["auto", "dark", "theme", "system", "appearance", "night"],
             kind: SettingKind::Enum {
-                // `Option<String>` — `None` falls back to "groknight".
-                default: "groknight",
+                // `Option<String>` — `None` falls back to "axonnight".
+                default: "axonnight",
                 choices: CONCRETE_THEME_CHOICES,
                 supports_preview: true,
             },
@@ -716,8 +716,8 @@ pub fn default_settings() -> Vec<SettingMeta> {
             description: "Theme to use when the system is in light mode (only with theme=auto).",
             keywords: &["auto", "light", "theme", "system", "appearance", "day"],
             kind: SettingKind::Enum {
-                // `Option<String>` — `None` falls back to "grokday".
-                default: "grokday",
+                // `Option<String>` — `None` falls back to "axonday".
+                default: "axonday",
                 choices: CONCRETE_THEME_CHOICES,
                 supports_preview: true,
             },
@@ -891,7 +891,7 @@ pub fn default_settings() -> Vec<SettingMeta> {
             hidden_in_minimal: false,
         },
         // SHELL-owned: `[ui].prompt_suggestions` + process-wide cache. Default ON.
-        // The `GROK_PROMPT_SUGGESTIONS` env var overrides at runtime.
+        // The `AXON_PROMPT_SUGGESTIONS` env var overrides at runtime.
         SettingMeta {
             key: "prompt_suggestions",
             category: SettingCategory::Editor,

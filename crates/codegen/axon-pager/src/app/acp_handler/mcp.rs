@@ -7,7 +7,7 @@ use super::*;
 /// `config.toml` / `requirements.toml`. The first call performs one
 /// `BoolFlag::env` read; every subsequent call is a pure
 /// `OnceLock::get` (single atomic load). Default `true`; set
-/// `GROK_MCP_PUSH_SERVER_STATUS=0` to disable.
+/// `AXON_MCP_PUSH_SERVER_STATUS=0` to disable.
 pub(super) fn push_server_status_enabled() -> bool {
     use std::sync::OnceLock;
     static ENABLED: OnceLock<bool> = OnceLock::new();

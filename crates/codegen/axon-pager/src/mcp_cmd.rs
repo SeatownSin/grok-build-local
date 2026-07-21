@@ -23,7 +23,7 @@ Examples:
   # Add a remote server with an authentication header
   grok mcp add --transport http api https://mcp.example.com/mcp --header \"Authorization: Bearer YOUR_TOKEN\"
 
-  # Add to the project config (./.grok/config.toml) instead of ~/.grok/config.toml
+  # Add to the project config (./.axon/config.toml) instead of ~/.axon/config.toml
   grok mcp add --scope project github -- npx -y @modelcontextprotocol/server-github";
 
 #[derive(Debug, clap::Args, Clone)]
@@ -46,9 +46,9 @@ pub enum McpTransport {
 /// Which config file an MCP server definition is written to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum McpScope {
-    /// `~/.grok/config.toml`, available in all your projects
+    /// `~/.axon/config.toml`, available in all your projects
     User,
-    /// `./.grok/config.toml`, shared with everyone working in this directory
+    /// `./.axon/config.toml`, shared with everyone working in this directory
     Project,
 }
 
@@ -111,7 +111,7 @@ pub struct AddArgs {
     #[arg(short = 't', long, value_enum)]
     transport: Option<McpTransport>,
 
-    /// Config to write to: user (~/.grok/config.toml) or project (./.grok/config.toml)
+    /// Config to write to: user (~/.axon/config.toml) or project (./.axon/config.toml)
     #[arg(short = 's', long, value_enum, default_value = "user")]
     scope: McpScope,
 
@@ -568,7 +568,7 @@ async fn run_remove(name: &str, requested_scope: Option<McpScope>) -> Result<()>
     println!("File modified: {}", scope_display(scope, &path));
 
     // A scoped delete can leave the name defined in the other scope or an
-    // ancestor .grok/config.toml, where it still resolves for sessions.
+    // ancestor .axon/config.toml, where it still resolves for sessions.
     let still_user_defined = mcp_server_defined_at(&user_config_path(), name);
     if let Some((survivor_scope, remaining)) =
         surviving_definition(still_user_defined, find_project_site())
@@ -1050,7 +1050,7 @@ mod tests {
     #[test]
     fn select_remove_site_covers_scope_presence_matrix() {
         let user = axon_shell::util::config::user_config_path();
-        let project = PathBuf::from("/repo/.grok/config.toml");
+        let project = PathBuf::from("/repo/.axon/config.toml");
 
         // No scope: single hits resolve, both scopes is ambiguous, neither is
         // not found.
@@ -1095,7 +1095,7 @@ mod tests {
     #[test]
     fn surviving_definition_prefers_project_then_user() {
         let user = axon_shell::util::config::user_config_path();
-        let project = PathBuf::from("/repo/.grok/config.toml");
+        let project = PathBuf::from("/repo/.axon/config.toml");
 
         // The mirror of the remove note: a user-scope delete with a project
         // survivor (and vice versa) must still report the remaining site.

@@ -2276,9 +2276,9 @@ fn int_editing_value_click_on_value_text_is_noop() {
 #[test]
 fn picking_enum_esc_dispatches_preview_revert_for_each_key() {
     let cases: &[(&str, &str)] = &[
-        ("theme", "groknight"),
-        ("auto_dark_theme", "groknight"),
-        ("auto_light_theme", "grokday"),
+        ("theme", "axonnight"),
+        ("auto_dark_theme", "axonnight"),
+        ("auto_light_theme", "axonday"),
     ];
     for &(key, original) in cases {
         let mut s = make_state();
@@ -2315,12 +2315,12 @@ fn picking_enum_esc_dispatches_preview_revert_for_each_key() {
 #[test]
 fn picking_enum_esc_returns_to_browse() {
     let mut s = make_state();
-    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("groknight"), true);
+    s.transition_to_picking_enum("theme", 0, SettingValue::Enum("axonnight"), true);
     let outcome = handle_settings_key(&mut s, &KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
     match outcome {
         SettingsKeyOutcome::Action(Action::PreviewTheme(name)) => {
             assert_eq!(
-                name, "groknight",
+                name, "axonnight",
                 "Esc revert must dispatch the original canonical"
             );
         }
@@ -5688,7 +5688,7 @@ fn docs_footer_tip_is_centered() {
         "width=40 must render SHORT path (contains `change a setting`): {row_short:?}",
     );
     assert!(
-        !row_short.contains("grokday"),
+        !row_short.contains("axonday"),
         "width=40 must NOT render LONG path (no `grokday`): {row_short:?}",
     );
     assert!(
@@ -6041,12 +6041,12 @@ fn click_settings_breadcrumb_collapses_picker_to_browse() {
     // For preview-supporting enums (theme), the breadcrumb-
     // click revert dispatches `Action::PreviewTheme(original)`.
     // The original canonical for the default theme is
-    // `"groknight"`. Tightened from the previous `Action(_) |
+    // `"axonnight"`. Tightened from the previous `Action(_) |
     // Changed` to lock in the revert contract.
     match outcome {
         SettingsKeyOutcome::Action(Action::PreviewTheme(orig)) => {
             assert_eq!(
-                orig, "groknight",
+                orig, "axonnight",
                 "breadcrumb-click revert must carry the original canonical",
             );
         }
@@ -6159,7 +6159,7 @@ fn d_key_in_picking_enum_dispatches_open_reset_confirm() {
             // captures `original_value = current value = groknight`,
             // so the revert dispatches with that canonical.
             assert_eq!(
-                orig, "groknight",
+                orig, "axonnight",
                 "PreviewTheme revert must carry the original canonical",
             );
         }

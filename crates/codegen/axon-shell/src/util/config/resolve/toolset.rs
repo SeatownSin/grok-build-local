@@ -6,12 +6,12 @@ use axon_tools::implementations::grok_build::ask_user_question;
 /// enabled. Precedence (highest first): `requirements.toml` (org policy, wins
 /// outright) > a truthy `DISABLE_EMBEDDED_SEARCH_TOOLS` master (forces off) > env
 /// > `config.toml` `[toolset.bash]` > `managed_config.toml` > default-on. Env uses the shared
-/// [`axon_config::env_bool`] parser (`GROK_TOOLS_FIND_BFS` /
-/// `GROK_TOOLS_GREP_UGREP`, plus the `GROK_FIND_BFS` / `GROK_GREP_UGREP` aliases).
+/// [`axon_config::env_bool`] parser (`AXON_TOOLS_FIND_BFS` /
+/// `AXON_TOOLS_GREP_UGREP`, plus the `AXON_FIND_BFS` / `AXON_GREP_UGREP` aliases).
 ///
 /// Pass the **merged** requirements ([`crate::config::load_merged_requirements`])
 /// so an org policy in any requirements layer — not only
-/// `~/.grok/requirements.toml` — is honored. Returns `(find_bfs, grep_ugrep)`,
+/// `~/.axon/requirements.toml` — is honored. Returns `(find_bfs, grep_ugrep)`,
 /// which the caller bakes into a
 /// [`axon_tools::computer::local::SearchShadowConfig`] on the local terminal
 /// backend.
@@ -35,8 +35,8 @@ pub fn resolve_search_tools_enabled(
         )
     };
     (
-        resolve("GROK_TOOLS_FIND_BFS", "GROK_FIND_BFS", "find_bfs"),
-        resolve("GROK_TOOLS_GREP_UGREP", "GROK_GREP_UGREP", "grep_ugrep"),
+        resolve("AXON_TOOLS_FIND_BFS", "AXON_FIND_BFS", "find_bfs"),
+        resolve("AXON_TOOLS_GREP_UGREP", "AXON_GREP_UGREP", "grep_ugrep"),
     )
 }
 
@@ -62,7 +62,7 @@ fn resolve_search_tool_enabled(
     env.or(config).or(managed).unwrap_or(true)
 }
 
-const ENV_LOGIN_SHELL_CAPTURE: &str = "GROK_LOGIN_ENV";
+const ENV_LOGIN_SHELL_CAPTURE: &str = "AXON_LOGIN_ENV";
 
 fn login_shell_capture_from_toml(v: Option<&TomlValue>) -> Option<bool> {
     v?.get("toolset")?
@@ -196,7 +196,7 @@ mod login_shell_capture_tests {
 /// Env override for `[toolset.ask_user_question] timeout_enabled` (parsed by
 /// the shared [`axon_config::env_bool`] via `BoolFlag`). The secs env var
 /// lives in the tools crate (`RESPONSE_TIMEOUT_ENV`), parsed once there.
-const ENV_ASK_USER_QUESTION_TIMEOUT_ENABLED: &str = "GROK_ASK_USER_QUESTION_TIMEOUT_ENABLED";
+const ENV_ASK_USER_QUESTION_TIMEOUT_ENABLED: &str = "AXON_ASK_USER_QUESTION_TIMEOUT_ENABLED";
 
 /// Extract `[toolset.ask_user_question] timeout_enabled` from one TOML layer.
 fn ask_user_question_timeout_enabled_from_toml(v: Option<&TomlValue>) -> Option<bool> {
@@ -227,7 +227,7 @@ fn ask_user_question_timeout_secs_from_toml(v: Option<&TomlValue>) -> Option<u64
 
 /// Resolve `[toolset.ask_user_question] timeout_enabled`.
 ///
-/// Precedence: requirements > env (`GROK_ASK_USER_QUESTION_TIMEOUT_ENABLED`)
+/// Precedence: requirements > env (`AXON_ASK_USER_QUESTION_TIMEOUT_ENABLED`)
 /// > user `config.toml` > managed (user-level `managed_config.toml` over the
 /// system-managed layer, matching `effective_config()`'s merge order) >
 /// remote settings > default `true`. Returns [`Resolved`] so callers can
@@ -277,7 +277,7 @@ fn resolve_ask_user_question_timeout_secs_from_tiers(
 
 /// Resolve `[toolset.ask_user_question] timeout_secs` (positive seconds).
 ///
-/// Precedence: requirements > env (`GROK_ASK_USER_QUESTION_TIMEOUT_SECS`,
+/// Precedence: requirements > env (`AXON_ASK_USER_QUESTION_TIMEOUT_SECS`,
 /// parsed by the tools crate's canonical parser) > user `config.toml` >
 /// managed (user-level over system-managed, matching `effective_config()`) >
 /// remote settings > default 1800 (30 minutes).
@@ -485,7 +485,7 @@ mod ask_user_question_timeout_tests {
 mod tests {
     use super::*;
 
-    // Assumes GROK_TOOLS_* / DISABLE_EMBEDDED_SEARCH_TOOLS are unset in the test env.
+    // Assumes AXON_TOOLS_* / DISABLE_EMBEDDED_SEARCH_TOOLS are unset in the test env.
     #[test]
     fn resolve_search_tools_enabled_layers_and_precedence() {
         // Default-on when nothing is set.

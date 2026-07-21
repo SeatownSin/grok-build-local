@@ -13,7 +13,7 @@ curl -fsSL https://x.ai/cli/install.sh | bash
 Or install with npm:
 
 ```bash
-npm i -g @xai-official/grok
+npm i -g @axon-official/grok
 ```
 
 ## Get Started
@@ -29,7 +29,7 @@ grok -p "Explain this codebase"
 On first launch, Grok opens your browser to authenticate. For CI or headless environments, use an API key from [console.x.ai](https://console.x.ai):
 
 ```bash
-export XAI_API_KEY="xai-..."
+export XAI_API_KEY="axon-..."
 ```
 
 ## Update
@@ -41,7 +41,7 @@ grok update
 Or if installed via npm:
 
 ```bash
-npm i -g @xai-official/grok@latest
+npm i -g @axon-official/grok@latest
 ```
 
 ## Supported Platforms

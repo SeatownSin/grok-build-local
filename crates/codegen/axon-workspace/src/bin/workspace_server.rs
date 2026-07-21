@@ -1,6 +1,6 @@
 //! Standalone workspace ToolServer for remote sandboxes.
 //!
-//! Reads OIDC credentials from `~/.grok/auth.json`, connects to a
+//! Reads OIDC credentials from `~/.axon/auth.json`, connects to a
 //! server, exposes workspace tools, and refreshes tokens
 //! automatically.
 use clap::Parser;
@@ -68,11 +68,11 @@ struct Args {
     /// `gcs::upload_bytes` path.
     ///
     /// Enabled by default. Pass `--upload-queue-enabled false` (or set the
-    /// `GROK_WORKSPACE_UPLOAD_QUEUE_ENABLED` env var to `false`) to fall back to
+    /// `AXON_WORKSPACE_UPLOAD_QUEUE_ENABLED` env var to `false`) to fall back to
     /// the legacy inline path. Accepts `true`/`false`.
     #[arg(
         long,
-        env = "GROK_WORKSPACE_UPLOAD_QUEUE_ENABLED",
+        env = "AXON_WORKSPACE_UPLOAD_QUEUE_ENABLED",
         default_value_t = true,
         action = clap::ArgAction::Set,
     )]
@@ -81,11 +81,11 @@ struct Args {
     /// instead of widening to the built-in default catalog.
     #[arg(long)]
     require_explicit_toolset: bool,
-    /// Trust project-scoped LSP servers from `<repo>/.grok/lsp.json`.
+    /// Trust project-scoped LSP servers from `<repo>/.axon/lsp.json`.
     /// Defaults off; sandbox opts in only after workspace trust is established.
     #[arg(
         long,
-        env = "GROK_WORKSPACE_PROJECT_LSP_TRUSTED",
+        env = "AXON_WORKSPACE_PROJECT_LSP_TRUSTED",
         default_value_t = false,
         action = clap::ArgAction::Set,
     )]
@@ -93,10 +93,10 @@ struct Args {
     /// Confine `x.ai/fs/*` resolution to the workspace root (reject `..`,
     /// absolute-outside-root, symlink escapes). On by default: the standalone
     /// server always backs a remote-sandbox workspace, a real tenant boundary.
-    /// Override with `GROK_WORKSPACE_CONFINE_FS_TO_ROOT=false` (e.g. local dev).
+    /// Override with `AXON_WORKSPACE_CONFINE_FS_TO_ROOT=false` (e.g. local dev).
     #[arg(
         long,
-        env = "GROK_WORKSPACE_CONFINE_FS_TO_ROOT",
+        env = "AXON_WORKSPACE_CONFINE_FS_TO_ROOT",
         default_value_t = true,
         action = clap::ArgAction::Set,
     )]
@@ -226,7 +226,7 @@ async fn run(args: Args, cwd: PathBuf) -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .with(donating.clone())
         .init();
-    let direct_otlp = match std::env::var("GROK_WORKSPACE_OTLP_ENDPOINT") {
+    let direct_otlp = match std::env::var("AXON_WORKSPACE_OTLP_ENDPOINT") {
         Ok(endpoint) if !endpoint.is_empty() => {
             match axon_tracing::init_fastrace(endpoint.clone(), SERVICE_NAME.to_owned(), None) {
                 Ok(()) => {
@@ -244,7 +244,7 @@ async fn run(args: Args, cwd: PathBuf) -> anyhow::Result<()> {
     let url = Url::parse(&args.hub_url).map_err(|e| anyhow::anyhow!("invalid --hub-url: {e}"))?;
     {
         use axon_sandbox::{ProfileName, SandboxManager};
-        let profile = match std::env::var("GROK_SANDBOX_PROFILE").ok() {
+        let profile = match std::env::var("AXON_SANDBOX_PROFILE").ok() {
             Some(val) => {
                 let parsed = val
                     .parse::<ProfileName>()
@@ -252,7 +252,7 @@ async fn run(args: Args, cwd: PathBuf) -> anyhow::Result<()> {
                 if matches!(parsed, ProfileName::Custom(_)) {
                     tracing::warn!(
                         value = % val,
-                        "Unrecognized GROK_SANDBOX_PROFILE, defaulting to workspace"
+                        "Unrecognized AXON_SANDBOX_PROFILE, defaulting to workspace"
                     );
                     ProfileName::Workspace
                 } else {
@@ -266,7 +266,7 @@ async fn run(args: Args, cwd: PathBuf) -> anyhow::Result<()> {
         if profile == ProfileName::Off {
             tracing::info!(
                 profile = % profile_name,
-                "Sandbox explicitly disabled via GROK_SANDBOX_PROFILE=off"
+                "Sandbox explicitly disabled via AXON_SANDBOX_PROFILE=off"
             );
         } else {
             let mut sandbox = SandboxManager::new(profile, &cwd);
@@ -294,7 +294,7 @@ async fn run(args: Args, cwd: PathBuf) -> anyhow::Result<()> {
     let auth_provider = axon_workspace::hub_auth::provider(&url, args.auth_config.as_deref())?;
     tracing::info!(hub_url = % url, cwd = % cwd.display(), "Starting workspace server");
     let cwd_display = cwd.display().to_string();
-    let session_id = std::env::var("GROK_SESSION_ID").ok();
+    let session_id = std::env::var("AXON_SESSION_ID").ok();
     let parsed_metadata = match args.metadata {
         Some(json_str) => Some(
             serde_json::from_str(&json_str)
@@ -457,7 +457,7 @@ mod tests {
     }
     #[test]
     fn project_lsp_trust_defaults_off_and_is_opt_in() {
-        unsafe { std::env::remove_var("GROK_WORKSPACE_PROJECT_LSP_TRUSTED") };
+        unsafe { std::env::remove_var("AXON_WORKSPACE_PROJECT_LSP_TRUSTED") };
         let args = Args::try_parse_from(["xai-workspace-server"]).unwrap();
         assert!(!args.project_lsp_trusted);
         let args = Args::try_parse_from(["xai-workspace-server", "--project-lsp-trusted", "true"])

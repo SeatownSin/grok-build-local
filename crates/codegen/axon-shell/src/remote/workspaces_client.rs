@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::auth::AuthManager;
 
-const GROK_WEB_URL: &str = "https://grok.com";
+const AXON_WEB_URL: &str = "https://grok.com";
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,11 +63,11 @@ pub struct WorkspacesClient {
 impl WorkspacesClient {
     pub fn new(auth: Arc<AuthManager>) -> Self {
         let base_url = first_nonempty_env(&[
-            "GROK_WORKSPACES_BASE_URL",
-            "GROK_CONVERSATIONS_BASE_URL",
-            "GROK_CODE_WEB_URL",
+            "AXON_WORKSPACES_BASE_URL",
+            "AXON_CONVERSATIONS_BASE_URL",
+            "AXON_CODE_WEB_URL",
         ])
-        .unwrap_or_else(|| GROK_WEB_URL.to_string());
+        .unwrap_or_else(|| AXON_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
             base_url: crate::util::block_xai_base_url(base_url, "workspaces backend"),

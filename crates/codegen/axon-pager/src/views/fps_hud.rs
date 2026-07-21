@@ -1,6 +1,6 @@
-//! Release-safe FPS readout — `/debug fps`, `GROK_FPS` on release builds.
+//! Release-safe FPS readout — `/debug fps`, `AXON_FPS` on release builds.
 //!
-//! The full frame profiler (`render::frame_metrics`, `GROK_FPS`) is compiled
+//! The full frame profiler (`render::frame_metrics`, `AXON_FPS`) is compiled
 //! only in debug/dev builds because it threads per-phase timings
 //! through `draw_frame`. This HUD measures the one thing that needs no
 //! pipeline change — the wall-clock duration of the whole `draw_frame` call
@@ -8,10 +8,10 @@
 //! behind a runtime toggle (the scroll-debug HUD precedent) and profiles the
 //! production render path with zero fidelity gap.
 //!
-//! `GROK_FPS` ownership: in debug/dev builds the env feeds `FrameMetrics` as
+//! `AXON_FPS` ownership: in debug/dev builds the env feeds `FrameMetrics` as
 //! always and this HUD stays toggle-only (no double overlay); on release
 //! binaries — where that overlay does not exist — the same env enables this
-//! HUD from startup, so `GROK_FPS=1` is never a silent no-op
+//! HUD from startup, so `AXON_FPS=1` is never a silent no-op
 //! ([`HONORS_GROK_FPS_ENV`]).
 //!
 //! "fps" here is render throughput (1 / mean frame cost), not paint
@@ -31,11 +31,11 @@ const SAMPLE_CAP: usize = 120;
 const REFRESH: Duration = Duration::from_millis(250);
 /// Panel width in cells; each line is padded/truncated to this.
 const PANEL_WIDTH: u16 = 32;
-/// Whether this HUD owns the `GROK_FPS` env gate: only where the dev
+/// Whether this HUD owns the `AXON_FPS` env gate: only where the dev
 /// `FrameMetrics` overlay is compiled out. In debug/dev builds the env keeps
 /// feeding that overlay alone.
 const HONORS_GROK_FPS_ENV: bool = true;
-/// Runtime state for the FPS HUD. `GROK_FPS` enables it at startup on
+/// Runtime state for the FPS HUD. `AXON_FPS` enables it at startup on
 /// release binaries ([`HONORS_GROK_FPS_ENV`]); `/debug fps` toggles it
 /// live everywhere. Deliberately NOT a settings-registry entry: it is a
 /// diagnostic, not a preference to persist.
@@ -53,10 +53,10 @@ impl Default for FpsHud {
 }
 impl FpsHud {
     pub fn new() -> Self {
-        Self::with_env(std::env::var("GROK_FPS").ok())
+        Self::with_env(std::env::var("AXON_FPS").ok())
     }
-    /// `env` is the raw `GROK_FPS` value; the truthiness rule (nonempty and
-    /// not `"0"`) matches `FrameMetrics` and `GROK_SCROLL_DEBUG`.
+    /// `env` is the raw `AXON_FPS` value; the truthiness rule (nonempty and
+    /// not `"0"`) matches `FrameMetrics` and `AXON_SCROLL_DEBUG`.
     fn with_env(env: Option<String>) -> Self {
         let env_on = HONORS_GROK_FPS_ENV && env.is_some_and(|v| !v.is_empty() && v != "0");
         Self {
@@ -141,7 +141,7 @@ fn percentile(sorted: &[f64], pct: f64) -> f64 {
 /// Owned render params for one frame (title + stats line, top-right).
 pub struct FpsOverlay {
     body: String,
-    /// Rows left free for overlays above (the dev `GROK_FPS` line).
+    /// Rows left free for overlays above (the dev `AXON_FPS` line).
     pub top_offset: u16,
 }
 impl FpsOverlay {
@@ -187,7 +187,7 @@ mod tests {
             assert_eq!(
                 FpsHud::with_env(Some(truthy.into())).enabled(),
                 HONORS_GROK_FPS_ENV,
-                "GROK_FPS={truthy:?} must track the env-gate owner"
+                "AXON_FPS={truthy:?} must track the env-gate owner"
             );
         }
         for falsy in [None, Some(String::new()), Some("0".into())] {

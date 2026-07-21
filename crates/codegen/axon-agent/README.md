@@ -1,26 +1,26 @@
-# `xai-grok-agent`
+# `axon-agent`
 
 Agent builder, definition parsing, and system prompt assembly.
 
-This crate extracts a first-class `Agent` type from `xai-grok-shell`.
+This crate extracts a first-class `Agent` type from `axon-shell`.
 An `Agent` bundles tools, system prompt, system-reminder policy,
 compaction policy, and model configuration into a single, portable
 object that any host can consume — whether that host is
-`xai-grok-shell`, another in-process host, or a headless batch runner.
+`axon-shell`, another in-process host, or a headless batch runner.
 
 ## Quick Start
 
 ### From a definition file
 
 Agent definitions are **Markdown files with YAML frontmatter**, stored
-in `.grok/agents/` (project-level) or `~/.grok/agents/` (user-level).
+in `.axon/agents/` (project-level) or `~/.axon/agents/` (user-level).
 
 ```rust
 use xai_grok_agent::{AgentDefinition, AgentBuilder};
 use xai_grok_tools::notification::ToolNotificationHandle;
 
 // 1. Parse the definition file
-let def = AgentDefinition::from_file(".grok/agents/code-reviewer.md")?;
+let def = AgentDefinition::from_file(".axon/agents/code-reviewer.md")?;
 
 // 2. Build the agent
 let agent = AgentBuilder::new(cwd, None, ToolNotificationHandle::noop())
@@ -50,7 +50,7 @@ let agent = AgentBuilder::new(cwd, None, ToolNotificationHandle::noop())
 ```rust
 use xai_grok_agent::discovery;
 
-// Find all .md files in .grok/agents/ directories
+// Find all .md files in .axon/agents/ directories
 let definitions = discovery::discover(&cwd);
 
 // Find a specific agent by name (checks built-ins, then user dirs)
@@ -228,47 +228,47 @@ is omitted when the tool is disabled.
 
 Agent definitions are discovered from multiple locations with priority:
 
-1. **Project-level** (highest priority): `.grok/agents/*.md` — walk
+1. **Project-level** (highest priority): `.axon/agents/*.md` — walk
    from `cwd` up to the git repository root. Files found closer to
    `cwd` take priority.
-2. **User-level**: `~/.grok/agents/*.md`
+2. **User-level**: `~/.axon/agents/*.md`
 3. **Compat paths** (lowest priority): additional vendor agent
    directories under the user home (when enabled)
 4. **Built-in**: `default_grok_build()`, `browser_use()`
 
 Name-based dedup ensures the highest-priority definition wins. For
-example, a project `.grok/agents/code-reviewer.md` shadows a
+example, a project `.axon/agents/code-reviewer.md` shadows a
 user-level definition with the same name.
 
 ## Crate Relationships
 
 ```
 ┌──────────────────┐
-│  xai-grok-agent  │  ← This crate
+│  axon-agent  │  ← This crate
 │  (Agent, Builder, │
 │   Definition)     │
 └────────┬─────────┘
          │ depends on
          ▼
 ┌──────────────────┐
-│  xai-grok-tools  │
+│  axon-tools  │
 │  (ToolBridge,    │
 │   ToolRegistry,  │
 │   ToolState)     │
 └────────▲─────────┘
          │ depends on
 ┌────────┴─────────┐
-│  xai-grok-shell  │  uses AgentBuilder to create
+│  axon-shell  │  uses AgentBuilder to create
 │  (session host)  │  Agent during session setup
 └──────────────────┘
 ```
 
-- **`xai-grok-tools`**: Provides `ToolBridge`, `ToolRegistry`,
+- **`axon-tools`**: Provides `ToolBridge`, `ToolRegistry`,
   `ToolState`, `SystemReminderLayer`, and tool implementations.
-  `xai-grok-agent` depends on it for tool setup.
-- **`xai-grok-shell`**: The application shell. Uses `AgentBuilder`
+  `axon-agent` depends on it for tool setup.
+- **`axon-shell`**: The application shell. Uses `AgentBuilder`
   to construct an `Agent` during session creation. The shell
-  re-exports some modules from `xai-grok-agent` (AGENTS.md
+  re-exports some modules from `axon-agent` (AGENTS.md
   discovery, skills discovery, base prompt rendering).
 
 ## Built-in Agents
@@ -298,13 +298,13 @@ ones.
 
 ```bash
 # Check
-cargo check -p xai-grok-agent
+cargo check -p axon-agent
 
 # Test
-cargo test -p xai-grok-agent
+cargo test -p axon-agent
 
 # Clippy
-cargo clippy -p xai-grok-agent --fix --allow-dirty
+cargo clippy -p axon-agent --fix --allow-dirty
 
 # Format
 cargo fmt --all

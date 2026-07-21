@@ -25,11 +25,11 @@ where
     tokio::task::LocalSet::new().run_until(f()).await;
 }
 
-/// Find `summary.json` for `session_id` under `<home>/.grok/sessions/` and
+/// Find `summary.json` for `session_id` under `<home>/.axon/sessions/` and
 /// parse it. The sessions tree is `<encoded-cwd>/<session-id>/summary.json`;
 /// matching on the directory name avoids re-implementing the cwd encoding.
 fn read_summary(home: &std::path::Path, session_id: &str) -> serde_json::Value {
-    let sessions_root = home.join(".grok").join("sessions");
+    let sessions_root = home.join(".axon").join("sessions");
     let cwd_dirs = std::fs::read_dir(&sessions_root)
         .unwrap_or_else(|e| panic!("no sessions dir at {}: {e}", sessions_root.display()));
     for cwd_dir in cwd_dirs.flatten() {
@@ -60,8 +60,8 @@ async fn test_fresh_session_persists_reasoning_effort() {
         // user config override (the same path a remote settings catalog entry or
         // `--effort` would populate).
         let home = tempfile::TempDir::new().expect("create temp home");
-        let grok_dir = home.path().join(".grok");
-        std::fs::create_dir_all(&grok_dir).expect("create .grok dir");
+        let grok_dir = home.path().join(".axon");
+        std::fs::create_dir_all(&grok_dir).expect("create .axon dir");
         std::fs::write(
             grok_dir.join("config.toml"),
             r#"

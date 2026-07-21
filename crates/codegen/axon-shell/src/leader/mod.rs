@@ -12,7 +12,7 @@
 //! │  ┌─────────────────────────────────────────────────────────┐│
 //! │  │                      Agent (MvpAgent)                    ││
 //! │  │   - Shared state across all clients                      ││
-//! │  │   - Persists to ~/.grok/                                 ││
+//! │  │   - Persists to ~/.axon/                                 ││
 //! │  └─────────────────────────────────────────────────────────┘│
 //! │                           ▲                                  │
 //! │                           │ ACP                              │
@@ -23,7 +23,7 @@
 //! │  │   - Tracks session ownership for routing                 ││
 //! │  └────────────────────────┬────────────────────────────────┘│
 //! └───────────────────────────┼──────────────────────────────────┘
-//!                             │ IPC (Unix socket at ~/.grok/leader.sock)
+//!                             │ IPC (Unix socket at ~/.axon/leader.sock)
 //!         ┌───────────────────┼───────────────────┐
 //!         ▼                   ▼                   ▼
 //! ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
@@ -1336,7 +1336,7 @@ pub async fn connect_or_spawn(
 /// Resolve the binary to spawn as the leader subprocess.
 ///
 /// For a **managed install** — the running binary lives under `grok_home`
-/// (e.g. `~/.grok/...`) — prefer the managed `~/.grok/bin/grok` symlink. After an
+/// (e.g. `~/.axon/...`) — prefer the managed `~/.axon/bin/grok` symlink. After an
 /// auto-update or `grok update` atomically swaps that symlink, `current_exe()`
 /// still resolves (via `/proc/self/exe` on Linux) to the *old* versioned target,
 /// so spawning it would relaunch the stale binary. The symlink always points to
@@ -1347,7 +1347,7 @@ pub async fn connect_or_spawn(
 /// not under `grok_home`), keep `current_exe()` so the spawned leader matches the
 /// calling binary.
 ///
-/// Falls back to `~/.grok/bin/grok` only when `current_exe()` is unavailable.
+/// Falls back to `~/.axon/bin/grok` only when `current_exe()` is unavailable.
 fn resolve_exe_for_spawn() -> Result<std::path::PathBuf, ConnectionError> {
     resolve_binary_with_home(&crate::util::grok_home::grok_home())
 }
@@ -1399,10 +1399,10 @@ fn spawn_leader_subprocess(env_urls: &LeaderEnvUrls) -> Result<u32, ConnectionEr
         cmd.env(crate::leader::LEADER_SOCKET_ENV, socket);
     }
     for key in [
-        "GROK_DEBUG_LOG",
-        "GROK_HOOKS_LOG",
-        "GROK_LOG_SAMPLING",
-        "GROK_INSTRUMENTATION",
+        "AXON_DEBUG_LOG",
+        "AXON_HOOKS_LOG",
+        "AXON_LOG_SAMPLING",
+        "AXON_INSTRUMENTATION",
     ] {
         if let Some(v) = std::env::var_os(key) {
             cmd.env(key, v);
@@ -1421,7 +1421,7 @@ fn spawn_leader_subprocess(env_urls: &LeaderEnvUrls) -> Result<u32, ConnectionEr
             cmd.stderr(std::process::Stdio::null());
         }
     }
-    let leader_log = std::env::var("GROK_LEADER_LOG")
+    let leader_log = std::env::var("AXON_LEADER_LOG")
         .or_else(|_| std::env::var("RUST_LOG"))
         .unwrap_or_else(|_| "axon_shell=info,axon_acp_lib=warn,axon_mcp=warn".into());
     cmd.env("RUST_LOG", leader_log);

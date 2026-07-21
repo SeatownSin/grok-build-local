@@ -404,7 +404,7 @@ impl SubagentSpawnContext {
     }
     /// Subagent verbatim-input flag, mirroring `Config::resolve_compaction_verbatim_input` (env > config > remote settings > default `true`).
     pub fn resolve_compaction_verbatim_input(&self) -> bool {
-        crate::agent::config::BoolFlag::env("GROK_COMPACTION_VERBATIM_INPUT")
+        crate::agent::config::BoolFlag::env("AXON_COMPACTION_VERBATIM_INPUT")
             .config(
                 self.agent_config
                     .as_ref()
@@ -437,7 +437,7 @@ impl SubagentSpawnContext {
     /// `managed_config.toml` `[features] subagent_worktree_snapshot` is the
     /// per-deployment rollout lever.
     pub fn resolve_subagent_worktree_snapshot_enabled(&self) -> bool {
-        crate::agent::config::BoolFlag::env("GROK_SUBAGENT_WORKTREE_SNAPSHOT")
+        crate::agent::config::BoolFlag::env("AXON_SUBAGENT_WORKTREE_SNAPSHOT")
             .config(
                 self.agent_config
                     .as_ref()
@@ -1901,10 +1901,10 @@ async fn await_subagent_turn_or_cancellation(
     }
 }
 /// Max time a blocking `spawn_subagent` may hold the turn before it is
-/// auto-backgrounded (non-destructively). Env override: `GROK_SUBAGENT_AWAIT_BUDGET_MS`.
+/// auto-backgrounded (non-destructively). Env override: `AXON_SUBAGENT_AWAIT_BUDGET_MS`.
 const SUBAGENT_AWAIT_BUDGET: std::time::Duration = std::time::Duration::from_secs(600);
 fn subagent_await_budget() -> std::time::Duration {
-    std::env::var("GROK_SUBAGENT_AWAIT_BUDGET_MS")
+    std::env::var("AXON_SUBAGENT_AWAIT_BUDGET_MS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .filter(|&ms| ms > 0)

@@ -282,7 +282,7 @@ fn protected_edit_path(path: &Path) -> bool {
     STARTUP_FILES.contains(&file)
         || protected_git_hooks_path(&string_components)
         || string_components.contains(&".ssh")
-        || string_components.ends_with(&[".grok", "config.toml"])
+        || string_components.ends_with(&[".axon", "config.toml"])
         || path == Path::new("/etc")
         || path.starts_with(Path::new("/etc"))
 }
@@ -915,7 +915,7 @@ mod tests {
         }
         for path in [
             "/work/src/main.rs",
-            "/work/project/.grok/config.toml/backup",
+            "/work/project/.axon/config.toml/backup",
         ] {
             assert!(
                 !edit_target_requires_prompt(Path::new(path)),

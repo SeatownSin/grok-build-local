@@ -26,8 +26,8 @@ fn fail_closed_flag(requirements: &toml::Value) -> bool {
 }
 
 /// Env override for [`FAIL_CLOSED_KEY`]. Named for prefix-alignment
-/// with `GROK_MANAGED_CONFIG_URL`; only applies to `requirements.toml`.
-pub(crate) const FAIL_CLOSED_ENV: &str = "GROK_MANAGED_CONFIG_FAIL_CLOSED";
+/// with `AXON_MANAGED_CONFIG_URL`; only applies to `requirements.toml`.
+pub(crate) const FAIL_CLOSED_ENV: &str = "AXON_MANAGED_CONFIG_FAIL_CLOSED";
 
 /// Where a requirements layer came from: a file on disk, or the macOS MDM
 /// managed-preferences layer (admin-forced, no file). The typed split keeps a
@@ -56,7 +56,7 @@ pub struct RequirementsLayer {
     pub value: toml::Value,
     pub source: RequirementsSource,
     /// `true` = root-owned system layer. Security decisions must trust this flag,
-    /// not re-derive from the source (`GROK_HOME`-influenced, could carry `..`).
+    /// not re-derive from the source (`AXON_HOME`-influenced, could carry `..`).
     pub is_system: bool,
 }
 
@@ -113,7 +113,7 @@ pub(crate) fn load_requirements() -> Option<toml::Value> {
 }
 
 /// User requirements layer from `<home>/requirements.toml`, or `None` with no
-/// resolvable user home (rather than reading a cwd-relative `.grok`).
+/// resolvable user home (rather than reading a cwd-relative `.axon`).
 fn load_user_requirements(home: Option<&Path>) -> Option<toml::Value> {
     load_requirements_layer(&home?.join("requirements.toml"))
 }
@@ -230,7 +230,7 @@ pub fn validate_requirements() -> Result<(), RequirementsError> {
 }
 
 /// Validate the user requirements layer if a user home resolves; otherwise a
-/// no-op (no cwd-relative `.grok/requirements.toml` is read or enforced).
+/// no-op (no cwd-relative `.axon/requirements.toml` is read or enforced).
 fn validate_user_requirements(home: Option<&Path>) -> Result<(), RequirementsError> {
     match home {
         Some(g) => validate_requirements_layer(&g.join("requirements.toml")),

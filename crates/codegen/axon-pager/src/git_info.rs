@@ -311,12 +311,12 @@ fn collapse_home(path: &Path) -> String {
 /// codepoint, so it renders as "tofu" without a patched font. Where one can't
 /// be assumed we fall back to a glyph the platform's stock fonts cover.
 ///
-/// `GROK_NERD_FONTS=1` forces Powerline; `GROK_NERD_FONTS=0` forces the fallback.
+/// `AXON_NERD_FONTS=1` forces Powerline; `AXON_NERD_FONTS=0` forces the fallback.
 pub(crate) fn branch_icon() -> &'static str {
     static ICON: OnceLock<&str> = OnceLock::new();
     ICON.get_or_init(|| {
         decide_branch_icon(
-            std::env::var("GROK_NERD_FONTS").ok().as_deref(),
+            std::env::var("AXON_NERD_FONTS").ok().as_deref(),
             HostOs::current(),
             terminal_context().brand,
         )
@@ -344,7 +344,7 @@ fn decide_branch_icon(nerd_fonts: Option<&str>, host: HostOs, brand: TerminalNam
 /// Whether a Nerd Font (Private Use Area glyphs) is plausible for this
 /// host/terminal. Used by [`decide_branch_icon`] to pick a Powerline glyph.
 ///
-/// An explicit `GROK_NERD_FONTS` override (`0`/`false` → off, anything else →
+/// An explicit `AXON_NERD_FONTS` override (`0`/`false` → off, anything else →
 /// on) always wins. Otherwise PUA glyphs are assumed everywhere except Windows
 /// consoles and the macOS terminals that ship stock fonts (Apple Terminal,
 /// iTerm2), which tofu them.

@@ -251,10 +251,10 @@ pub(crate) fn merge_and_filter(
 /// Alias for backward compatibility.
 pub type NoopSessionContextFactory = WorkspaceSessionContextFactory;
 /// Whether per-session `tool_state.json` persistence + per-turn upload is
-/// enabled (`GROK_WORKSPACE_TOOL_STATE_ENABLED=true`; any other value keeps
+/// enabled (`AXON_WORKSPACE_TOOL_STATE_ENABLED=true`; any other value keeps
 /// legacy behavior).
 pub fn tool_state_enabled() -> bool {
-    std::env::var("GROK_WORKSPACE_TOOL_STATE_ENABLED").as_deref() == Ok("true")
+    std::env::var("AXON_WORKSPACE_TOOL_STATE_ENABLED").as_deref() == Ok("true")
 }
 /// Sanitize a `session_id` into a single safe filesystem path segment: chars
 /// outside `[A-Za-z0-9_-]` become `_`, empty becomes `anon`. When any
@@ -292,7 +292,7 @@ fn ensure_session_dir(root: &std::path::Path, session_id: &str) -> (PathBuf, std
     (dir, created)
 }
 /// Serializes tests (across modules) that mutate the process-global
-/// `GROK_WORKSPACE_TOOL_STATE_ENABLED`. Aliased to the crate-wide
+/// `AXON_WORKSPACE_TOOL_STATE_ENABLED`. Aliased to the crate-wide
 /// [`crate::ENV_TEST_LOCK`] so ALL env-mutating tests share ONE lock (the
 /// hazard is the global `environ` array, not the variable's value).
 #[cfg(test)]
@@ -321,7 +321,7 @@ pub(crate) use crate::ENV_TEST_LOCK as TOOL_STATE_ENV_LOCK;
 pub struct WorkspaceSessionContextFactory {
     auth: Option<axon_computer_hub_sdk::SharedAuthProvider>,
     api_base_url: Option<String>,
-    /// Resolved `$GROK_WORKSPACE_HOME` when tool-state persistence is enabled;
+    /// Resolved `$AXON_WORKSPACE_HOME` when tool-state persistence is enabled;
     /// `None` disables it. Resolved once by the caller so the factory performs
     /// no per-build env reads.
     tool_state_home: Option<PathBuf>,
@@ -348,7 +348,7 @@ impl WorkspaceSessionContextFactory {
         }
     }
     /// Enable session-keyed tool-state persistence rooted at `home`
-    /// (`$GROK_WORKSPACE_HOME`). Callers should only invoke this when
+    /// (`$AXON_WORKSPACE_HOME`). Callers should only invoke this when
     /// [`tool_state_enabled`] is `true`.
     pub fn with_tool_state_home(mut self, home: PathBuf) -> Self {
         self.tool_state_home = Some(home);
@@ -499,7 +499,7 @@ fn build_proxy_headers(base_url: &str) -> indexmap::IndexMap<String, String> {
     headers.insert("x-grok-client-version".to_string(), version.to_string());
     headers.insert(
         "x-grok-client-identifier".to_string(),
-        std::env::var("GROK_CLIENT_NAME").unwrap_or_else(|_| "grok-shell".to_string()),
+        std::env::var("AXON_CLIENT_NAME").unwrap_or_else(|_| "grok-shell".to_string()),
     );
     if base_url.contains("cli-chat-proxy") || base_url.contains("chat-proxy") {
         headers.insert("X-XAI-Token-Auth".to_string(), "xai-grok-cli".to_string());
@@ -511,24 +511,24 @@ fn build_proxy_headers(base_url: &str) -> indexmap::IndexMap<String, String> {
     headers
 }
 /// Build web fetch config. Enabled with default params unless
-/// `GROK_DISABLE_WEB_FETCH=1` is set.
+/// `AXON_DISABLE_WEB_FETCH=1` is set.
 fn build_web_fetch_config() -> axon_tools::implementations::grok_build::web_fetch::WebFetchConfig
 {
     use axon_tools::implementations::grok_build::web_fetch::{WebFetchConfig, WebFetchParams};
-    if std::env::var("GROK_DISABLE_WEB_FETCH").is_ok_and(|v| v == "1" || v == "true") {
+    if std::env::var("AXON_DISABLE_WEB_FETCH").is_ok_and(|v| v == "1" || v == "true") {
         return WebFetchConfig::Disabled;
     }
     let mut params = WebFetchParams::default();
-    if let Ok(proxy) = std::env::var("GROK_WEB_FETCH_PROXY") {
+    if let Ok(proxy) = std::env::var("AXON_WEB_FETCH_PROXY") {
         params.proxy_endpoint = Some(proxy);
     }
-    if axon_config::env_bool("GROK_WEB_FETCH_ALLOW_LOCAL") == Some(true) {
+    if axon_config::env_bool("AXON_WEB_FETCH_ALLOW_LOCAL") == Some(true) {
         params.allow_local = Some(true);
     }
     WebFetchConfig::Enabled { params }
 }
 fn default_web_search_model() -> String {
-    std::env::var("GROK_WEB_SEARCH_MODEL").unwrap_or_else(|_| "grok-4.20-multi-agent".to_string())
+    std::env::var("AXON_WEB_SEARCH_MODEL").unwrap_or_else(|_| "grok-4.20-multi-agent".to_string())
 }
 #[cfg(any(test, feature = "test-support"))]
 pub mod test_support {
@@ -991,7 +991,7 @@ mod tests {
         let _guard = super::TOOL_STATE_ENV_LOCK
             .lock()
             .unwrap_or_else(|e| e.into_inner());
-        let var = "GROK_WORKSPACE_TOOL_STATE_ENABLED";
+        let var = "AXON_WORKSPACE_TOOL_STATE_ENABLED";
         unsafe { std::env::remove_var(var) };
         assert!(!tool_state_enabled(), "unset → disabled");
         unsafe { std::env::set_var(var, "false") };

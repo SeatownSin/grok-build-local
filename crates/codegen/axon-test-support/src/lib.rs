@@ -16,7 +16,7 @@
 //! - [`leader::LeaderStdioClient`] — ACP client that drives `grok agent --leader stdio` (unix)
 //! - [`run_headless`] — Run `grok -p` against the mock server and capture output
 //! - [`git_workdir`] — Create a temp directory with git repo (forces libgit2 init)
-//! - [`grok_binary`] — Resolve the grok binary path (GROK_BINARY env or cargo_bin)
+//! - [`grok_binary`] — Resolve the grok binary path (AXON_BINARY env or cargo_bin)
 //! - [`spawn_counting_server`] — Connection-counting HTTP/1.1 server for wire/pooling tests
 //! - [`uds_proxy::UdsProxy`] — Frame-aware fault-injection proxy for leader IPC sockets (unix)
 pub mod acp_client;

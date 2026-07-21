@@ -33,7 +33,7 @@ where
 /// second spawn in a resume test reads the stale cache written by phase 1
 /// and never sees the updated model list.
 fn invalidate_models_cache(home: &std::path::Path) {
-    let cache = home.join(".grok").join("models_cache.json");
+    let cache = home.join(".axon").join("models_cache.json");
     if cache.exists() {
         std::fs::remove_file(&cache).expect("failed to delete models_cache.json");
     }
@@ -201,8 +201,8 @@ async fn test_model_without_agent_type_defaults_to_grok_build() {
         })
         .await;
 }
-/// The `GROK_AGENT` escape hatch should override the model's agent_type.
-/// Setting `GROK_AGENT=grok-build` with an alternate-agent model should use
+/// The `AXON_AGENT` escape hatch should override the model's agent_type.
+/// Setting `AXON_AGENT=grok-build` with an alternate-agent model should use
 /// grok-build harness.
 #[tokio::test]
 #[ignore]
@@ -224,7 +224,7 @@ async fn test_grok_agent_env_overrides_model_agent_type() {
                 &server.url(),
                 home.path(),
             );
-            cmd.env("GROK_AGENT", "grok-build");
+            cmd.env("AXON_AGENT", "grok-build");
             let mut child = cmd.spawn().expect("spawn grok");
             let outgoing = child.stdin.take().unwrap();
             let incoming = child.stdout.take().unwrap();
@@ -335,7 +335,7 @@ async fn test_grok_agent_env_overrides_model_agent_type() {
                 .expect("should have inference request");
             assert!(
                 sys_prompt.contains("Grok") || sys_prompt.contains("grok"),
-                "GROK_AGENT=grok-build should override cursor model's agent_type\nsystem prompt preview: {}",
+                "AXON_AGENT=grok-build should override cursor model's agent_type\nsystem prompt preview: {}",
                 & sys_prompt[..sys_prompt.len().min(500)]
             );
         })

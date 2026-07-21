@@ -95,11 +95,11 @@ fn ensure_local_grok_binary(binary: &Path) {
     );
 }
 
-/// Resolve grok binary: `GROK_BINARY` env (CI) or a locally built `axon-pager` binary.
+/// Resolve grok binary: `AXON_BINARY` env (CI) or a locally built `axon-pager` binary.
 pub fn grok_binary() -> PathBuf {
-    if let Ok(path) = std::env::var("GROK_BINARY") {
+    if let Ok(path) = std::env::var("AXON_BINARY") {
         let p = PathBuf::from(path);
-        assert!(p.exists(), "GROK_BINARY does not exist: {}", p.display());
+        assert!(p.exists(), "AXON_BINARY does not exist: {}", p.display());
         return p;
     }
 
@@ -158,20 +158,20 @@ pub fn test_env_cmd_tokio(
     cmd.env("HOME", home)
         // HOME alone does not sandbox grok on Windows: the product resolves
         // `~` via `USERPROFILE`/Known Folders (`std::env::home_dir()`), so
-        // without an explicit GROK_HOME every spawned child shares the real
-        // `%USERPROFILE%\.grok` — test 1's models_cache.json (which embeds
+        // without an explicit AXON_HOME every spawned child shares the real
+        // `%USERPROFILE%\.axon` — test 1's models_cache.json (which embeds
         // its per-test mock-server URL) then poisons every later test's
         // prompt (the windows-x86_64 lifecycle "prompt timed out" failure).
         // Mirrors `leader.rs` and the pty-harness `env_for_pager`.
-        .env("GROK_HOME", home.join(".grok"))
-        .env("GROK_CLI_CHAT_PROXY_BASE_URL", mock_url)
-        .env("GROK_XAI_API_BASE_URL", mock_url)
+        .env("AXON_HOME", home.join(".axon"))
+        .env("AXON_CLI_CHAT_PROXY_BASE_URL", mock_url)
+        .env("AXON_XAI_API_BASE_URL", mock_url)
         .env("XAI_API_KEY", "test-key-for-ci")
-        .env("GROK_TELEMETRY_ENABLED", "false")
-        .env("GROK_FEEDBACK_ENABLED", "false")
-        .env("GROK_TRACE_UPLOAD", "false")
-        .env("GROK_INSTRUMENTATION", "disabled")
+        .env("AXON_TELEMETRY_ENABLED", "false")
+        .env("AXON_FEEDBACK_ENABLED", "false")
+        .env("AXON_TRACE_UPLOAD", "false")
+        .env("AXON_INSTRUMENTATION", "disabled")
         // Release binaries (CI lifecycle tests) otherwise spawn a background
         // update check that hits the network and can add latency under Rosetta.
-        .env("GROK_DISABLE_AUTOUPDATER", "1");
+        .env("AXON_DISABLE_AUTOUPDATER", "1");
 }

@@ -1,5 +1,5 @@
-//! Tracing layer for `target: "sampling_log"` → `~/.grok/logs/sampling.jsonl`.
-//! Enable with `--log-sampling` or `GROK_LOG_SAMPLING=1`.
+//! Tracing layer for `target: "sampling_log"` → `~/.axon/logs/sampling.jsonl`.
+//! Enable with `--log-sampling` or `AXON_LOG_SAMPLING=1`.
 
 use std::sync::Mutex;
 
@@ -12,7 +12,7 @@ use axon_config::grok_home;
 
 use crate::instrumentation::{NoOpLayer, TargetFilterLayer};
 
-const ENV_VAR: &str = "GROK_LOG_SAMPLING";
+const ENV_VAR: &str = "AXON_LOG_SAMPLING";
 const LOG_FILE: &str = "sampling.jsonl";
 const TARGET: &str = "sampling_log";
 

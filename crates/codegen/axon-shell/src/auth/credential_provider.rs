@@ -424,10 +424,10 @@ mod tests {
     use chrono::{Duration as ChronoDuration, Utc};
     use std::sync::Mutex;
     use axon_auth::AuthCredentialProvider;
-    /// Serializes tests that pin `GROK_AUTH_EARLY_INVALIDATION_SECS`, since
+    /// Serializes tests that pin `AXON_AUTH_EARLY_INVALIDATION_SECS`, since
     /// env vars are process-global and parallel tests would race.
     static EARLY_INVALIDATION_LOCK: Mutex<()> = Mutex::new(());
-    /// RAII guard: pins `GROK_AUTH_EARLY_INVALIDATION_SECS` to the production
+    /// RAII guard: pins `AXON_AUTH_EARLY_INVALIDATION_SECS` to the production
     /// default (300s) while held, restoring the previous value on drop.
     /// Acquires `EARLY_INVALIDATION_LOCK` so concurrent test runners can't
     /// observe a half-mutated env.
@@ -440,8 +440,8 @@ mod tests {
             let lock = EARLY_INVALIDATION_LOCK
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
-            let previous = std::env::var("GROK_AUTH_EARLY_INVALIDATION_SECS").ok();
-            unsafe { std::env::set_var("GROK_AUTH_EARLY_INVALIDATION_SECS", "300") };
+            let previous = std::env::var("AXON_AUTH_EARLY_INVALIDATION_SECS").ok();
+            unsafe { std::env::set_var("AXON_AUTH_EARLY_INVALIDATION_SECS", "300") };
             Self {
                 _lock: lock,
                 previous,
@@ -452,8 +452,8 @@ mod tests {
         fn drop(&mut self) {
             unsafe {
                 match self.previous.take() {
-                    Some(prev) => std::env::set_var("GROK_AUTH_EARLY_INVALIDATION_SECS", prev),
-                    None => std::env::remove_var("GROK_AUTH_EARLY_INVALIDATION_SECS"),
+                    Some(prev) => std::env::set_var("AXON_AUTH_EARLY_INVALIDATION_SECS", prev),
+                    None => std::env::remove_var("AXON_AUTH_EARLY_INVALIDATION_SECS"),
                 }
             }
         }

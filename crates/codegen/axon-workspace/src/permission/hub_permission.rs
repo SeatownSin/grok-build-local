@@ -51,7 +51,7 @@ fn is_timeout_err(msg: &str) -> bool {
 /// chat over the server) for local e2e and gradual rollout. Prefer server capability
 /// negotiation long-term; this is the interim gate so tool-permission can be
 /// exercised without waiting on that wire format.
-pub const HITL_PERMISSION_LIVE_ENV: &str = "GROK_HITL_PERMISSION_LIVE";
+pub const HITL_PERMISSION_LIVE_ENV: &str = "AXON_HITL_PERMISSION_LIVE";
 /// Whether the HITL-live permission path is enabled.
 ///
 /// Intended long-term gate: the chat flag `grok_chat_enable_hitl_live_path`,

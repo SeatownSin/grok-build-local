@@ -96,7 +96,7 @@ pub(crate) fn run_external_auth_sync(command: &str, is_refresh: bool) -> Option<
         // Pipe stderr — inherit would corrupt the TUI alternate screen.
         .stderr(Stdio::piped());
     if is_refresh {
-        cmd.env("GROK_AUTH_EXPIRED", "1");
+        cmd.env("AXON_AUTH_EXPIRED", "1");
     }
     axon_tools::util::detach_std_command(&mut cmd);
     cmd.envs(axon_tools::util::pager_env());
@@ -241,7 +241,7 @@ mod tests {
 
     #[test]
     fn sync_sets_grok_auth_expired_env_on_refresh() {
-        let auth = run_external_auth_sync("echo $GROK_AUTH_EXPIRED", true).unwrap();
+        let auth = run_external_auth_sync("echo $AXON_AUTH_EXPIRED", true).unwrap();
         assert_eq!(auth.key, "1");
     }
 

@@ -717,7 +717,7 @@ pub(crate) async fn run(
     // memory growth.
     if args.log_sampling {
         // SAFETY: called before any threads are spawned by init_tracing.
-        unsafe { std::env::set_var("GROK_LOG_SAMPLING", "1") };
+        unsafe { std::env::set_var("AXON_LOG_SAMPLING", "1") };
     }
     let tracing_handle = crate::tracing::init_tracing();
 
@@ -845,11 +845,11 @@ pub(crate) async fn run(
         .as_ref()
         .and_then(|s| s.sharing_enabled)
         .unwrap_or(false);
-    app.plugin_cta_enabled = axon_config::env_bool("GROK_PLUGIN_CTA")
+    app.plugin_cta_enabled = axon_config::env_bool("AXON_PLUGIN_CTA")
         .or_else(|| remote_settings.as_ref().and_then(|s| s.plugin_cta))
         .unwrap_or(false);
     // Voice is applied after auth_meta so API-key detection is accurate.
-    app.session_picker_grouped = std::env::var("GROK_SESSION_PICKER_GROUPED")
+    app.session_picker_grouped = std::env::var("AXON_SESSION_PICKER_GROUPED")
         .ok()
         .and_then(|v| match v.as_str() {
             "1" | "true" => Some(true),
@@ -1023,7 +1023,7 @@ pub(crate) async fn run(
         );
         if let Some(table) = raw.as_table() {
             // Voice inherits the same resolved endpoints base as chat
-            // (config > GROK_XAI_API_BASE_URL env > default).
+            // (config > AXON_XAI_API_BASE_URL env > default).
             let endpoints_base =
                 axon_shell::agent::config::EndpointsConfig::from_config_value(raw)
                     .xai_api_base_url;
@@ -1219,7 +1219,7 @@ pub(crate) async fn run(
         );
     }
 
-    // Apply initial config (may come from existing ~/.grok/pager.toml).
+    // Apply initial config (may come from existing ~/.axon/pager.toml).
     let mut initial_config = config_watcher.current().clone();
     // The cache holds the USER compact value; the render value is derived
     // (auto-compact while the startup terminal is short).
@@ -1338,7 +1338,7 @@ pub(crate) async fn run(
     app.apply_effective_compact();
 
     // Apply the scroll settings from the caches (seeded by `prime` above;
-    // GROK_SCROLL_SPEED/_MODE/_LINES + GROK_INVERT_SCROLL env overrides
+    // AXON_SCROLL_SPEED/_MODE/_LINES + AXON_INVERT_SCROLL env overrides
     // apply on first load).
     app.scroll_config = crate::input::mouse::ScrollConfig::from_settings();
 
@@ -1616,11 +1616,11 @@ pub(crate) async fn run(
     }
 
     // `grok dashboard` startup: open the dashboard view immediately. The
-    // CLI subcommand wrote a `GROK_OPEN_DASHBOARD_AT_STARTUP=1` env var
+    // CLI subcommand wrote a `AXON_OPEN_DASHBOARD_AT_STARTUP=1` env var
     // so we don't have to thread a flag through every arg struct.
-    if std::env::var("GROK_OPEN_DASHBOARD_AT_STARTUP").as_deref() == Ok("1") {
+    if std::env::var("AXON_OPEN_DASHBOARD_AT_STARTUP").as_deref() == Ok("1") {
         // SAFETY: we are pre-multithreaded init for this app loop.
-        unsafe { std::env::remove_var("GROK_OPEN_DASHBOARD_AT_STARTUP") };
+        unsafe { std::env::remove_var("AXON_OPEN_DASHBOARD_AT_STARTUP") };
         if app.session_startup_allowed() {
             let effs = dispatch::dispatch(Action::OpenDashboard, &mut app);
             if process_effects(effs, &mut tasks, &mut app, &progress_tx) {
@@ -2265,8 +2265,8 @@ pub(crate) async fn run(
             // Hot-reload: config file changed (dev mode) or initial load.
             Ok(()) = config_watcher.changed() => {
                 let mut config = config_watcher.current().clone();
-                // Preserve fields persisted via `~/.grok/config.toml [ui]`
-                // rather than `~/.grok/pager.toml`. The watcher only knows
+                // Preserve fields persisted via `~/.axon/config.toml [ui]`
+                // rather than `~/.axon/pager.toml`. The watcher only knows
                 // about pager.toml, so a hot-reload would otherwise revert
                 // these to their hardcoded defaults. Compact carries the
                 // PRE-reload render value; the canonical re-derive below owns

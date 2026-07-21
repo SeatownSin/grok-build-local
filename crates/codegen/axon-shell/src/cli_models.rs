@@ -100,7 +100,7 @@ mod tests {
 
     /// Isolate process-global auth sources that `AuthStatus::resolve` consults.
     ///
-    /// Uses `GROK_AUTH_PATH` (not `GROK_HOME`) so a OnceLock-cached real home
+    /// Uses `AXON_AUTH_PATH` (not `AXON_HOME`) so a OnceLock-cached real home
     /// with `auth.json` cannot leak into these tests.
     fn isolate_auth_sources() -> (tempfile::TempDir, [EnvGuard; 7]) {
         let dir = tempfile::tempdir().unwrap();
@@ -108,11 +108,11 @@ mod tests {
         let guards = [
             EnvGuard::unset(XAI_API_KEY_ENV_VAR),
             EnvGuard::unset(LEGACY_XAI_API_KEY_ENV_VAR),
-            EnvGuard::unset("GROK_AUTH"),
-            EnvGuard::set("GROK_AUTH_PATH", auth_path.to_str().unwrap()),
-            EnvGuard::unset("GROK_DEPLOYMENT_KEY"),
-            EnvGuard::unset("GROK_WS_ORIGIN"),
-            EnvGuard::unset("GROK_DISABLE_API_KEY_AUTH"),
+            EnvGuard::unset("AXON_AUTH"),
+            EnvGuard::set("AXON_AUTH_PATH", auth_path.to_str().unwrap()),
+            EnvGuard::unset("AXON_DEPLOYMENT_KEY"),
+            EnvGuard::unset("AXON_WS_ORIGIN"),
+            EnvGuard::unset("AXON_DISABLE_API_KEY_AUTH"),
         ];
         (dir, guards)
     }
@@ -161,7 +161,7 @@ mod tests {
             ..GrokAuth::test_default()
         };
         let json = serde_json::to_string(&token).unwrap();
-        let _auth = EnvGuard::set("GROK_AUTH", &json);
+        let _auth = EnvGuard::set("AXON_AUTH", &json);
 
         assert_eq!(
             AuthStatus::resolve(&Config::default()),
@@ -253,7 +253,7 @@ mod tests {
             ..GrokAuth::test_default()
         };
         let json = serde_json::to_string(&token).unwrap();
-        let _auth = EnvGuard::set("GROK_AUTH", &json);
+        let _auth = EnvGuard::set("AXON_AUTH", &json);
 
         let dm = crate::models::default_model();
         let cfg = config_from_toml(&byok_and_deployment_toml(dm));

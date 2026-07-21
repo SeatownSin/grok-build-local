@@ -211,7 +211,7 @@ pub async fn request_device_code(
 
 /// Poll the token endpoint until the user approves (or denies / expires).
 ///
-/// On success, persists credentials to `~/.grok/auth.json` and returns
+/// On success, persists credentials to `~/.axon/auth.json` and returns
 /// the authenticated `GrokAuth`.
 ///
 /// Callers should have already displayed `device_code.verification_uri`
@@ -568,7 +568,7 @@ pub(crate) mod tests {
     #[test]
     fn build_auth_persists_credentials_without_proxy_fetch() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".axon");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager = auth_manager_with_grok_home(&grok_home, "http://127.0.0.1:9");
         let tokens = super::TokenOk {
@@ -611,7 +611,7 @@ pub(crate) mod tests {
     fn build_auth_seeds_team_metadata_from_access_token() {
         ensure_crypto_provider();
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".axon");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager = auth_manager_with_grok_home(&grok_home, "http://127.0.0.1:9");
         let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::HS256);
@@ -687,7 +687,7 @@ pub(crate) mod tests {
     fn assert_build_auth_rejected(cfg: GrokComConfig, token_principal: &str, expected_err: &str) {
         ensure_crypto_provider();
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".axon");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager =
             Arc::new(AuthManager::new(&grok_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));
@@ -731,7 +731,7 @@ pub(crate) mod tests {
             ..GrokComConfig::default()
         };
         let temp_dir = tempfile::tempdir().unwrap();
-        let grok_home = temp_dir.path().join(".grok");
+        let grok_home = temp_dir.path().join(".axon");
         std::fs::create_dir_all(&grok_home).unwrap();
         let auth_manager =
             Arc::new(AuthManager::new(&grok_home, cfg).with_proxy_base_url("http://127.0.0.1:9"));

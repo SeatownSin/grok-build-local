@@ -18,13 +18,13 @@ use strum::AsRefStr;
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum SkillScope {
-    /// cwd/.grok/skills (highest priority)
+    /// cwd/.axon/skills (highest priority)
     Local = 0,
-    /// repo_root/.grok/skills
+    /// repo_root/.axon/skills
     Repo = 1,
-    /// ~/.grok/skills
+    /// ~/.axon/skills
     User = 2,
-    /// ~/.grok/server-skills (synced from the skill store)
+    /// ~/.axon/server-skills (synced from the skill store)
     Server = 3,
     /// platform built-in skills (lowest precedence)
     Bundled = 4,
@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn extracts_skill_name() {
         assert_eq!(
-            skill_name_from_path("/home/user/.grok/skills/deploy/SKILL.md"),
+            skill_name_from_path("/home/user/.axon/skills/deploy/SKILL.md"),
             Some("deploy"),
         );
     }
@@ -210,7 +210,7 @@ mod tests {
     #[test]
     fn nested_path() {
         assert_eq!(
-            skill_name_from_path("/repo/.grok/skills/my-skill/SKILL.md"),
+            skill_name_from_path("/repo/.axon/skills/my-skill/SKILL.md"),
             Some("my-skill"),
         );
     }

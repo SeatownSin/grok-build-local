@@ -19,10 +19,10 @@ Common use cases:
 
 1. Create the hooks directory:
    ```sh
-   mkdir -p ~/.grok/hooks
+   mkdir -p ~/.axon/hooks
    ```
 
-2. Create a simple hook file, e.g. `~/.grok/hooks/session-start.json`:
+2. Create a simple hook file, e.g. `~/.axon/hooks/session-start.json`:
    ```json
    {
      "hooks": {
@@ -47,13 +47,13 @@ Hooks are discovered from several places (all are merged):
 
 | Scope     | Path                              | Trusted?     | Notes |
 |-----------|-----------------------------------|--------------|-------|
-| Global    | `~/.grok/hooks/*.json`            | Always       | Best for personal hooks |
+| Global    | `~/.axon/hooks/*.json`            | Always       | Best for personal hooks |
 | Global    | `~/.claude/settings.json`         | Always       | Claude Code compatibility |
-| Project   | `<project>/.grok/hooks/*.json`    | Requires trust | Per-repo automation |
+| Project   | `<project>/.axon/hooks/*.json`    | Requires trust | Per-repo automation |
 | Project   | `<project>/.claude/settings.json` | Requires trust | Claude compatibility |
 | Plugin    | Bundled inside installed plugins  | Per-plugin   | Shared team hooks |
 
-**Trusting a project**: Open the hooks modal (`Ctrl+L` on non–VS Code family, or `/hooks` on any terminal including VS Code family) or run `/hooks-trust` (the same folder-trust gate as `--trust`, recorded in `~/.grok/trusted_folders.toml`) the first time you open a project with hooks. This prevents untrusted repos from running arbitrary code.
+**Trusting a project**: Open the hooks modal (`Ctrl+L` on non–VS Code family, or `/hooks` on any terminal including VS Code family) or run `/hooks-trust` (the same folder-trust gate as `--trust`, recorded in `~/.axon/trusted_folders.toml`) the first time you open a project with hooks. This prevents untrusted repos from running arbitrary code.
 
 ## The Hook JSON Format
 
@@ -126,17 +126,17 @@ For events like `SessionStart` or `PostToolUse`, stdout is ignored. Just exit 0 
 
 Grok injects the following variables into every hook process:
 
-- `GROK_HOOK_EVENT` — the event name (e.g. `pre_tool_use`, `session_start`, `post_tool_use`)
-- `GROK_HOOK_NAME` — the full configured name of this hook
-- `GROK_SESSION_ID` — the current session identifier
-- `GROK_WORKSPACE_ROOT` — absolute path to the workspace root
+- `AXON_HOOK_EVENT` — the event name (e.g. `pre_tool_use`, `session_start`, `post_tool_use`)
+- `AXON_HOOK_NAME` — the full configured name of this hook
+- `AXON_SESSION_ID` — the current session identifier
+- `AXON_WORKSPACE_ROOT` — absolute path to the workspace root
 
 For hooks provided by plugins, the following are also set:
 
-- `GROK_PLUGIN_ROOT` — absolute path to the plugin's installation directory
-- `GROK_PLUGIN_DATA` — absolute path to the plugin's writable data directory
+- `AXON_PLUGIN_ROOT` — absolute path to the plugin's installation directory
+- `AXON_PLUGIN_DATA` — absolute path to the plugin's writable data directory
 
-These runner- and plugin-injected variables always take precedence. Attempts to override the reserved runner keys via the `env` field are stripped at load time (with a warning logged). For plugin hooks, `GROK_PLUGIN_ROOT` and `GROK_PLUGIN_DATA` similarly override any user-supplied values for those keys.
+These runner- and plugin-injected variables always take precedence. Attempts to override the reserved runner keys via the `env` field are stripped at load time (with a warning logged). For plugin hooks, `AXON_PLUGIN_ROOT` and `AXON_PLUGIN_DATA` similarly override any user-supplied values for those keys.
 
 ### Custom Environment Variables (`env` field)
 
@@ -157,7 +157,7 @@ Values must be **strings** — JSON numbers and bools currently fail to parse
 (wrap them in quotes if you need them).
 
 For plugin hooks, the plugin adapter additionally injects
-`GROK_PLUGIN_ROOT` and `GROK_PLUGIN_DATA`. These keys override any user-declared
+`AXON_PLUGIN_ROOT` and `AXON_PLUGIN_DATA`. These keys override any user-declared
 values for the same names (the plugin contract is non-negotiable).
 
 ### Variable Substitution
@@ -183,7 +183,7 @@ if the var becomes set; otherwise the runner refuses to spawn with a clear
 
 For HTTP hooks specifically, `url` is also re-expanded **at request time**
 (immediately before SSRF validation), so plugin-injected vars like
-`${GROK_PLUGIN_ROOT}/check` resolve against the plugin's actual path.
+`${AXON_PLUGIN_ROOT}/check` resolve against the plugin's actual path.
 
 #### Parameter-expansion modifiers
 
@@ -223,7 +223,7 @@ In the **Hooks** tab you can:
 - `r` — Remove
 - `Space` — Expand groups
 
-Hooks from `~/.grok/hooks/` appear under **Global**, project ones under **Project**, etc.
+Hooks from `~/.axon/hooks/` appear under **Global**, project ones under **Project**, etc.
 
 ## HTTP Hooks
 
@@ -241,11 +241,11 @@ The full event envelope is POSTed as JSON. Useful for webhooks, analytics, or se
 2. **Use explicit `deny` to block** — hooks fail-open on any error (timeout, crash, missing env var, etc.), so a hook that crashes will not block the tool call. To enforce policy, your hook must run to completion and emit `{"decision":"deny","reason":"..."}` on stdout.
 3. **Use absolute paths or relative to hook file** — scripts in `bin/` next to the JSON are portable.
 4. **Test with `Ctrl+L` (non–VS Code family) / `/hooks`** — verify loading and matching before relying on them.
-5. **Version control project hooks** — commit `.grok/hooks/` (but never secrets).
+5. **Version control project hooks** — commit `.axon/hooks/` (but never secrets).
 
 ## Security Notes
 
-- Global hooks (`~/.grok/...`) run with your user permissions — treat them like shell scripts.
+- Global hooks (`~/.axon/...`) run with your user permissions — treat them like shell scripts.
 - Project hooks require explicit trust (run `/hooks-trust` or use the modal) to prevent supply-chain attacks from malicious repos.
 - HTTP hooks send session data — only use trusted endpoints.
 
@@ -254,18 +254,18 @@ The full event envelope is POSTed as JSON. Useful for webhooks, analytics, or se
 - **Hook not running?** → Press `Ctrl+L` on non–VS Code family (or run `/hooks` anywhere) to see if it's loaded and matched.
 - **Project hooks ignored?** → Trust the project first.
 - **Script not found?** → Check the path is relative to the `.json` file and executable (`chmod +x`).
-- **See errors?** → Check the pager logs (usually in the tracing pane or `~/.grok/logs`).
+- **See errors?** → Check the pager logs (usually in the tracing pane or `~/.axon/logs`).
 
 ## More Examples
 
-See the built-in examples in the `xai-grok-hooks` crate:
+See the built-in examples in the `axon-hooks` crate:
 
-- [Safe Shell Guard](../../../xai-grok-hooks/examples/hooks/safe-shell.json)
-- [No Recursive Grep](../../../xai-grok-hooks/examples/hooks/no-recursive-grep.json) — hard-blocks `grep -r`/`grep -R`/`rgrep` (OOM guard)
-- [Session Audit Log](../../../xai-grok-hooks/examples/hooks/session-log.json)
-- [Tool Activity Logger](../../../xai-grok-hooks/examples/hooks/tool-logger.json)
+- [Safe Shell Guard](../../../axon-hooks/examples/hooks/safe-shell.json)
+- [No Recursive Grep](../../../axon-hooks/examples/hooks/no-recursive-grep.json) — hard-blocks `grep -r`/`grep -R`/`rgrep` (OOM guard)
+- [Session Audit Log](../../../axon-hooks/examples/hooks/session-log.json)
+- [Tool Activity Logger](../../../axon-hooks/examples/hooks/tool-logger.json)
 
-Copy them to `~/.grok/hooks/` and customize.
+Copy them to `~/.axon/hooks/` and customize.
 
 ## Full Reference
 

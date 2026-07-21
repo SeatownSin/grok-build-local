@@ -14,7 +14,7 @@ It runs as a full-screen TUI that understands your codebase, edits files,
 executes shell commands, and manages long-running tasks — interactively,
 headlessly for scripting/CI, or embedded in editors via the Agent Client
 Protocol (ACP). The app presents itself as **Axon**; the build artifact and
-command still carry upstream's `xai-grok-pager`/`grok` names (renaming those
+command still carry upstream's `axon-pager`/`grok` names (renaming those
 internal identifiers is a separate, later change).
 
 [What's different](#whats-different-from-upstream) ·
@@ -94,9 +94,9 @@ Requirements:
     `PATH` or set `PROTOC` to its full path.
 
 ```sh
-cargo run -p xai-grok-pager-bin              # build + launch the TUI
-cargo build -p xai-grok-pager-bin --release  # release binary: target/release/xai-grok-pager
-cargo check -p xai-grok-pager-bin            # fast validation
+cargo run -p axon-pager-bin              # build + launch the TUI
+cargo build -p axon-pager-bin --release  # release binary: target/release/axon-pager
+cargo check -p axon-pager-bin            # fast validation
 ```
 
 **First launch.** With no model configured, the first run drops into a short
@@ -104,7 +104,7 @@ setup wizard: it scans `localhost` **and your local network** for running model
 servers (Ollama, LM Studio, llama.cpp, vLLM) — probing the ports actually
 listening, so it finds servers on non-standard ports too — lets you pick a
 detected model or enter an endpoint manually, writes it to
-`~/.grok/config.toml`, and starts straight into a session. Quit the wizard and
+`~/.axon/config.toml`, and starts straight into a session. Quit the wizard and
 it exits cleanly. Prefer to set things up ahead of time? Configure a model up
 front ([below](#configuring-a-local-model)) and launch goes directly to a
 session — no wizard, no login. There is no browser auth flow to xAI in this
@@ -114,7 +114,7 @@ build.
 
 The first-run wizard writes this for you (auto-detecting servers on `localhost`
 and your LAN, on any port), but you can also add or edit models in
-`~/.grok/config.toml` by hand. A loopback endpoint needs nothing else — no key,
+`~/.axon/config.toml` by hand. A loopback endpoint needs nothing else — no key,
 no login:
 
 ```toml
@@ -131,7 +131,7 @@ default = "local"                       # make it the default for new sessions
 For a non-loopback server that also needs no auth, set `no_auth = true`. For a
 keyed provider (OpenAI, Anthropic, …), set `api_key`/`env_key` and `base_url` as
 usual. Full details:
-[`docs/user-guide/11-custom-models.md`](crates/codegen/xai-grok-pager/docs/user-guide/11-custom-models.md).
+[`docs/user-guide/11-custom-models.md`](crates/codegen/axon-pager/docs/user-guide/11-custom-models.md).
 
 ## Updates
 
@@ -149,7 +149,7 @@ harness reasons, not product bugs**. Run the suite under **WSL2 / Linux** for a
 clean signal:
 
 ```sh
-PROTOC=/path/to/protoc cargo test -p xai-grok-shell --lib
+PROTOC=/path/to/protoc cargo test -p axon-shell --lib
 ```
 
 A `.gitattributes` pins LF line endings so a Windows checkout doesn't break the
@@ -159,11 +159,11 @@ pinned-copy template tests.
 
 | Path | Contents |
 |------|----------|
-| `crates/codegen/xai-grok-pager-bin` | Composition-root package; builds the `xai-grok-pager` binary |
-| `crates/codegen/xai-grok-pager` | The TUI: scrollback, prompt, modals, rendering |
-| `crates/codegen/xai-grok-shell` | Agent runtime + leader/stdio/headless entry points |
-| `crates/codegen/xai-grok-tools` | Tool implementations (terminal, file edit, search, ...) |
-| `crates/codegen/xai-grok-workspace` | Host filesystem, VCS, execution, checkpoints |
+| `crates/codegen/axon-pager-bin` | Composition-root package; builds the `axon-pager` binary |
+| `crates/codegen/axon-pager` | The TUI: scrollback, prompt, modals, rendering |
+| `crates/codegen/axon-shell` | Agent runtime + leader/stdio/headless entry points |
+| `crates/codegen/axon-tools` | Tool implementations (terminal, file edit, search, ...) |
+| `crates/codegen/axon-workspace` | Host filesystem, VCS, execution, checkpoints |
 | `crates/codegen/...` | The rest of the CLI crate closure (config, MCP, markdown, sandbox, ...) |
 | `crates/common/`, `crates/build/`, `prod/mc/` | Small shared leaf crates pulled in by the closure |
 | `third_party/` | Vendored upstream source (Mermaid diagram stack) |
@@ -177,7 +177,7 @@ pinned-copy template tests.
 
 ```sh
 cargo check -p <crate>        # always target specific crates; full-workspace builds are slow
-cargo test -p xai-grok-config # per-crate tests (see "Running the tests" re: WSL)
+cargo test -p axon-config # per-crate tests (see "Running the tests" re: WSL)
 cargo clippy -p <crate>       # lint config: clippy.toml at the repo root
 cargo fmt --all               # rustfmt.toml at the repo root
 ```
@@ -207,6 +207,6 @@ Third-party and vendored code remains under its original licenses:
 - [`THIRD-PARTY-NOTICES`](THIRD-PARTY-NOTICES) — crates.io / git dependencies,
   bundled UI themes, and in-tree source ports (including openai/codex and
   sst/opencode tool implementations)
-- [`crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md`](crates/codegen/xai-grok-tools/THIRD_PARTY_NOTICES.md)
+- [`crates/codegen/axon-tools/THIRD_PARTY_NOTICES.md`](crates/codegen/axon-tools/THIRD_PARTY_NOTICES.md)
   — crate-local notice for the codex and opencode ports
 - [`third_party/NOTICE`](third_party/NOTICE) — vendored Mermaid-stack index

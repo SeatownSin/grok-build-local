@@ -500,7 +500,7 @@ fn to_legacy_glyphs(s: &str) -> String {
 /// font is known not to ship the Dingbats glyphs we use as chrome.
 /// Cached for process lifetime.
 ///
-/// `GROK_FORCE_LEGACY_CONSOLE=1` (or `true`) forces this on regardless of
+/// `AXON_FORCE_LEGACY_CONSOLE=1` (or `true`) forces this on regardless of
 /// host/terminal, and `=0` (or `false`) forces it off — a QA aid for
 /// eyeballing the ASCII fallbacks (or confirming the fancy glyphs) on any
 /// platform without a real ConHost.
@@ -517,9 +517,9 @@ pub fn is_legacy_windows_console() -> bool {
     })
 }
 
-/// Read the `GROK_FORCE_LEGACY_CONSOLE` escape hatch from the environment.
+/// Read the `AXON_FORCE_LEGACY_CONSOLE` escape hatch from the environment.
 fn forced_legacy_console_override() -> Option<bool> {
-    parse_forced_legacy_console(std::env::var("GROK_FORCE_LEGACY_CONSOLE").ok().as_deref())
+    parse_forced_legacy_console(std::env::var("AXON_FORCE_LEGACY_CONSOLE").ok().as_deref())
 }
 
 /// Pure parse of the override value so tests don't touch the environment.

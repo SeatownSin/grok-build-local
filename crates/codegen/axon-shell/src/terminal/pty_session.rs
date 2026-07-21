@@ -462,7 +462,7 @@ pub async fn close_all() {
 /// Priority: explicit `shell` param > `$SHELL` env > platform default.
 /// On Windows falls back to the `detect_windows_shell` cascade
 /// (pwsh > powershell.exe > Git Bash > cmd.exe, overridable via
-/// `GROK_SHELL`) since `$SHELL` is absent.
+/// `AXON_SHELL`) since `$SHELL` is absent.
 fn resolve_pty_shell(shell: Option<&str>) -> (String, Vec<String>) {
     if let Some(s) = shell {
         return (s.to_string(), vec![]);

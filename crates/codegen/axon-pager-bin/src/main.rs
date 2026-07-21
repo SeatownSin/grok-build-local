@@ -158,13 +158,13 @@ async fn run_setup_command(json: bool) {
         eprintln!("or set a deployment key:");
         eprintln!();
         if cfg!(unix) {
-            eprintln!("  export GROK_DEPLOYMENT_KEY=<your-key>");
+            eprintln!("  export AXON_DEPLOYMENT_KEY=<your-key>");
         } else {
-            eprintln!("  $env:GROK_DEPLOYMENT_KEY=\"<your-key>\"");
+            eprintln!("  $env:AXON_DEPLOYMENT_KEY=\"<your-key>\"");
         }
         eprintln!("  grok setup");
         eprintln!();
-        eprintln!("Or add the key to ~/.grok/config.toml:");
+        eprintln!("Or add the key to ~/.axon/config.toml:");
         eprintln!();
         eprintln!("  [endpoints]");
         eprintln!("  deployment_key = \"<your-key>\"");
@@ -365,7 +365,7 @@ fn ensure_control_caps(reg: &LeaderRegistration) -> Result<&LeaderCapabilities> 
 }
 /// Env override for the `grok workspace` gate: any truthy value enables the
 /// command locally, a falsy one disables it — bypassing the remote settings flag.
-const WORKSPACE_COMMAND_ENV: &str = "GROK_WORKSPACE_COMMAND";
+const WORKSPACE_COMMAND_ENV: &str = "AXON_WORKSPACE_COMMAND";
 /// Resolution of the `grok workspace` gate. `Unknown` is kept separate from
 /// `Disabled` so we don't tell the user the flag is off when the settings were
 /// simply never read (both fail closed, but `Unknown` earns an honest message).
@@ -375,7 +375,7 @@ enum WorkspaceGate {
     Disabled,
     Unknown,
 }
-/// The `GROK_WORKSPACE_COMMAND` override, if set (`Some(true)`/`Some(false)`);
+/// The `AXON_WORKSPACE_COMMAND` override, if set (`Some(true)`/`Some(false)`);
 /// `None` defers to the remote settings flag.
 fn workspace_command_env_override() -> Option<bool> {
     std::env::var(WORKSPACE_COMMAND_ENV)
@@ -528,7 +528,7 @@ async fn workspace_start(
     if !use_leader {
         anyhow::bail!(
             "`grok workspace` requires leader mode (the workspace is shared via the leader).\n\
-             Enable it with `[cli] use_leader = true` in ~/.grok/config.toml, or pass --leader."
+             Enable it with `[cli] use_leader = true` in ~/.axon/config.toml, or pass --leader."
         );
     }
     ensure_authenticated(
@@ -1442,7 +1442,7 @@ fn raise_fd_limit() {
 #[cfg(not(target_os = "macos"))]
 fn raise_fd_limit() {}
 /// Single audit point for the `Command::Dashboard` soft-subcommand.
-/// Sets `GROK_OPEN_DASHBOARD_AT_STARTUP=1` if the user asked for
+/// Sets `AXON_OPEN_DASHBOARD_AT_STARTUP=1` if the user asked for
 /// `grok dashboard`, and clears `args.command` so the regular
 /// subcommand match doesn't try to handle it.
 ///
@@ -1452,7 +1452,7 @@ fn raise_fd_limit() {}
 /// is compatible with `--no-leader`.
 ///
 /// The only gate is the feature flag: a disabled dashboard
-/// (`[dashboard].enabled = false` / `GROK_AGENT_DASHBOARD=0`) is a CLI
+/// (`[dashboard].enabled = false` / `AXON_AGENT_DASHBOARD=0`) is a CLI
 /// error here, before the TUI starts, because the welcome view silently
 /// drops the equivalent runtime toast.
 fn flag_dashboard_at_startup_if_requested(args: &mut PagerArgs) -> Result<()> {
@@ -1462,12 +1462,12 @@ fn flag_dashboard_at_startup_if_requested(args: &mut PagerArgs) -> Result<()> {
     if !axon_pager::views::dashboard::dashboard_enabled() {
         anyhow::bail!(
             "the Agent Dashboard is disabled. Enable it by removing \
-             `[dashboard] enabled = false` from ~/.grok/config.toml and \
-             unsetting GROK_AGENT_DASHBOARD=0."
+             `[dashboard] enabled = false` from ~/.axon/config.toml and \
+             unsetting AXON_AGENT_DASHBOARD=0."
         );
     }
     args.command = None;
-    unsafe { std::env::set_var("GROK_OPEN_DASHBOARD_AT_STARTUP", "1") };
+    unsafe { std::env::set_var("AXON_OPEN_DASHBOARD_AT_STARTUP", "1") };
     Ok(())
 }
 const RUNTIME_SHUTDOWN_GRACE: std::time::Duration = std::time::Duration::from_secs(2);
@@ -1698,14 +1698,14 @@ async fn async_main() -> Result<()> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     let mut args = PagerArgs::parse_and_apply_cwd()?;
     if let Some(ref mode) = args.compaction_mode {
-        unsafe { std::env::set_var("GROK_COMPACTION_MODE", mode) };
+        unsafe { std::env::set_var("AXON_COMPACTION_MODE", mode) };
     }
     if let Some(ref detail) = args.compaction_detail {
-        unsafe { std::env::set_var("GROK_COMPACTION_DETAIL", detail) };
+        unsafe { std::env::set_var("AXON_COMPACTION_DETAIL", detail) };
     }
     if args.chat() {
         unsafe {
-            std::env::set_var(axon_shell::agent::chat_modes::GROK_CHAT_MODE_ENV, "1");
+            std::env::set_var(axon_shell::agent::chat_modes::AXON_CHAT_MODE_ENV, "1");
         }
     }
     if let Some(ref socket) = args.leader_socket {
@@ -1713,8 +1713,8 @@ async fn async_main() -> Result<()> {
     }
     if let Some(ref path) = args.debug_file {
         unsafe {
-            std::env::set_var("GROK_DEBUG_LOG", path);
-            std::env::remove_var("GROK_LOG_FILE");
+            std::env::set_var("AXON_DEBUG_LOG", path);
+            std::env::remove_var("AXON_LOG_FILE");
         }
     }
     if args.debug || args.debug_file.is_some() {
@@ -1723,8 +1723,8 @@ async fn async_main() -> Result<()> {
                 unsafe { std::env::set_var(k, v) };
             }
         };
-        set_if_unset("GROK_DEBUG_LOG", "1");
-        set_if_unset("GROK_HOOKS_LOG", "1");
+        set_if_unset("AXON_DEBUG_LOG", "1");
+        set_if_unset("AXON_HOOKS_LOG", "1");
     }
     if let Some(Command::Completions { shell }) = &args.command {
         axon_pager::completions_cmd::run(*shell);
@@ -2117,7 +2117,7 @@ fn build_update_config() -> UpdateConfig {
                 axon_shell::agent::config::EndpointsConfig::default().deployment_key;
         }
     });
-    config.npm_registry = std::env::var(obfstr::obfstr!("GROK_NPM_REGISTRY"))
+    config.npm_registry = std::env::var(obfstr::obfstr!("AXON_NPM_REGISTRY"))
         .ok()
         .or_else(axon_shell::util::config::load_npm_registry_sync);
     if let Ok(root) = axon_shell::config::load_effective_config_disk_only()
@@ -2149,7 +2149,7 @@ fn stdio_auto_update_enabled(
 /// True when `exe` is the binary `<grok_home>/bin/grok` resolves to, the
 /// install that adopts a staged update on respawn. Both sides are
 /// canonicalized; any failure reports unmanaged and skips the update. The
-/// npm shim hardcodes `~/.grok`, so a custom `GROK_HOME` skips here too.
+/// npm shim hardcodes `~/.axon`, so a custom `AXON_HOME` skips here too.
 fn is_managed_install(exe: Option<std::path::PathBuf>, grok_home: &std::path::Path) -> bool {
     if grok_home.as_os_str().is_empty() {
         return false;
@@ -2491,7 +2491,7 @@ mod tests {
     /// `grok dashboard` flags the startup hook without forcing leader mode —
     /// the dashboard is independent of leader mode, so the launch keeps
     /// whatever leader setting the user (or config) chose.
-    #[serial_test::serial(GROK_AGENT_DASHBOARD)]
+    #[serial_test::serial(AXON_AGENT_DASHBOARD)]
     #[test]
     fn dashboard_subcommand_flags_startup_without_forcing_leader() {
         let mut args = PagerArgs::try_parse_from(["grok", "dashboard"]).unwrap();
@@ -2503,16 +2503,16 @@ mod tests {
             "soft subcommand must be consumed so the interactive path runs",
         );
         assert_eq!(
-            std::env::var("GROK_OPEN_DASHBOARD_AT_STARTUP").as_deref(),
+            std::env::var("AXON_OPEN_DASHBOARD_AT_STARTUP").as_deref(),
             Ok("1"),
             "startup hook flag must be set",
         );
-        unsafe { std::env::remove_var("GROK_OPEN_DASHBOARD_AT_STARTUP") };
+        unsafe { std::env::remove_var("AXON_OPEN_DASHBOARD_AT_STARTUP") };
     }
     /// `grok dashboard --no-leader` is allowed — the dashboard does not
     /// require a leader, so the combination launches into the dashboard in
     /// non-leader mode.
-    #[serial_test::serial(GROK_AGENT_DASHBOARD)]
+    #[serial_test::serial(AXON_AGENT_DASHBOARD)]
     #[test]
     fn dashboard_subcommand_allows_no_leader() {
         let mut args = PagerArgs::try_parse_from(["grok", "--no-leader", "dashboard"]).unwrap();
@@ -2525,25 +2525,25 @@ mod tests {
             "soft subcommand must be consumed so the interactive path runs",
         );
         assert_eq!(
-            std::env::var("GROK_OPEN_DASHBOARD_AT_STARTUP").as_deref(),
+            std::env::var("AXON_OPEN_DASHBOARD_AT_STARTUP").as_deref(),
             Ok("1"),
             "startup hook flag must be set",
         );
-        unsafe { std::env::remove_var("GROK_OPEN_DASHBOARD_AT_STARTUP") };
+        unsafe { std::env::remove_var("AXON_OPEN_DASHBOARD_AT_STARTUP") };
     }
-    /// `GROK_AGENT_DASHBOARD=0` disables the feature — the subcommand
+    /// `AXON_AGENT_DASHBOARD=0` disables the feature — the subcommand
     /// must error visibly before the TUI starts.
-    #[serial_test::serial(GROK_AGENT_DASHBOARD)]
+    #[serial_test::serial(AXON_AGENT_DASHBOARD)]
     #[test]
     fn dashboard_subcommand_errors_when_disabled() {
-        unsafe { std::env::set_var("GROK_AGENT_DASHBOARD", "0") };
+        unsafe { std::env::set_var("AXON_AGENT_DASHBOARD", "0") };
         let mut args = PagerArgs::try_parse_from(["grok", "dashboard"]).unwrap();
         let result = flag_dashboard_at_startup_if_requested(&mut args);
-        unsafe { std::env::remove_var("GROK_AGENT_DASHBOARD") };
+        unsafe { std::env::remove_var("AXON_AGENT_DASHBOARD") };
         let err = result.expect_err("disabled dashboard must error");
         assert!(err.to_string().contains("disabled"), "got: {err}");
         assert!(
-            std::env::var("GROK_OPEN_DASHBOARD_AT_STARTUP").is_err(),
+            std::env::var("AXON_OPEN_DASHBOARD_AT_STARTUP").is_err(),
             "failure path must not flag the startup hook",
         );
     }
@@ -2581,16 +2581,16 @@ mod tests {
             WorkspaceGate::Disabled
         );
     }
-    #[serial_test::serial(GROK_WORKSPACE_COMMAND)]
+    #[serial_test::serial(AXON_WORKSPACE_COMMAND)]
     #[test]
     fn workspace_command_env_override_parsing() {
-        unsafe { std::env::remove_var("GROK_WORKSPACE_COMMAND") };
+        unsafe { std::env::remove_var("AXON_WORKSPACE_COMMAND") };
         assert_eq!(workspace_command_env_override(), None);
-        unsafe { std::env::set_var("GROK_WORKSPACE_COMMAND", "1") };
+        unsafe { std::env::set_var("AXON_WORKSPACE_COMMAND", "1") };
         assert_eq!(workspace_command_env_override(), Some(true));
-        unsafe { std::env::set_var("GROK_WORKSPACE_COMMAND", "off") };
+        unsafe { std::env::set_var("AXON_WORKSPACE_COMMAND", "off") };
         assert_eq!(workspace_command_env_override(), Some(false));
-        unsafe { std::env::remove_var("GROK_WORKSPACE_COMMAND") };
+        unsafe { std::env::remove_var("AXON_WORKSPACE_COMMAND") };
     }
     fn make_state() -> std::sync::Mutex<StdioReplayState> {
         std::sync::Mutex::new(StdioReplayState::default())

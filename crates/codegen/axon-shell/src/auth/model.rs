@@ -330,10 +330,10 @@ pub fn lookup_auth(map: &AuthStore, scope: &str) -> Option<GrokAuth> {
     Some(auth)
 }
 
-/// Early-invalidation buffer. Override with `GROK_AUTH_EARLY_INVALIDATION_SECS`
+/// Early-invalidation buffer. Override with `AXON_AUTH_EARLY_INVALIDATION_SECS`
 /// for testing (e.g. `=5` to shrink the buffer to 5 seconds).
 pub(super) fn early_invalidation() -> Duration {
-    std::env::var("GROK_AUTH_EARLY_INVALIDATION_SECS")
+    std::env::var("AXON_AUTH_EARLY_INVALIDATION_SECS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .map(|s| Duration::seconds(s as i64))

@@ -21,7 +21,7 @@ use axon_tool_types::{KillTaskOutput, TaskOutputOutput};
 /// Rewrites real worktree paths to display paths in serialized output.
 ///
 /// In forked sessions, tools produce output containing the worktree
-/// directory (e.g., `/root/.grok/worktrees/project/fork-019cb252-...`). The
+/// directory (e.g., `/root/.axon/worktrees/project/fork-019cb252-...`). The
 /// client UI should instead see the original project path (the `display_cwd`).
 #[derive(Clone, Debug)]
 pub struct PathRewriter {
@@ -49,7 +49,7 @@ impl PathRewriter {
 
     /// Rewrite all occurrences of the real worktree path with the display path.
     ///
-    /// Handles both plain paths (e.g., `/root/.grok/worktrees/project/fork-...`)
+    /// Handles both plain paths (e.g., `/root/.axon/worktrees/project/fork-...`)
     /// and URL-encoded paths (e.g., `%2Froot%2F.grok%2Fworktrees%2F...`) that
     /// appear in session directory structures and `output_file` references.
     pub fn rewrite(&self, text: &str) -> String {
@@ -970,7 +970,7 @@ mod tests {
     #[test]
     fn test_path_rewriter_new_returns_some_when_different() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/project/ab-123",
+            "/root/.axon/worktrees/project/ab-123",
             Some("/home/user/project"),
         );
         assert!(rw.is_some());
@@ -979,11 +979,11 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrite_text() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
-        let input = "File at /root/.grok/worktrees/myproject/ab-123/src/main.rs";
+        let input = "File at /root/.axon/worktrees/myproject/ab-123/src/main.rs";
         let output = rw.rewrite(input);
         assert_eq!(output, "File at /testbed/myproject/src/main.rs");
     }
@@ -991,11 +991,11 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrite_path() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
-        let path = Path::new("/root/.grok/worktrees/myproject/ab-123/src/lib.rs");
+        let path = Path::new("/root/.axon/worktrees/myproject/ab-123/src/lib.rs");
         let rewritten = rw.rewrite_path(path);
         assert_eq!(rewritten, PathBuf::from("/testbed/myproject/src/lib.rs"));
     }
@@ -1003,7 +1003,7 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrite_path_no_match() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
@@ -1015,14 +1015,14 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrites_raw_output_json() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
         let output = ToolOutput::ReadFile(ReadFileOutput::FileContent(FileContent {
             content: "content".to_string(),
             content_concise: None,
-            absolute_path: PathBuf::from("/root/.grok/worktrees/myproject/ab-123/src/main.rs"),
+            absolute_path: PathBuf::from("/root/.axon/worktrees/myproject/ab-123/src/main.rs"),
             offset: None,
             limit: None,
             raw_output: "content".to_string(),
@@ -1073,13 +1073,13 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrites_list_dir_raw_output() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
         let output = ToolOutput::ListDir(ListDirOutput::Content(ListDirContent {
             content: "file1.rs\nfile2.rs".to_string(),
-            absolute_root_path: PathBuf::from("/root/.grok/worktrees/myproject/ab-123/src"),
+            absolute_root_path: PathBuf::from("/root/.axon/worktrees/myproject/ab-123/src"),
         }));
         let json = raw_output_json(&output, Some(&rw)).unwrap();
         let round_tripped: ToolOutput = serde_json::from_value(json).unwrap();
@@ -1097,20 +1097,20 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrites_bash_command_and_output() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
         let output = ToolOutput::Bash(BashOutput {
-            output: b"listing /root/.grok/worktrees/myproject/ab-123/src".to_vec(),
+            output: b"listing /root/.axon/worktrees/myproject/ab-123/src".to_vec(),
             output_for_prompt: String::new(),
             exit_code: 0,
-            command: "ls /root/.grok/worktrees/myproject/ab-123/src".to_string(),
+            command: "ls /root/.axon/worktrees/myproject/ab-123/src".to_string(),
             truncated: false,
             signal: None,
             timed_out: false,
             description: None,
-            current_dir: "/root/.grok/worktrees/myproject/ab-123".to_string(),
+            current_dir: "/root/.axon/worktrees/myproject/ab-123".to_string(),
             output_file: "/tmp/output.txt".to_string(),
             output_delta: None,
             total_bytes: 0,
@@ -1130,7 +1130,7 @@ mod tests {
     #[test]
     fn test_path_rewriter_rewrites_search_replace_diff_path() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/myproject/ab-123",
+            "/root/.axon/worktrees/myproject/ab-123",
             Some("/testbed/myproject"),
         )
         .unwrap();
@@ -1140,7 +1140,7 @@ mod tests {
                 new_string: "new".to_string(),
                 tool_output_for_prompt: String::new(),
                 tool_output_for_prompt_concise: None,
-                absolute_path: PathBuf::from("/root/.grok/worktrees/myproject/ab-123/src/lib.rs"),
+                absolute_path: PathBuf::from("/root/.axon/worktrees/myproject/ab-123/src/lib.rs"),
                 edits: SearchReplaceEditContextInformation::default(),
                 patch: None,
                 unicode_normalized: false,
@@ -1158,7 +1158,7 @@ mod tests {
         let raw = update.fields.raw_output.unwrap();
         let raw_str = raw.to_string();
         assert!(
-            !raw_str.contains("/root/.grok/worktrees/myproject/ab-123"),
+            !raw_str.contains("/root/.axon/worktrees/myproject/ab-123"),
             "raw_output should not contain worktree path, got: {}",
             raw_str
         );
@@ -1170,14 +1170,14 @@ mod tests {
     #[test]
     fn test_rewrite_handles_url_encoded_paths() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/project/ab-123-a-overlay",
+            "/root/.axon/worktrees/project/ab-123-a-overlay",
             Some("/home/user/project"),
         )
         .unwrap();
         // Session directory paths use urlencoding::encode(&cwd)
-        let encoded_overlay = urlencoding::encode("/root/.grok/worktrees/project/ab-123-a-overlay");
+        let encoded_overlay = urlencoding::encode("/root/.axon/worktrees/project/ab-123-a-overlay");
         let input = format!(
-            "output-file: /root/.grok/sessions/{}/session-id/terminal/call.log",
+            "output-file: /root/.axon/sessions/{}/session-id/terminal/call.log",
             encoded_overlay
         );
         let result = rw.rewrite(&input);
@@ -1195,11 +1195,11 @@ mod tests {
     #[test]
     fn test_rewrite_handles_plain_paths() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/project/ab-123-a-overlay",
+            "/root/.axon/worktrees/project/ab-123-a-overlay",
             Some("/home/user/project"),
         )
         .unwrap();
-        let input = "file: /root/.grok/worktrees/project/ab-123-a-overlay/src/main.rs";
+        let input = "file: /root/.axon/worktrees/project/ab-123-a-overlay/src/main.rs";
         let result = rw.rewrite(input);
         assert_eq!(result, "file: /home/user/project/src/main.rs");
     }
@@ -1207,11 +1207,11 @@ mod tests {
     #[test]
     fn test_rewrite_json_handles_url_encoded_paths() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/project/ab-123",
+            "/root/.axon/worktrees/project/ab-123",
             Some("/testbed/project"),
         )
         .unwrap();
-        let encoded = urlencoding::encode("/root/.grok/worktrees/project/ab-123");
+        let encoded = urlencoding::encode("/root/.axon/worktrees/project/ab-123");
         let value = serde_json::json!({
             "output_file": format!("/sessions/{}/task.log", encoded),
             "status": "running",
@@ -1227,7 +1227,7 @@ mod tests {
     #[test]
     fn test_rewrite_noop_when_no_overlay_path_present() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/project/ab-123",
+            "/root/.axon/worktrees/project/ab-123",
             Some("/testbed/project"),
         )
         .unwrap();
@@ -1249,11 +1249,11 @@ mod tests {
     #[test]
     fn test_maybe_rewrite_with_rewriter_sanitizes_error_text() {
         let rw = PathRewriter::new(
-            "/root/.grok/worktrees/project/ab-999",
+            "/root/.axon/worktrees/project/ab-999",
             Some("/home/user/project"),
         )
         .unwrap();
-        let error_text = "Tool `read_file` failed: IO error reading /root/.grok/worktrees/project/ab-999/src/lib.rs".to_string();
+        let error_text = "Tool `read_file` failed: IO error reading /root/.axon/worktrees/project/ab-999/src/lib.rs".to_string();
         let result = maybe_rewrite(Some(&rw), error_text);
         assert!(
             !result.contains("ab-999"),
@@ -1270,7 +1270,7 @@ mod tests {
         let output = ToolOutput::ReadFile(ReadFileOutput::FileContent(FileContent {
             content: "content".to_string(),
             content_concise: None,
-            absolute_path: PathBuf::from("/root/.grok/worktrees/myproject/ab-123/src/main.rs"),
+            absolute_path: PathBuf::from("/root/.axon/worktrees/myproject/ab-123/src/main.rs"),
             offset: None,
             limit: None,
             raw_output: "content".to_string(),
@@ -1283,7 +1283,7 @@ mod tests {
             ToolOutput::ReadFile(ReadFileOutput::FileContent(fc)) => {
                 assert_eq!(
                     fc.absolute_path,
-                    PathBuf::from("/root/.grok/worktrees/myproject/ab-123/src/main.rs")
+                    PathBuf::from("/root/.axon/worktrees/myproject/ab-123/src/main.rs")
                 );
             }
             other => panic!("Expected ReadFile, got {:?}", other),

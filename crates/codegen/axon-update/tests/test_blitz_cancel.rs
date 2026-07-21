@@ -2,7 +2,7 @@
 //! truncation / corruption / cancel at every point, and after every iteration
 //! assert the single invariant that makes the brick impossible:
 //!
-//! > `~/.grok/bin/grok` resolves to a binary that passes the smoke-test, OR it
+//! > `~/.axon/bin/grok` resolves to a binary that passes the smoke-test, OR it
 //! > is still the previous-good binary. It is never a broken/partial binary,
 //! > and a `.tmp` never masquerades as the active binary.
 //!
@@ -391,7 +391,7 @@ async fn blitz_fuzz_stress() {
         eprintln!("skipping: shell scripts cannot execute in this sandbox");
         return;
     }
-    let iterations: usize = std::env::var("GROK_BLITZ_ITERS")
+    let iterations: usize = std::env::var("AXON_BLITZ_ITERS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(100_000);

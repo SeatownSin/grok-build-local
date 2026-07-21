@@ -1085,17 +1085,17 @@ mod tests {
         let tmp = tempfile::TempDir::new().unwrap();
         std::fs::write(tmp.path().join("notes.md"), "").unwrap();
 
-        let _env = axon_test_support::EnvGuard::set("GROK_SUGGEST_TEST_DIR", tmp.path());
+        let _env = axon_test_support::EnvGuard::set("AXON_SUGGEST_TEST_DIR", tmp.path());
         let ctx = SuggestContext::new(
-            "cat $GROK_SUGGEST_TEST_DIR/no".into(),
-            "cat $GROK_SUGGEST_TEST_DIR/no".len(),
+            "cat $AXON_SUGGEST_TEST_DIR/no".into(),
+            "cat $AXON_SUGGEST_TEST_DIR/no".len(),
             "/ignored".into(),
         );
         let results = FilePathProvider.suggest(&ctx).await;
         assert_eq!(results.len(), 1);
         assert_eq!(
             results[0].token_text.as_deref(),
-            Some("$GROK_SUGGEST_TEST_DIR/notes.md")
+            Some("$AXON_SUGGEST_TEST_DIR/notes.md")
         );
     }
 

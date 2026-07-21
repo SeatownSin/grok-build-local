@@ -754,11 +754,11 @@ fn spawn_fake_acp_agent(
     });
     counter
 }
-/// Redirect `GROK_HOME` to a tempdir for test isolation.
+/// Redirect `AXON_HOME` to a tempdir for test isolation.
 fn setup_grok_home_in_tempdir() -> tempfile::TempDir {
     let tmp = tempfile::tempdir().expect("tempdir creation");
     unsafe {
-        std::env::set_var("GROK_HOME", tmp.path());
+        std::env::set_var("AXON_HOME", tmp.path());
     }
     tmp
 }
@@ -1574,18 +1574,18 @@ fn subagents_without_plan_produces_no_profile() {
     };
     assert_eq!(flags.agent_profile(), None);
 }
-/// Neutralize `GROK_AGENT` for the profile-matrix tests below: agent-driven
+/// Neutralize `AXON_AGENT` for the profile-matrix tests below: agent-driven
 /// dev shells export it, which flips `to_meta` into the defer-to-shell
 /// escape hatch and drops `agentProfile` — the tests would then assert the
 /// wrong branch. Empty string counts as unset (`!s.trim().is_empty()`).
-/// Callers must be `#[serial_test::serial(GROK_AGENT)]` (process-global env).
+/// Callers must be `#[serial_test::serial(AXON_AGENT)]` (process-global env).
 fn without_grok_agent() -> crate::test_util::EnvVarGuard {
-    crate::test_util::EnvVarGuard::set("GROK_AGENT", "")
+    crate::test_util::EnvVarGuard::set("AXON_AGENT", "")
 }
 /// At the runtime defaults (every `--no-*` flag false → every
 /// `SessionFlags` bool true via `!args.no_*`), `to_meta()` reflects the
 /// full plan profile and no separate `askUserQuestion` toggle.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(AXON_AGENT)]
 #[test]
 fn runtime_default_flags_produce_plan_meta() {
     let _env = without_grok_agent();
@@ -1602,7 +1602,7 @@ fn runtime_default_flags_produce_plan_meta() {
 }
 /// --plan alone produces meta with `agentProfile` only and a
 /// `askUserQuestion: false` since `ask_user` is off here.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(AXON_AGENT)]
 #[test]
 fn plan_only_meta() {
     let _env = without_grok_agent();
@@ -1618,7 +1618,7 @@ fn plan_only_meta() {
     assert_eq!(meta["yoloMode"], false);
 }
 /// --plan --subagents selects the full plan profile.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(AXON_AGENT)]
 #[test]
 fn plan_with_subagents_meta() {
     let _env = without_grok_agent();
@@ -1634,7 +1634,7 @@ fn plan_with_subagents_meta() {
     assert_eq!(meta["yoloMode"], false);
 }
 /// --ask-user alone selects the grok-build-ask-user profile.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(AXON_AGENT)]
 #[test]
 fn ask_user_alone_meta() {
     let _env = without_grok_agent();
@@ -1650,7 +1650,7 @@ fn ask_user_alone_meta() {
     assert_eq!(meta["yoloMode"], false);
 }
 /// --plan --ask-user: plan already includes ask-user; profile is plan.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(AXON_AGENT)]
 #[test]
 fn plan_with_ask_user_uses_plan_profile() {
     let _env = without_grok_agent();
@@ -1683,7 +1683,7 @@ fn subagents_alone_emits_only_ask_user_question_disable() {
 }
 /// All three flags on at the runtime default produce grok-build-plan
 /// and no `askUserQuestion` field.
-#[serial_test::serial(GROK_AGENT)]
+#[serial_test::serial(AXON_AGENT)]
 #[test]
 fn all_flags_meta() {
     let _env = without_grok_agent();

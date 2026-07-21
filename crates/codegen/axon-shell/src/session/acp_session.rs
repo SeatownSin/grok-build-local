@@ -829,7 +829,7 @@ pub(crate) struct SessionActor {
     /// `Default` (all `InheritCurrent`, empty pool) reproduces today's
     /// behavior. Consumed by the per-role spawn wiring.
     pub(crate) goal_role_models: GoalRoleModelConfig,
-    /// Kill-switch (`GROK_GOAL_USE_CURRENT_MODEL_ONLY` / `[features]
+    /// Kill-switch (`AXON_GOAL_USE_CURRENT_MODEL_ONLY` / `[features]
     /// goal_use_current_model_only`) resolved at actor build. When `true`,
     /// every `/goal` role inherits the current model. `goal_role_models`
     /// already reflects it (planner/strategist `InheritCurrent`, empty pool),
@@ -927,7 +927,7 @@ pub(crate) struct SessionActor {
     pub(crate) client_hooks: std::cell::RefCell<crate::extensions::hooks::ClientHooks>,
     /// Resolved workspace root for hooks: git worktree root if in a git repo,
     /// otherwise session cwd. Used for hook child process cwd, envelope fields,
-    /// and GROK_WORKSPACE_ROOT env var.
+    /// and AXON_WORKSPACE_ROOT env var.
     pub(crate) hook_resolved_workspace_root: String,
     /// The detected VCS kind for this session's workspace.
     pub(crate) vcs_kind: axon_workspace::session::git::VcsKind,

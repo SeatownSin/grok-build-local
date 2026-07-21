@@ -120,7 +120,7 @@ impl std::fmt::Display for UninstallError {
 }
 
 /// Find, remove, clean up, and deregister a plugin.
-/// When `keep_data` is true, `~/.grok/plugin-data/<id>/` is preserved.
+/// When `keep_data` is true, `~/.axon/plugin-data/<id>/` is preserved.
 pub fn uninstall_plugin(
     name: &str,
     confirm: bool,
@@ -1189,10 +1189,10 @@ pub fn remove_toml_marketplace_block(content: &str, source_identity: &str) -> Op
 }
 
 /// Try removing a source from `settings.json` / `known_marketplaces.json` under
-/// `~/.grok/` and `~/.claude/`. Returns `true` if removed from at least one file.
+/// `~/.axon/` and `~/.claude/`. Returns `true` if removed from at least one file.
 pub fn try_remove_source_from_json_files(source_url_or_path: &str) -> bool {
     // Resolve user grok via user_grok_home() (None when no home resolves) and
-    // home separately, so removal still runs from $GROK_HOME when no home dir
+    // home separately, so removal still runs from $AXON_HOME when no home dir
     // exists, and never touches a cwd-relative .grok.
     let home = dirs::home_dir();
     let grok = axon_config::user_grok_home();

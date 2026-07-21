@@ -126,7 +126,7 @@ pub fn prune_hidden_announcement_ids(
     ids.len() != before
 }
 
-/// Read hidden announcement ids from `~/.grok/announcements.json`.
+/// Read hidden announcement ids from `~/.axon/announcements.json`.
 /// Returns an empty set (everything visible) on missing or malformed file.
 pub async fn read_hidden_announcement_ids() -> BTreeSet<String> {
     let path = announcements_state_path();
@@ -136,7 +136,7 @@ pub async fn read_hidden_announcement_ids() -> BTreeSet<String> {
     }
 }
 
-/// Write hidden announcement ids to `~/.grok/announcements.json`.
+/// Write hidden announcement ids to `~/.axon/announcements.json`.
 pub async fn write_hidden_announcement_ids(ids: &BTreeSet<String>) {
     let path = announcements_state_path();
     if let Some(s) = serialize_hidden_announcement_ids(ids) {
@@ -203,16 +203,16 @@ pub fn is_expired_at(a: &RemoteAnnouncement, now: DateTime<Utc>) -> bool {
 
 /// Resolve startup announcements.
 ///
-/// Precedence: `GROK_ANNOUNCEMENTS_OVERRIDE` env var (JSON override) → remote announcements.
+/// Precedence: `AXON_ANNOUNCEMENTS_OVERRIDE` env var (JSON override) → remote announcements.
 /// Invalid env var JSON is logged and ignored (falls back to remote).
 pub fn resolve_startup(
     remote_announcements: Option<Vec<RemoteAnnouncement>>,
 ) -> Option<Vec<RemoteAnnouncement>> {
-    if let Ok(raw) = std::env::var("GROK_ANNOUNCEMENTS_OVERRIDE") {
+    if let Ok(raw) = std::env::var("AXON_ANNOUNCEMENTS_OVERRIDE") {
         match serde_json::from_str::<Vec<RemoteAnnouncement>>(&raw) {
             Ok(list) => return Some(list),
             Err(e) => {
-                tracing::warn!(error = %e, "invalid GROK_ANNOUNCEMENTS_OVERRIDE JSON; ignoring override");
+                tracing::warn!(error = %e, "invalid AXON_ANNOUNCEMENTS_OVERRIDE JSON; ignoring override");
             }
         }
     }
@@ -287,14 +287,14 @@ mod tests {
     fn resolve_startup_env_override() {
         // SAFETY: test-only, no concurrent access expected
         unsafe {
-            std::env::set_var("GROK_ANNOUNCEMENTS_OVERRIDE", r#"[{"id":"test"}]"#);
+            std::env::set_var("AXON_ANNOUNCEMENTS_OVERRIDE", r#"[{"id":"test"}]"#);
         }
         let result = resolve_startup(None);
         assert!(result.is_some());
         assert_eq!(result.unwrap()[0].id.as_deref(), Some("test"));
         // SAFETY: test-only
         unsafe {
-            std::env::remove_var("GROK_ANNOUNCEMENTS_OVERRIDE");
+            std::env::remove_var("AXON_ANNOUNCEMENTS_OVERRIDE");
         }
     }
 

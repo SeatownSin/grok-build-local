@@ -281,7 +281,7 @@ fn setup_npm(current_version: &str) -> FakeBinGuard {
     reset_home();
     set_test_version(current_version);
     // SAFETY: serial_test ensures no race; reset_home clears this between tests.
-    unsafe { std::env::set_var("GROK_INSTALLER", "npm") };
+    unsafe { std::env::set_var("AXON_INSTALLER", "npm") };
     FakeBinGuard::install_npm()
 }
 
@@ -290,7 +290,7 @@ fn setup_gh(current_version: &str) -> FakeBinGuard {
     reset_home();
     set_test_version(current_version);
     // SAFETY: serial_test ensures no race; reset_home clears this between tests.
-    unsafe { std::env::set_var("GROK_INSTALLER", "gh-release") };
+    unsafe { std::env::set_var("AXON_INSTALLER", "gh-release") };
     FakeBinGuard::install_gh()
 }
 
@@ -451,7 +451,7 @@ async fn auto_update_target_npm_rollback_returns_none() {
 // the relaunch signal.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Lay down a managed-install layout in the test GROK_HOME:
+/// Lay down a managed-install layout in the test AXON_HOME:
 /// `bin/grok -> ../downloads/grok-<version>-<platform>` (what
 /// `install_internal_from_base` produces).
 fn fake_managed_install(version: &str) {

@@ -15,9 +15,9 @@
 //! cargo test -p axon-shell --test test_built_binary_e2e -- --ignored
 //! ```
 //!
-//! In CI, set `GROK_BINARY` to point at the release artifact:
+//! In CI, set `AXON_BINARY` to point at the release artifact:
 //! ```bash
-//! GROK_BINARY=./artifacts/grok-0.1.159-linux-x86_64 \
+//! AXON_BINARY=./artifacts/grok-0.1.159-linux-x86_64 \
 //!   cargo test -p axon-shell --test test_built_binary_e2e -- --ignored
 //! ```
 
@@ -158,13 +158,13 @@ async fn test_version_with_crash_handler_exits_zero() {
     let binary = grok_binary();
     let output = Command::new(&binary)
         .arg("--version")
-        .env("GROK_CRASH_HANDLER", "1")
+        .env("AXON_CRASH_HANDLER", "1")
         .output()
         .unwrap_or_else(|e| panic!("failed to run {}: {e}", binary.display()));
 
     assert!(
         output.status.success(),
-        "grok --version with GROK_CRASH_HANDLER=1 failed (exit {:?}):\n{}",
+        "grok --version with AXON_CRASH_HANDLER=1 failed (exit {:?}):\n{}",
         output.status.code(),
         String::from_utf8_lossy(&output.stderr)
     );
@@ -233,7 +233,7 @@ async fn test_headless_tools_allowlist_keeps_enabled_web_tools() {
             "read_file,grep,list_dir,web_search,web_fetch",
         ],
         workdir.path(),
-        &[("GROK_WEB_FETCH", "1")],
+        &[("AXON_WEB_FETCH", "1")],
     )
     .await;
 
@@ -294,7 +294,7 @@ async fn test_headless_tools_allowlist_does_not_fail_open_for_disabled_web_fetch
             "read_file,web_fetch",
         ],
         workdir.path(),
-        &[("GROK_WEB_FETCH", "0")],
+        &[("AXON_WEB_FETCH", "0")],
     )
     .await;
 
@@ -1253,7 +1253,7 @@ async fn test_stdio_xcode_escaped_slash_methods_get_responses() {
 
 // ── Config test harness ─────────────────────────────────────────────────────
 
-/// Isolated headless run with a custom `~/.grok/`. Clean env (no leaked
+/// Isolated headless run with a custom `~/.axon/`. Clean env (no leaked
 /// host credentials). Write config files into `grok_dir()` before `run()`.
 struct ConfigTestHarness {
     home: tempfile::TempDir,
@@ -1264,23 +1264,23 @@ struct ConfigTestHarness {
 impl ConfigTestHarness {
     fn new(server: &MockInferenceServer) -> Self {
         let home = tempfile::tempdir().unwrap();
-        std::fs::create_dir_all(home.path().join(".grok")).unwrap();
+        std::fs::create_dir_all(home.path().join(".axon")).unwrap();
         Self {
             home,
             workdir: git_workdir(),
             env: vec![
-                ("GROK_CLI_CHAT_PROXY_BASE_URL".into(), server.url()),
-                ("GROK_TELEMETRY_ENABLED".into(), "false".into()),
-                ("GROK_FEEDBACK_ENABLED".into(), "false".into()),
-                ("GROK_TRACE_UPLOAD".into(), "false".into()),
-                ("GROK_INSTRUMENTATION".into(), "disabled".into()),
-                ("GROK_DISABLE_AUTOUPDATER".into(), "1".into()),
+                ("AXON_CLI_CHAT_PROXY_BASE_URL".into(), server.url()),
+                ("AXON_TELEMETRY_ENABLED".into(), "false".into()),
+                ("AXON_FEEDBACK_ENABLED".into(), "false".into()),
+                ("AXON_TRACE_UPLOAD".into(), "false".into()),
+                ("AXON_INSTRUMENTATION".into(), "disabled".into()),
+                ("AXON_DISABLE_AUTOUPDATER".into(), "1".into()),
             ],
         }
     }
 
     fn grok_dir(&self) -> std::path::PathBuf {
-        self.home.path().join(".grok")
+        self.home.path().join(".axon")
     }
 
     fn env(&mut self, key: &str, value: &str) -> &mut Self {
@@ -1301,7 +1301,7 @@ impl ConfigTestHarness {
             // Windows resolves `~` via USERPROFILE, not HOME — pin the grok
             // home explicitly so the sandbox holds on all platforms (see
             // `test_env_cmd_tokio`).
-            .env("GROK_HOME", self.grok_dir())
+            .env("AXON_HOME", self.grok_dir())
             .env("PATH", std::env::var("PATH").unwrap_or_default());
         for (k, v) in &self.env {
             cmd.env(k, v);
@@ -1338,7 +1338,7 @@ xai_api_base_url = "{url}"
 api_backend = "responses"
 base_url = "{url}"
 context_window = 500000
-env_key = "GROK_TEST_BYOK_TOKEN"
+env_key = "AXON_TEST_BYOK_TOKEN"
 model = "grok-4.5"
 
 [models]
@@ -1348,7 +1348,7 @@ default = "grok-4.5"
         ),
     )
     .unwrap();
-    h.env("GROK_TEST_BYOK_TOKEN", "test-byok-secret-token");
+    h.env("AXON_TEST_BYOK_TOKEN", "test-byok-secret-token");
 
     let result = h.run().await;
     assert_headless_success(&result, "managed config BYOK", Some(&server));

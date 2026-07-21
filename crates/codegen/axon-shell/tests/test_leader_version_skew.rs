@@ -3,16 +3,16 @@
 //! cross-version eviction with real processes.
 //!
 //! Binaries are resolved per role:
-//! - `GROK_BINARY_LEADER` — the binary that elects the initial leader
+//! - `AXON_BINARY_LEADER` — the binary that elects the initial leader
 //!   (typically the latest released stable, e.g. fetched from
 //!   `https://storage.googleapis.com/grok-build-public-artifacts/cli/grok-<ver>-linux-x86_64`).
-//! - `GROK_BINARY_CLIENT` — the second client (typically a freshly built main).
+//! - `AXON_BINARY_CLIENT` — the second client (typically a freshly built main).
 //!
 //! All tests are `#[ignore]`d: they need two pre-built binaries and spawn real
 //! leader subprocesses. On-demand today — no CI lane runs them; invoke with:
 //!
 //! ```bash
-//! GROK_BINARY_LEADER=/path/to/grok-old GROK_BINARY_CLIENT=/path/to/grok-new \
+//! AXON_BINARY_LEADER=/path/to/grok-old AXON_BINARY_CLIENT=/path/to/grok-new \
 //!   cargo test -p axon-shell --test test_leader_version_skew -- --ignored --nocapture
 //! ```
 
@@ -38,7 +38,7 @@ fn skew_binaries() -> Option<(std::path::PathBuf, std::path::PathBuf)> {
     let new = client_binary();
     if old == new {
         eprintln!(
-            "SKIP: GROK_BINARY_LEADER/GROK_BINARY_CLIENT resolve to the same binary ({})",
+            "SKIP: AXON_BINARY_LEADER/AXON_BINARY_CLIENT resolve to the same binary ({})",
             old.display()
         );
         return None;
@@ -58,7 +58,7 @@ async fn wait_for_pid_death(pid: u32, timeout: Duration) -> bool {
 }
 
 fn sandbox_unified_log(home: &Path) -> String {
-    std::fs::read_to_string(home.join(".grok").join("logs").join("unified.jsonl"))
+    std::fs::read_to_string(home.join(".axon").join("logs").join("unified.jsonl"))
         .unwrap_or_default()
 }
 
@@ -66,7 +66,7 @@ fn sandbox_unified_log(home: &Path) -> String {
 /// evicts it under the version floor, spawns a replacement from its own
 /// binary, and the old client's session survives via reconnect + reload.
 #[tokio::test]
-#[ignore = "two-binary version-skew test; set GROK_BINARY_LEADER/GROK_BINARY_CLIENT and run with --ignored"]
+#[ignore = "two-binary version-skew test; set AXON_BINARY_LEADER/AXON_BINARY_CLIENT and run with --ignored"]
 async fn new_client_evicts_old_leader_and_sessions_reload() {
     let Some((old_bin, new_bin)) = skew_binaries() else {
         return;
@@ -76,7 +76,7 @@ async fn new_client_evicts_old_leader_and_sessions_reload() {
             let server = MockInferenceServer::start().await.unwrap();
             let workdir = git_workdir();
             let home = tempfile::tempdir().unwrap();
-            std::fs::create_dir_all(home.path().join(".grok")).unwrap();
+            std::fs::create_dir_all(home.path().join(".axon")).unwrap();
 
             // Old binary elects the leader and completes a turn.
             let old_client = LeaderStdioClient::spawn_with_binary(
@@ -153,7 +153,7 @@ async fn new_client_evicts_old_leader_and_sessions_reload() {
 /// floor is directional — never downgrade), keeps functioning through
 /// serde-default compat, and the leader records the version mismatch.
 #[tokio::test]
-#[ignore = "two-binary version-skew test; set GROK_BINARY_LEADER/GROK_BINARY_CLIENT and run with --ignored"]
+#[ignore = "two-binary version-skew test; set AXON_BINARY_LEADER/AXON_BINARY_CLIENT and run with --ignored"]
 async fn old_client_adopts_new_leader_and_still_functions() {
     let Some((old_bin, new_bin)) = skew_binaries() else {
         return;
@@ -163,7 +163,7 @@ async fn old_client_adopts_new_leader_and_still_functions() {
             let server = MockInferenceServer::start().await.unwrap();
             let workdir = git_workdir();
             let home = tempfile::tempdir().unwrap();
-            std::fs::create_dir_all(home.path().join(".grok")).unwrap();
+            std::fs::create_dir_all(home.path().join(".axon")).unwrap();
 
             // NEW binary elects the leader first.
             let new_client = LeaderStdioClient::spawn_with_binary(
@@ -227,7 +227,7 @@ async fn old_client_adopts_new_leader_and_still_functions() {
 /// `signal_leaders_to_relaunch` in `axon-pager-bin/src/main.rs` (which is
 /// bin-private, so the per-leader body is replicated here).
 #[tokio::test]
-#[ignore = "two-binary version-skew test; set GROK_BINARY_LEADER/GROK_BINARY_CLIENT and run with --ignored"]
+#[ignore = "two-binary version-skew test; set AXON_BINARY_LEADER/AXON_BINARY_CLIENT and run with --ignored"]
 async fn relaunch_for_update_drives_real_old_leader_to_exit() {
     let Some((old_bin, _new_bin)) = skew_binaries() else {
         return;
@@ -237,7 +237,7 @@ async fn relaunch_for_update_drives_real_old_leader_to_exit() {
             let server = MockInferenceServer::start().await.unwrap();
             let workdir = git_workdir();
             let home = tempfile::tempdir().unwrap();
-            std::fs::create_dir_all(home.path().join(".grok")).unwrap();
+            std::fs::create_dir_all(home.path().join(".axon")).unwrap();
 
             let old_client = LeaderStdioClient::spawn_with_binary(
                 &old_bin,
@@ -259,7 +259,7 @@ async fn relaunch_for_update_drives_real_old_leader_to_exit() {
 
             // The update-signal body, against the sandboxed socket.
             let control = LeaderClient::connect(
-                home.path().join(".grok").join("leader.sock"),
+                home.path().join(".axon").join("leader.sock"),
                 "grok-pager-update",
                 ClientMode::Stdio,
                 ClientCapabilities::default(),
@@ -321,7 +321,7 @@ async fn relaunch_for_update_drives_real_old_leader_to_exit() {
 /// sandbox unified log, and no second writer touched `auth.json` during the
 /// swap (API-key auth here, so any write would be a regression).
 #[tokio::test]
-#[ignore = "two-binary version-skew test; set GROK_BINARY_LEADER/GROK_BINARY_CLIENT and run with --ignored"]
+#[ignore = "two-binary version-skew test; set AXON_BINARY_LEADER/AXON_BINARY_CLIENT and run with --ignored"]
 async fn eviction_leaves_single_leader_and_single_auth_owner() {
     let Some((old_bin, new_bin)) = skew_binaries() else {
         return;
@@ -331,7 +331,7 @@ async fn eviction_leaves_single_leader_and_single_auth_owner() {
             let server = MockInferenceServer::start().await.unwrap();
             let workdir = git_workdir();
             let home = tempfile::tempdir().unwrap();
-            std::fs::create_dir_all(home.path().join(".grok")).unwrap();
+            std::fs::create_dir_all(home.path().join(".axon")).unwrap();
 
             let old_client = LeaderStdioClient::spawn_with_binary(
                 &old_bin,
@@ -345,7 +345,7 @@ async fn eviction_leaves_single_leader_and_single_auth_owner() {
                 .await
                 .expect("no live old leader");
 
-            let auth_path = home.path().join(".grok").join("auth.json");
+            let auth_path = home.path().join(".axon").join("auth.json");
             let auth_before = std::fs::metadata(&auth_path)
                 .ok()
                 .and_then(|m| m.modified().ok());

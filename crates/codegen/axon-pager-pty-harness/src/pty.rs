@@ -228,7 +228,7 @@ impl Drop for PtyController {
     }
 }
 
-const CLIPBOARD_SINK_ENV_VARS: &[&str] = &["GROK_OSC52_SINK", "LC_GROK_OSC52_SINK"];
+const CLIPBOARD_SINK_ENV_VARS: &[&str] = &["AXON_OSC52_SINK", "LC_AXON_OSC52_SINK"];
 
 /// Host terminal identity markers stripped from the child environment.
 ///
@@ -374,7 +374,7 @@ mod tests {
             cmd.env(sink_var, "polluted");
         }
         // Unrelated vars must survive the hygiene pass untouched.
-        cmd.env("GROK_SCROLL_LOG", "/tmp/scroll.jsonl");
+        cmd.env("AXON_SCROLL_LOG", "/tmp/scroll.jsonl");
 
         apply_child_env(&mut cmd, &[]);
 
@@ -407,7 +407,7 @@ mod tests {
             Some("xterm-256color")
         );
         assert_eq!(
-            cmd.get_env("GROK_SCROLL_LOG").and_then(|v| v.to_str()),
+            cmd.get_env("AXON_SCROLL_LOG").and_then(|v| v.to_str()),
             Some("/tmp/scroll.jsonl"),
             "hygiene must not touch unrelated vars"
         );
@@ -428,7 +428,7 @@ mod tests {
                 ("TERM_PROGRAM", "vscode"),
                 ("NVIM", "/tmp/fake-nvim.sock"),
                 ("TERM", "xterm-kitty"),
-                ("GROK_OSC52_SINK", "1"),
+                ("AXON_OSC52_SINK", "1"),
             ],
         );
 
@@ -450,7 +450,7 @@ mod tests {
             Some("xterm-kitty")
         );
         assert_eq!(
-            cmd.get_env("GROK_OSC52_SINK").and_then(|v| v.to_str()),
+            cmd.get_env("AXON_OSC52_SINK").and_then(|v| v.to_str()),
             Some("1"),
             "explicit sink scenarios must be able to re-inject the marker"
         );

@@ -9,7 +9,7 @@ use serde::Deserialize;
 
 use crate::auth::AuthManager;
 
-const GROK_WEB_URL: &str = "https://grok.com";
+const AXON_WEB_URL: &str = "https://grok.com";
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -83,20 +83,20 @@ pub struct ChatModelsClient {
 
 impl ChatModelsClient {
     pub fn new(auth: Arc<AuthManager>) -> Self {
-        let base_url = std::env::var("GROK_MODES_BASE_URL")
+        let base_url = std::env::var("AXON_MODES_BASE_URL")
             .ok()
             .filter(|s| !s.is_empty())
             .or_else(|| {
-                std::env::var("GROK_CONVERSATIONS_BASE_URL")
+                std::env::var("AXON_CONVERSATIONS_BASE_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
             .or_else(|| {
-                std::env::var("GROK_CODE_WEB_URL")
+                std::env::var("AXON_CODE_WEB_URL")
                     .ok()
                     .filter(|s| !s.is_empty())
             })
-            .unwrap_or_else(|| GROK_WEB_URL.to_string());
+            .unwrap_or_else(|| AXON_WEB_URL.to_string());
         Self {
             http: crate::http::shared_client(),
             base_url: crate::util::block_xai_base_url(base_url, "chat modes backend"),

@@ -40,8 +40,8 @@ async fn prompt_suggestion_ghost_tab_accepts() {
 
     // env_for_pager disables the feature for the suite; re-enable it here.
     let mut env = content.env_for_pager();
-    env.retain(|(k, _)| k != "GROK_PROMPT_SUGGESTIONS");
-    env.push(("GROK_PROMPT_SUGGESTIONS".into(), "true".into()));
+    env.retain(|(k, _)| k != "AXON_PROMPT_SUGGESTIONS");
+    env.push(("AXON_PROMPT_SUGGESTIONS".into(), "true".into()));
     let env_refs: Vec<(&str, &str)> = env.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
 
     let binary = pager_binary().expect("resolve pager binary");

@@ -1911,9 +1911,9 @@ fn defaults_round_trip_through_registry() {
             "remember_tool_approvals" => SettingValue::Bool(false),
             "toolset.ask_user_question.timeout_enabled" => SettingValue::Bool(true),
             "keep_text_selection" => SettingValue::Enum("flash"),
-            "theme" => SettingValue::Enum("groknight"),
-            "auto_dark_theme" => SettingValue::Enum("groknight"),
-            "auto_light_theme" => SettingValue::Enum("grokday"),
+            "theme" => SettingValue::Enum("axonnight"),
+            "auto_dark_theme" => SettingValue::Enum("axonnight"),
+            "auto_light_theme" => SettingValue::Enum("axonday"),
             "render_mermaid" => SettingValue::Enum("auto"),
             "multiline_mode" => SettingValue::Bool(false),
             "permission_mode" => SettingValue::Enum("ask"),
@@ -3795,7 +3795,7 @@ fn docs_footer_renders_for_browse_and_picker() {
              {all_text}"
         );
         assert!(
-            all_text.contains("change theme to grokday"),
+            all_text.contains("change theme to axonday"),
             "[{fixture_label}] docs footer must include the example phrasing"
         );
     }

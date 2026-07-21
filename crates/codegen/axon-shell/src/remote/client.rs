@@ -5,13 +5,13 @@ use indexmap::IndexMap;
 use prod_mc_cli_chat_proxy_types::SubagentBundle;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-const GROK_CODE_BACKEND_URL: &str = "https://code.grok.com";
+const AXON_CODE_BACKEND_URL: &str = "https://code.grok.com";
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
-const GROK_CODE_WEB_URL: &str = "https://grok.com";
+const AXON_CODE_WEB_URL: &str = "https://grok.com";
 /// Build a share URL from a permission ID
 pub fn share_url(permission_id: &str) -> String {
     let web_url =
-        std::env::var("GROK_CODE_WEB_URL").unwrap_or_else(|_| GROK_CODE_WEB_URL.to_string());
+        std::env::var("AXON_CODE_WEB_URL").unwrap_or_else(|_| AXON_CODE_WEB_URL.to_string());
     format!("{}/build/share/{}", web_url, permission_id)
 }
 async fn parse_json_response<T: serde::de::DeserializeOwned>(
@@ -288,8 +288,8 @@ impl BackendClient {
         Self {
             client: reqwest_middleware::ClientBuilder::new(reqwest_client.clone()).build(),
             reqwest_client,
-            base_url: std::env::var("GROK_CODE_BACKEND_URL")
-                .unwrap_or_else(|_| GROK_CODE_BACKEND_URL.to_string()),
+            base_url: std::env::var("AXON_CODE_BACKEND_URL")
+                .unwrap_or_else(|_| AXON_CODE_BACKEND_URL.to_string()),
             auth_manager: None,
         }
     }
@@ -1652,9 +1652,9 @@ mod tests {
         use crate::agent::config::EndpointsConfig;
         use crate::agent::models::ModelFetchAuth;
         for k in [
-            "GROK_CLI_CHAT_PROXY_BASE_URL",
-            "GROK_XAI_API_BASE_URL",
-            "GROK_MODELS_LIST_URL",
+            "AXON_CLI_CHAT_PROXY_BASE_URL",
+            "AXON_XAI_API_BASE_URL",
+            "AXON_MODELS_LIST_URL",
         ] {
             unsafe { std::env::remove_var(k) };
         }
@@ -1697,13 +1697,13 @@ mod tests {
     fn deployment_config_url_uses_cli_chat_proxy_when_not_overridden() {
         use crate::agent::config::EndpointsConfig;
         for k in [
-            "GROK_CLI_CHAT_PROXY_BASE_URL",
-            "GROK_MANAGED_CONFIG_URL",
-            "GROK_XAI_API_BASE_URL",
+            "AXON_CLI_CHAT_PROXY_BASE_URL",
+            "AXON_MANAGED_CONFIG_URL",
+            "AXON_XAI_API_BASE_URL",
         ] {
             unsafe { std::env::remove_var(k) };
         }
-        unsafe { std::env::set_var("GROK_DEPLOYMENT_KEY", "xai-token-ENTERPRISE") };
+        unsafe { std::env::set_var("AXON_DEPLOYMENT_KEY", "xai-token-ENTERPRISE") };
         let managed: toml::Value = toml::from_str(
             r#"[endpoints]
             deployment_key = "xai-token-ENTERPRISE"
@@ -1726,7 +1726,7 @@ mod tests {
             EndpointsConfig::from_config_value(&pinned).resolve_managed_config_url(),
             "https://proxy.acme-corp.example/v1/deployment/config"
         );
-        unsafe { std::env::remove_var("GROK_DEPLOYMENT_KEY") };
+        unsafe { std::env::remove_var("AXON_DEPLOYMENT_KEY") };
     }
     #[derive(Clone)]
     struct DualBundleServerState {

@@ -201,10 +201,10 @@ impl WorktreeDb {
         })
     }
 
-    /// Open the default DB at `~/.grok/worktrees.db`.
+    /// Open the default DB at `~/.axon/worktrees.db`.
     ///
-    /// Discovers grok home via `$GROK_HOME`, falling back to the canonicalized
-    /// `$HOME/.grok` (matching `axon_config::grok_home`).
+    /// Discovers grok home via `$AXON_HOME`, falling back to the canonicalized
+    /// `$HOME/.axon` (matching `axon_config::grok_home`).
     /// Path is resolved fresh each call (~1µs env var read) to support
     /// test overrides. Each call opens its own connection — callers in hot
     /// paths should cache the `WorktreeDb` instance.
@@ -338,30 +338,30 @@ pub fn now_epoch_secs() -> i64 {
 }
 
 pub fn resolve_grok_home() -> Result<PathBuf> {
-    if let Ok(v) = std::env::var("GROK_HOME") {
+    if let Ok(v) = std::env::var("AXON_HOME") {
         return Ok(PathBuf::from(v));
     }
-    let home = PathBuf::from(std::env::var("HOME").context("neither $GROK_HOME nor $HOME is set")?);
-    // Canonicalize the home dir so worktree paths share the same physical .grok
+    let home = PathBuf::from(std::env::var("HOME").context("neither $AXON_HOME nor $HOME is set")?);
+    // Canonicalize the home dir so worktree paths share the same physical .axon
     // tree as trust/hooks even when it is symlinked. The dunce canonicalization
     // must stay in sync with axon_config::default_grok_home();
     // home resolution deliberately differs ($HOME here vs std::env::home_dir()).
-    Ok(dunce::canonicalize(&home).unwrap_or(home).join(".grok"))
+    Ok(dunce::canonicalize(&home).unwrap_or(home).join(".axon"))
 }
 
-/// Serializes tests that mutate the process-global `GROK_HOME` env var so they
+/// Serializes tests that mutate the process-global `AXON_HOME` env var so they
 /// don't clobber each other under `cargo test`, where tests share one process
 /// (nextest isolates per-process, but the suite must also pass under `cargo test`).
 #[cfg(test)]
-static GROK_HOME_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+static AXON_HOME_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 /// Test-only isolation for code that resolves the DB via `open_default()`.
 ///
-/// Holds [`GROK_HOME_ENV_LOCK`] (serializing concurrent setters), points
-/// `GROK_HOME` at a fresh private tmp dir, and restores the prior value on drop.
+/// Holds [`AXON_HOME_ENV_LOCK`] (serializing concurrent setters), points
+/// `AXON_HOME` at a fresh private tmp dir, and restores the prior value on drop.
 /// Use instead of hand-rolling the lock + restore guard + tmp dir per test.
 ///
-/// `Drop` restores `GROK_HOME` before `_lock` releases, so the env is correct
+/// `Drop` restores `AXON_HOME` before `_lock` releases, so the env is correct
 /// before another waiting setter proceeds.
 #[cfg(test)]
 pub(crate) struct GrokHomeFixture {
@@ -376,18 +376,18 @@ pub(crate) struct GrokHomeFixture {
 #[cfg(test)]
 impl GrokHomeFixture {
     pub(crate) fn new() -> Self {
-        let lock = GROK_HOME_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let lock = AXON_HOME_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let tmp = tempfile::TempDir::new().unwrap();
         let home = tmp.path().join("grok-home");
         std::fs::create_dir_all(&home).unwrap();
         // Warm up the DB (journal-mode conversion + schema) before exposing it
-        // via GROK_HOME, sparing the test hot loop set_journal_mode's retry
+        // via AXON_HOME, sparing the test hot loop set_journal_mode's retry
         // sleeps. This open has exclusive access (nothing reaches the path
-        // until GROK_HOME points here); set_journal_mode's retry is the actual
+        // until AXON_HOME points here); set_journal_mode's retry is the actual
         // race fix.
         let _ = WorktreeDb::open(&home);
-        let prev = std::env::var_os("GROK_HOME");
-        unsafe { std::env::set_var("GROK_HOME", &home) };
+        let prev = std::env::var_os("AXON_HOME");
+        unsafe { std::env::set_var("AXON_HOME", &home) };
         Self {
             _lock: lock,
             prev,
@@ -402,8 +402,8 @@ impl Drop for GrokHomeFixture {
     fn drop(&mut self) {
         unsafe {
             match self.prev.take() {
-                Some(p) => std::env::set_var("GROK_HOME", p),
-                None => std::env::remove_var("GROK_HOME"),
+                Some(p) => std::env::set_var("AXON_HOME", p),
+                None => std::env::remove_var("AXON_HOME"),
             }
         }
     }

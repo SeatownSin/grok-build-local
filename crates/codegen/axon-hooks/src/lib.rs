@@ -6,7 +6,7 @@
 //! ## Overview
 //!
 //! This crate provides a minimal hooks system for Grok. Hooks are discovered
-//! from dedicated directories (`~/.grok/hooks/` and `<git-worktree-root>/.grok/hooks/`),
+//! from dedicated directories (`~/.axon/hooks/` and `<git-worktree-root>/.axon/hooks/`),
 //! defined in JSON files (compatible settings format), and executed as child processes.
 //!
 //! ## v0 scope
@@ -24,8 +24,8 @@
 //! use axon_hooks::event::HookEventName;
 //!
 //! let (registry, errors) = load_hooks(
-//!     Some(Path::new("/home/user/.grok/hooks")),
-//!     Some(Path::new("/project/.grok/hooks")),
+//!     Some(Path::new("/home/user/.axon/hooks")),
+//!     Some(Path::new("/project/.axon/hooks")),
 //! );
 //!
 //! for err in &errors {

@@ -22,7 +22,7 @@ pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 pub const DEFAULT_OUTPUT_BYTE_LIMIT: usize = 30_000; // 30k characters
 
 /// Resolved absolute path to bash. On Unix uses the `axon_config` shell
-/// resolution cascade (`$GROK_SHELL` > `$SHELL` > `which` > common dirs >
+/// resolution cascade (`$AXON_SHELL` > `$SHELL` > `which` > common dirs >
 /// `/bin/bash`) and is cached process-wide. On non-Unix returns `"/bin/bash"`
 /// — but every caller in this crate is gated behind `#[cfg(unix)]`, so the
 /// non-Unix value should not be observed in practice.

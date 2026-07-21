@@ -13,9 +13,9 @@ arch name — `linux-x86_64`, `linux-aarch64`, `macos-aarch64`.
 Run the full bench suite on a quiet machine:
 
 ```bash
-cargo run -p xai-grok-pager --release --bin pty-bench -- \
+cargo run -p axon-pager --release --bin pty-bench -- \
   --all \
-  --write-baseline crates/codegen/xai-grok-pager-pty-harness/benches/pty_baselines/<platform>.json
+  --write-baseline crates/codegen/axon-pager-pty-harness/benches/pty_baselines/<platform>.json
 ```
 
 ## Overwriting after an intentional perf change

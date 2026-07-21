@@ -5,8 +5,8 @@ use serde::Deserialize;
 use toml::Value as TomlValue;
 use axon_config_types::DisplayRefreshSettings;
 
-pub const ENV_DISPLAY_REFRESH_PROBE_ENABLED: &str = "GROK_DISPLAY_REFRESH_PROBE_ENABLED";
-pub const ENV_DISPLAY_REFRESH_AUTO_CADENCE: &str = "GROK_DISPLAY_REFRESH_AUTO_CADENCE";
+pub const ENV_DISPLAY_REFRESH_PROBE_ENABLED: &str = "AXON_DISPLAY_REFRESH_PROBE_ENABLED";
+pub const ENV_DISPLAY_REFRESH_AUTO_CADENCE: &str = "AXON_DISPLAY_REFRESH_AUTO_CADENCE";
 
 /// Default motion paint cadence (~60 Hz) when env and auto-cadence do not apply.
 pub const DISPLAY_REFRESH_DEFAULT_CADENCE_MS: u64 = 16;
@@ -19,7 +19,7 @@ pub const DISPLAY_REFRESH_DEFAULT_CEILING_MS: u32 = 16;
 pub const DISPLAY_REFRESH_DEFAULT_MIN_HZ: u32 = 55;
 pub const DISPLAY_REFRESH_DEFAULT_MAX_HZ: u32 = 165;
 
-/// Same band as env cadence knobs (`GROK_MIN_DRAW_MS` / `GROK_SCROLL_CADENCE_MS`).
+/// Same band as env cadence knobs (`AXON_MIN_DRAW_MS` / `AXON_SCROLL_CADENCE_MS`).
 const CADENCE_MS_MIN: u32 = 1;
 const CADENCE_MS_MAX: u32 = 100;
 

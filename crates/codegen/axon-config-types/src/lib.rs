@@ -310,7 +310,7 @@ pub struct RemoteSettings {
     /// MCP/LSP servers (commands sourced from working-tree config files) require
     /// a per-folder trust decision before they are spawned. `Some(true)`
     /// enables, `Some(false)` is a kill-switch, `None` falls back to the client
-    /// default (on). Sits below env `GROK_FOLDER_TRUST`, user
+    /// default (on). Sits below env `AXON_FOLDER_TRUST`, user
     /// `[folder_trust] enabled`, and managed config in the resolver chain. See
     /// `agent::folder_trust::feature_enabled`.
     #[serde(default)]
@@ -490,7 +490,7 @@ pub struct RemoteSettings {
     /// recent tail (pass 2 → final summary), keeping summarizer latency off the
     /// critical path. `Some(true)` enables (remote rollout), `Some(false)` forces
     /// off, `None` falls back to `[features] two_pass_compaction` /
-    /// `GROK_TWO_PASS_COMPACTION` / default (off).
+    /// `AXON_TWO_PASS_COMPACTION` / default (off).
     #[serde(default)]
     pub two_pass_compaction_enabled: Option<bool>,
     /// Dynamic tip list from remote settings. When present with non-empty entries,
@@ -526,7 +526,7 @@ pub struct RemoteSettings {
     pub image_description_model: Option<String>,
     /// Server-side pin for the next-prompt suggestion model (tab-autocomplete
     /// ghost text), from the `grok_build_settings` remote settings flag. Sits below
-    /// env (`GROK_PROMPT_SUGGESTIONS_MODEL`) and `[models] prompt_suggestion`
+    /// env (`AXON_PROMPT_SUGGESTIONS_MODEL`) and `[models] prompt_suggestion`
     /// in config.toml, above the client hint and the built-in
     /// `grok-build-0.1` default. The effective model is catalog-guarded: when
     /// it is not in the shell's model catalog the suggestion request is
@@ -636,7 +636,7 @@ pub struct RemoteSettings {
     pub sharing_enabled: Option<bool>,
     /// Voice mode (STT dictation). Client default is **on** when absent.
     /// `Some(false)` is a remote kill switch; `Some(true)` forces on.
-    /// Overridable locally via `GROK_VOICE_MODE`. Free-tier SuperGrok upsell
+    /// Overridable locally via `AXON_VOICE_MODE`. Free-tier SuperGrok upsell
     /// is a separate client tier gate.
     #[serde(default)]
     pub voice_mode_enabled: Option<bool>,
@@ -746,19 +746,19 @@ pub struct RemoteSettings {
     #[serde(default)]
     pub system_prompt_label: Option<String>,
     /// Global per-compaction wall-clock budget (seconds) from remote settings;
-    /// `0` disables. Env (`GROK_COMPACTION_WALL_CLOCK_SECS`) overrides it.
+    /// `0` disables. Env (`AXON_COMPACTION_WALL_CLOCK_SECS`) overrides it.
     /// Resolved via `resolve_compaction_wall_clock_budget_secs`.
     #[serde(default)]
     pub compaction_wall_clock_budget_secs: Option<u64>,
     /// Compaction mode (`summary` | `transcript` | `segments`) from remote settings.
-    /// Env (`GROK_COMPACTION_MODE`) and user config override it.
+    /// Env (`AXON_COMPACTION_MODE`) and user config override it.
     #[serde(default)]
     pub compaction_mode: Option<String>,
     /// Segments verbatim detail (`none` | `minimal` | `balanced` | `verbose`)
-    /// from remote settings. Env (`GROK_COMPACTION_DETAIL`) and config override it.
+    /// from remote settings. Env (`AXON_COMPACTION_DETAIL`) and config override it.
     #[serde(default)]
     pub compaction_detail: Option<String>,
-    /// remote settings verbatim-input flag; env (`GROK_COMPACTION_VERBATIM_INPUT`) and config override it. `None` = default (true).
+    /// remote settings verbatim-input flag; env (`AXON_COMPACTION_VERBATIM_INPUT`) and config override it. `None` = default (true).
     #[serde(default)]
     pub compaction_verbatim_input: Option<bool>,
     #[serde(default)]

@@ -386,7 +386,7 @@ pub struct AnimationConfig {
     /// Lower = faster wave, higher = slower/smoother wave. Default: 32.
     pub wave_rows: u16,
     /// Show an FPS counter overlay in the top-right corner (debug/dev builds only).
-    /// Also enabled by the `GROK_FPS=1` env var. Default: false.
+    /// Also enabled by the `AXON_FPS=1` env var. Default: false.
     pub show_fps: bool,
 }
 
@@ -1083,7 +1083,7 @@ pub struct RawAnimationConfig {
     /// Lower = faster wave, higher = slower/smoother wave. Default: 32.
     pub wave_rows: u16,
     /// Show an FPS counter overlay in the top-right corner.
-    /// Requires a debug build. Also enabled by GROK_FPS=1 env var. Default: false.
+    /// Requires a debug build. Also enabled by AXON_FPS=1 env var. Default: false.
     pub show_fps: bool,
 }
 

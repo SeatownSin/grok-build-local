@@ -1232,7 +1232,7 @@ fn resume_source_worktree_reuse() {
         child_session_id: "child-wt".into(),
         child_cwd: "/tmp/worktree".into(),
         worktree_path: Some(
-            PathBuf::from("/home/user/.grok/worktrees/myrepo/subagent-sub-wt"),
+            PathBuf::from("/home/user/.axon/worktrees/myrepo/subagent-sub-wt"),
         ),
         snapshot_ref: None,
         subagent_type: "general-purpose".into(),
@@ -1242,7 +1242,7 @@ fn resume_source_worktree_reuse() {
     let worktree = source_with_worktree.worktree_path.clone();
     assert_eq!(
         worktree.as_deref(),
-        Some(Path::new("/home/user/.grok/worktrees/myrepo/subagent-sub-wt",)),
+        Some(Path::new("/home/user/.axon/worktrees/myrepo/subagent-sub-wt",)),
         "should reuse source worktree"
     );
     let source_without_worktree = ResumeSourceData {
@@ -1317,7 +1317,7 @@ fn select_override_cwd_resume_never_falls_through_to_request_cwd() {
         child_session_id: "child-wt".into(),
         child_cwd: "/tmp/whatever".into(),
         worktree_path: Some(
-            PathBuf::from("/home/user/.grok/worktrees/repo/subagent-sub-wt"),
+            PathBuf::from("/home/user/.axon/worktrees/repo/subagent-sub-wt"),
         ),
         snapshot_ref: None,
         subagent_type: "general-purpose".into(),

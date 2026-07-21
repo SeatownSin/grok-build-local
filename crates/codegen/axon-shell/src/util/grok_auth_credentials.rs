@@ -66,7 +66,7 @@ impl GrokAuthCredentials {
     /// Error hint for 401 responses, based on which credential was sent.
     pub fn auth_error_hint(&self) -> &'static str {
         if self.deployment_key.is_some() {
-            "Your GROK_DEPLOYMENT_KEY is invalid or expired. Please contact a team admin."
+            "Your AXON_DEPLOYMENT_KEY is invalid or expired. Please contact a team admin."
         } else if self.user_token.is_some() {
             "Your auth token is invalid or expired. Run `grok login` to re-authenticate."
         } else {

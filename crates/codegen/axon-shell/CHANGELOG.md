@@ -13,7 +13,7 @@
 
 - **Local shell tools** now see the same environment variables, aliases, and functions as your login shell.
 - **Syntax highlighting** in diffs and the file viewer no longer miscolors strings or comments that span multiple lines.
-- **Global rules** from ~/.grok/rules and compatible vendor homes are now discovered correctly.
+- **Global rules** from ~/.axon/rules and compatible vendor homes are now discovered correctly.
 - **Background tasks** that finish after you press Ctrl+C no longer automatically resume the model.
 - **Ctrl+\** out of the dashboard now returns you to the agent you came from.
 - **MCP OAuth logins** now succeed against servers that require the RFC 9207 issuer parameter in the callback.
@@ -230,7 +230,7 @@
 - **Dashboard shortcuts** now advertise ? instead of Ctrl+. on terminals that cannot deliver the latter.
 - **Double-clicking** scrollback while Text selection is fold/nav now shows a tip offering Ctrl+Y to enable Word select.
 - **`grok worktree ls`** now works as a short alias for `grok worktree list`.
-- **MCP tool output truncation** can now be set per-repo in `.grok/config.toml`.
+- **MCP tool output truncation** can now be set per-repo in `.axon/config.toml`.
 - **Auto-send of queued follow-ups** during task waits can now be enabled fleet-wide via remote settings.
 - **Welcome screen** now offers one-click resume of a recent Claude Code session via ctrl+u.
 
@@ -271,7 +271,7 @@
 - **IME text input in Otty** no longer attaches unrelated clipboard images on every character.
 - **Rewind** now fully removes the selected turn from both scrollback and the model's conversation history.
 - **Queued prompts** now abort long blocking waits instead of waiting for the full timeout.
-- **File links and media** now work for worktree sessions under ~/.grok/worktrees/.
+- **File links and media** now work for worktree sessions under ~/.axon/worktrees/.
 - **Collapsed Read/Edit tool rows** now show only the filename instead of long absolute paths.
 - **Clipboard copies on Wayland** now succeed even when the terminal loses focus mid-copy.
 - **User messages queued** behind an auto-wake turn are no longer lost when the user presses Ctrl+C.
@@ -409,7 +409,7 @@
 - **Try Again** on the free-usage paywall now correctly resubmits after rate-limit retries.
 - **Cursor** now respects your terminal's default blink style instead of always blinking.
 - **Skill commands** in scrollback now highlight only the command name, not the arguments.
-- **Plan files** now default to .grok/plan.md to match Grok conventions.
+- **Plan files** now default to .axon/plan.md to match Grok conventions.
 - **LaTeX math** renders correctly for display equations and complex subscripts.
 - **Queue hint** in the terminal no longer shows incorrect bold text on part of the message.
 
@@ -747,7 +747,7 @@
 ## Features
 
 - **MCP servers** from host integrations can now be added, replaced, or removed without restarting the session.
-- **Agent-run terminal commands** now set `GROK_AGENT=1` so host tools can tell them apart from interactive shells.
+- **Agent-run terminal commands** now set `AXON_AGENT=1` so host tools can tell them apart from interactive shells.
 
 ## Bug Fixes
 
@@ -982,7 +982,7 @@
 
 ## Features
 
-- **Added option** to fully disable the hunk tracker via --hunk-tracker-mode, GROK_HUNK_TRACKER, or config.
+- **Added option** to fully disable the hunk tracker via --hunk-tracker-mode, AXON_HUNK_TRACKER, or config.
 
 ## Bug Fixes
 
@@ -1227,7 +1227,7 @@
 
 ## Features
 
-- **`grok --debug`** now produces per-session log files under ~/.grok/debug/ even with a leader process.
+- **`grok --debug`** now produces per-session log files under ~/.axon/debug/ even with a leader process.
 
 ## Bug Fixes
 
@@ -1465,7 +1465,7 @@
 
 - **Image and video generation** tools now emit structured paths so the pager renders media without regex scraping.
 - **Compaction summaries** now use a more detailed structure that improves recovery after context reset.
-- **image_gen** can now be enabled via the harness model using [features] in config.toml or the GROK_IMAGE_GEN_HARNESS env var.
+- **image_gen** can now be enabled via the harness model using [features] in config.toml or the AXON_IMAGE_GEN_HARNESS env var.
 - **Improved config refresh** on new sessions from the shell.
 
 ## Bug Fixes
@@ -1480,7 +1480,7 @@
 - **New segments compaction mode** writes per-segment markdown files that the model can read to recover pre-compaction detail.
 - **Claude and Cursor compatibility scanning** (skills, rules, AGENTS.md) can now be toggled individually via env vars or config.toml.
 - **grok inspect** now shows the resolved on/off state and source for every Claude/Cursor compatibility toggle.
-- **Cursor MCP servers and hooks** are now discovered and can be disabled independently via GROK_CURSOR_MCPS_ENABLED / GROK_CURSOR_HOOKS_ENABLED.
+- **Cursor MCP servers and hooks** are now discovered and can be disabled independently via AXON_CURSOR_MCPS_ENABLED / AXON_CURSOR_HOOKS_ENABLED.
 
 ## Bug Fixes
 

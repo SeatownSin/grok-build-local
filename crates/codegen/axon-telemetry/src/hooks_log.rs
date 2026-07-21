@@ -1,7 +1,7 @@
 //! Hooks and plugins tracing target and optional file-based logging layer.
 //!
 //! A dedicated tracing target for hooks and plugins subsystems with an optional
-//! file logger that writes to `~/.grok/logs/hooks.log`.
+//! file logger that writes to `~/.axon/logs/hooks.log`.
 //!
 //! ## When to use
 //!
@@ -12,10 +12,10 @@
 //! ## Enabling
 //!
 //! ```bash
-//! GROK_HOOKS_LOG=1 grok              # enable, write to ~/.grok/logs/hooks.log
-//! GROK_HOOKS_LOG=/tmp/h.log grok     # write to custom path
-//! GROK_HOOKS_LOG=0 grok              # explicitly disable
-//! tail -f ~/.grok/logs/hooks.log     # watch in another terminal
+//! AXON_HOOKS_LOG=1 grok              # enable, write to ~/.axon/logs/hooks.log
+//! AXON_HOOKS_LOG=/tmp/h.log grok     # write to custom path
+//! AXON_HOOKS_LOG=0 grok              # explicitly disable
+//! tail -f ~/.axon/logs/hooks.log     # watch in another terminal
 //! ```
 
 use std::fmt;
@@ -32,7 +32,7 @@ use tracing_subscriber::registry::LookupSpan;
 
 use axon_config::grok_home;
 
-const ENV_HOOKS_LOG: &str = "GROK_HOOKS_LOG";
+const ENV_HOOKS_LOG: &str = "AXON_HOOKS_LOG";
 
 static LOG_GUARD: std::sync::OnceLock<Mutex<Option<tracing_appender::non_blocking::WorkerGuard>>> =
     std::sync::OnceLock::new();
@@ -59,9 +59,9 @@ impl FormatTime for UptimeTimer {
 
 /// Build the hooks/plugins log layer.
 ///
-/// Writes to `~/.grok/logs/hooks.log` (or custom path via `GROK_HOOKS_LOG`).
+/// Writes to `~/.axon/logs/hooks.log` (or custom path via `AXON_HOOKS_LOG`).
 /// Filters to hooks (`axon_hooks`) and plugins (`axon_agent::plugins`) targets.
-/// Set `GROK_HOOKS_LOG=0` to disable, `GROK_HOOKS_LOG=/path` to redirect.
+/// Set `AXON_HOOKS_LOG=0` to disable, `AXON_HOOKS_LOG=/path` to redirect.
 pub fn layer<S>() -> Option<impl Layer<S>>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,

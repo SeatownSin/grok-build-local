@@ -39,15 +39,15 @@ fn is_container_no_display() -> bool {
 /// even when the inner terminal brand is misdetected (e.g. over SSH, where only
 /// `TERM` propagates and Apple Terminal / unknown brands look OSC-52-incapable).
 ///
-/// Two names are accepted: the canonical `GROK_OSC52_SINK` (inherited by local
-/// children) and the `LC_`-prefixed `LC_GROK_OSC52_SINK`, which the default
+/// Two names are accepted: the canonical `AXON_OSC52_SINK` (inherited by local
+/// children) and the `LC_`-prefixed `LC_AXON_OSC52_SINK`, which the default
 /// OpenSSH client/server configs forward (`SendEnv LANG LC_*` /
 /// `AcceptEnv LANG LC_*`) so the signal survives the hop into a remote `grok`.
 pub fn osc52_sink_active() -> bool {
     static SINK: OnceLock<bool> = OnceLock::new();
     *SINK.get_or_init(|| {
-        std::env::var_os("GROK_OSC52_SINK").is_some()
-            || std::env::var_os("LC_GROK_OSC52_SINK").is_some()
+        std::env::var_os("AXON_OSC52_SINK").is_some()
+            || std::env::var_os("LC_AXON_OSC52_SINK").is_some()
     })
 }
 

@@ -96,7 +96,7 @@ fn resolve_device_flow(
     config: Option<bool>,
     remote: Option<bool>,
 ) -> crate::agent::config::Resolved<bool> {
-    crate::agent::config::BoolFlag::env("GROK_LOGIN_DEVICE_FLOW")
+    crate::agent::config::BoolFlag::env("AXON_LOGIN_DEVICE_FLOW")
         .cli(login_override.as_cli_bool())
         .config(config)
         .feature_flag(remote)
@@ -116,7 +116,7 @@ async fn cli_should_use_device(
 
 /// Whether interactive xAI OAuth2 login uses the RFC 8628 device flow (vs loopback).
 ///
-/// Precedence: CLI (`--oauth`/`--device-auth`) > `GROK_LOGIN_DEVICE_FLOW` env >
+/// Precedence: CLI (`--oauth`/`--device-auth`) > `AXON_LOGIN_DEVICE_FLOW` env >
 /// `[auth] login_device_flow` config > `grok_build_login_device_flow` remote feature flag > loopback.
 async fn should_use_device_flow(login_override: LoginTransportOverride) -> bool {
     // Already resolved (and logged) upstream — honor it without re-resolving or
@@ -129,7 +129,7 @@ async fn should_use_device_flow(login_override: LoginTransportOverride) -> bool 
         resolve_device_flow(login_override, None, None)
     } else {
         // Read once to gate the fetch; resolve_device_flow reads it again for the decision.
-        let env = crate::agent::config::env_bool("GROK_LOGIN_DEVICE_FLOW");
+        let env = crate::agent::config::env_bool("AXON_LOGIN_DEVICE_FLOW");
         // One config snapshot feeds both the `[auth]` tier and the proxy URL.
         let effective = crate::config::load_effective_config().ok();
         let config = config_login_device_flow(effective.as_ref());
@@ -231,7 +231,7 @@ async fn run_external_auth_provider(
     }
 
     if is_refresh {
-        cmd.env("GROK_AUTH_EXPIRED", "1");
+        cmd.env("AXON_AUTH_EXPIRED", "1");
     }
 
     axon_tools::util::detach_command(&mut cmd);
@@ -618,7 +618,7 @@ async fn run_auth_flow_inner(
     // Enterprise OIDC keeps loopback (customer IdPs may lack a device endpoint).
     // xAI OAuth2 also defaults to loopback; the device flow (robust on
     // remote/SSH where the loopback redirect can't reach the CLI) is opt-in via
-    // --device-auth / GROK_LOGIN_DEVICE_FLOW / [auth] login_device_flow.
+    // --device-auth / AXON_LOGIN_DEVICE_FLOW / [auth] login_device_flow.
     if crate::auth::oidc::is_configured(grok_com_config) {
         return crate::auth::oidc::run_login_flow(grok_com_config, auth_manager, channels).await;
     }
@@ -860,7 +860,7 @@ pub async fn ensure_authenticated_or_noninteractive(
 /// Unified `grok login` handler for CLI entry points (tui, pager).
 ///
 /// Precedence: `--oauth` forces loopback, `--device-auth` forces device,
-/// otherwise `GROK_LOGIN_DEVICE_FLOW` env / `[auth] login_device_flow` config /
+/// otherwise `AXON_LOGIN_DEVICE_FLOW` env / `[auth] login_device_flow` config /
 /// loopback default. Both transports run through `run_auth_flow_inner` so the
 /// external auth provider and devbox auto-migration are tried first.
 pub async fn run_cli_login(
@@ -949,7 +949,7 @@ pub struct LogoutResult {
     pub was_logged_in: bool,
     /// Email of the session that was cleared (if available).
     pub email: Option<String>,
-    /// `true` if `XAI_API_KEY` / `GROK_CODE_XAI_API_KEY` env var is set.
+    /// `true` if `XAI_API_KEY` / `AXON_CODE_XAI_API_KEY` env var is set.
     pub api_key_still_set: bool,
 }
 
@@ -1038,14 +1038,14 @@ mod tests {
     use crate::env::EnvVarGuard;
     use chrono::Utc;
 
-    /// Run `f` with `GROK_LOGIN_DEVICE_FLOW` set to `value` (unset for `None`).
+    /// Run `f` with `AXON_LOGIN_DEVICE_FLOW` set to `value` (unset for `None`).
     /// `EnvVarGuard` serializes the process env and restores it on drop, so
     /// `resolve_device_flow` reads the env tier from a known state.
     fn with_device_flow_env<T>(value: Option<bool>, f: impl FnOnce() -> T) -> T {
         let _guard = match value {
-            Some(true) => EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "true"),
-            Some(false) => EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "false"),
-            None => EnvVarGuard::remove("GROK_LOGIN_DEVICE_FLOW"),
+            Some(true) => EnvVarGuard::set("AXON_LOGIN_DEVICE_FLOW", "true"),
+            Some(false) => EnvVarGuard::set("AXON_LOGIN_DEVICE_FLOW", "false"),
+            None => EnvVarGuard::remove("AXON_LOGIN_DEVICE_FLOW"),
         };
         f()
     }
@@ -1328,14 +1328,14 @@ mod tests {
         // opposite env value, so a leak into the resolver would flip the result —
         // returning the carried value proves the early return (and no second log).
         {
-            let _guard = EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "false");
+            let _guard = EnvVarGuard::set("AXON_LOGIN_DEVICE_FLOW", "false");
             assert!(
                 should_use_device_flow(LoginTransportOverride::Preresolved(true)).await,
                 "Preresolved(true) honors device without re-resolving"
             );
         }
         {
-            let _guard = EnvVarGuard::set("GROK_LOGIN_DEVICE_FLOW", "true");
+            let _guard = EnvVarGuard::set("AXON_LOGIN_DEVICE_FLOW", "true");
             assert!(
                 !should_use_device_flow(LoginTransportOverride::Preresolved(false)).await,
                 "Preresolved(false) honors loopback without re-resolving"
@@ -1832,7 +1832,7 @@ mod tests {
         mgr.set_refresher(std::sync::Arc::new(AlwaysTransientRefresher));
 
         // Force device explicitly so the assertion doesn't depend on ambient
-        // GROK_LOGIN_DEVICE_FLOW / the real config file (the CLI override
+        // AXON_LOGIN_DEVICE_FLOW / the real config file (the CLI override
         // short-circuits the config read).
         let result = run_auth_flow(
             &mgr,

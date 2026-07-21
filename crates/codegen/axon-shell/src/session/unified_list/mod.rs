@@ -45,8 +45,8 @@ pub fn facet_registry() -> &'static FacetRegistry {
 pub fn conversations_lane_enabled() -> bool {
     false
 }
-/// Env lane (desktop `GROK_SESSION_LIST_CONVERSATIONS`) OR process-wide
-/// `--chat` (`GROK_CHAT_MODE`); hard-off in release builds.
+/// Env lane (desktop `AXON_SESSION_LIST_CONVERSATIONS`) OR process-wide
+/// `--chat` (`AXON_CHAT_MODE`); hard-off in release builds.
 /// The single predicate `MvpAgent::conversations_client()` keys on.
 pub fn conversations_lane_active() -> bool {
     conversations_lane_enabled() || crate::agent::chat_modes::process_chat_mode_enabled()
@@ -604,7 +604,7 @@ mod tests {
         )
         .await;
         let _env = axon_test_support::EnvGuard::set(
-            "GROK_CONVERSATIONS_BASE_URL",
+            "AXON_CONVERSATIONS_BASE_URL",
             format!("http://{addr}"),
         );
         let home = tempfile::tempdir().expect("tempdir");
@@ -668,15 +668,15 @@ mod tests {
     #[serial_test::serial]
     fn conversations_lane_env_gating_matrix() {
         {
-            let _off = axon_test_support::EnvGuard::unset("GROK_SESSION_LIST_CONVERSATIONS");
+            let _off = axon_test_support::EnvGuard::unset("AXON_SESSION_LIST_CONVERSATIONS");
             assert!(!conversations_lane_enabled());
         }
         {
-            let _on = axon_test_support::EnvGuard::set("GROK_SESSION_LIST_CONVERSATIONS", "1");
+            let _on = axon_test_support::EnvGuard::set("AXON_SESSION_LIST_CONVERSATIONS", "1");
             assert_eq!(conversations_lane_enabled(), false);
         }
         {
-            let _off = axon_test_support::EnvGuard::set("GROK_SESSION_LIST_CONVERSATIONS", "0");
+            let _off = axon_test_support::EnvGuard::set("AXON_SESSION_LIST_CONVERSATIONS", "0");
             assert!(!conversations_lane_enabled());
         }
     }
@@ -685,21 +685,21 @@ mod tests {
     #[test]
     #[serial_test::serial]
     fn conversations_lane_active_truth_table() {
-        use crate::agent::chat_modes::GROK_CHAT_MODE_ENV;
-        let _chat_off = axon_test_support::EnvGuard::unset(GROK_CHAT_MODE_ENV);
+        use crate::agent::chat_modes::AXON_CHAT_MODE_ENV;
+        let _chat_off = axon_test_support::EnvGuard::unset(AXON_CHAT_MODE_ENV);
         let _desktop_off =
-            axon_test_support::EnvGuard::unset("GROK_SESSION_LIST_CONVERSATIONS");
+            axon_test_support::EnvGuard::unset("AXON_SESSION_LIST_CONVERSATIONS");
         assert!(
             !conversations_lane_active(),
             "no env ⇒ lane off (Build-mode default)"
         );
         {
             let _desktop =
-                axon_test_support::EnvGuard::set("GROK_SESSION_LIST_CONVERSATIONS", "1");
+                axon_test_support::EnvGuard::set("AXON_SESSION_LIST_CONVERSATIONS", "1");
             assert_eq!(conversations_lane_active(), false);
         }
         {
-            let _chat = axon_test_support::EnvGuard::set(GROK_CHAT_MODE_ENV, "1");
+            let _chat = axon_test_support::EnvGuard::set(AXON_CHAT_MODE_ENV, "1");
             assert_eq!(
                 conversations_lane_active(),
                 false,
@@ -712,14 +712,14 @@ mod tests {
     #[test]
     #[serial_test::serial]
     fn parse_list_req_forces_kind_under_process_chat_mode_only() {
-        use crate::agent::chat_modes::GROK_CHAT_MODE_ENV;
+        use crate::agent::chat_modes::AXON_CHAT_MODE_ENV;
         let raw = serde_json::json!(
             { "_meta" : { "x.ai/facetFilters" : { "kind" : ["build"], "starred" : [true]
             } }, }
         )
         .to_string();
         {
-            let _off = axon_test_support::EnvGuard::unset(GROK_CHAT_MODE_ENV);
+            let _off = axon_test_support::EnvGuard::unset(AXON_CHAT_MODE_ENV);
             let req = parse_list_req(&raw).expect("parse");
             let parsed = ParsedMeta::parse(req.meta.as_ref());
             assert_eq!(
@@ -729,7 +729,7 @@ mod tests {
             );
         }
         {
-            let _on = axon_test_support::EnvGuard::set(GROK_CHAT_MODE_ENV, "1");
+            let _on = axon_test_support::EnvGuard::set(AXON_CHAT_MODE_ENV, "1");
             let req = parse_list_req(&raw).expect("parse");
             let parsed = ParsedMeta::parse(req.meta.as_ref());
             let expected = "build";

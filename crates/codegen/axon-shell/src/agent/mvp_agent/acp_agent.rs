@@ -415,7 +415,7 @@ impl acp::Agent for MvpAgent {
                 )
                 .auth_methods(auth_methods)
                 .meta({
-                    let metadata = parse_json_object_env("GROK_AGENT_METADATA");
+                    let metadata = parse_json_object_env("AXON_AGENT_METADATA");
                     serde_json::json!(
                         { "grokShell" : true, "defaultAuthMethodId" :
                         default_auth_method_id_wire, (axon_mcp::wire::MCP_SDK) :
@@ -682,7 +682,7 @@ impl acp::Agent for MvpAgent {
                 self.maybe_fetch_post_auth_settings().await;
                 Ok(self.auth_response_with_meta())
             }
-            auth_method::GROK_COM_METHOD_ID | auth_method::OIDC_METHOD_ID => {
+            auth_method::AXON_COM_METHOD_ID | auth_method::OIDC_METHOD_ID => {
                 let grok_ctx = self.auth_manager.grok_com_config();
                 let auth_meta = AuthRequestMeta::from_json(arguments.meta.as_ref());
                 tracing::info!(

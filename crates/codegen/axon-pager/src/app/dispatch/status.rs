@@ -98,9 +98,9 @@ pub(super) fn dispatch_show_privacy_info(app: &mut AppView) -> Vec<Effect> {
     // Config keys only; do not describe retention/training/analytics policy here.
     lines.push("");
     lines.push("  Other settings (not changed by /privacy):");
-    lines.push("  - [features] telemetry / GROK_TELEMETRY_ENABLED");
-    lines.push("  - [telemetry] trace_upload / GROK_TELEMETRY_TRACE_UPLOAD");
-    lines.push("  - GROK_EXTERNAL_OTEL / OTEL_*");
+    lines.push("  - [features] telemetry / AXON_TELEMETRY_ENABLED");
+    lines.push("  - [telemetry] trace_upload / AXON_TELEMETRY_TRACE_UPLOAD");
+    lines.push("  - AXON_EXTERNAL_OTEL / OTEL_*");
     lines.push("");
     lines.push("  Learn more: https://x.ai/legal");
     let text = lines.join("\n");
@@ -114,7 +114,7 @@ pub(super) fn set_coding_data_sharing_inner(app: &mut AppView, opted_in: bool) {
 }
 
 /// Set coding-data-sharing preference. SHELL-owned, auth-metadata-backed
-/// (persists via ACP ext-request, NOT `~/.grok/config.toml`).
+/// (persists via ACP ext-request, NOT `~/.axon/config.toml`).
 pub(super) fn set_coding_data_sharing(app: &mut AppView, opted_in: bool) -> Vec<Effect> {
     // ── Guard 1: Enterprise ZDR ──────────────────────────────────────
     if app.is_zdr {

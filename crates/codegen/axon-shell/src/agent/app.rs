@@ -305,9 +305,9 @@ pub async fn run_stdio_agent(
 
     // Log the client that launched us (set by grok-desktop when spawning `grok agent stdio`).
     // This appears early in unified.jsonl and is extremely useful for auth diagnostics.
-    if let Ok(version) = std::env::var("GROK_CLIENT_VERSION") {
+    if let Ok(version) = std::env::var("AXON_CLIENT_VERSION") {
         crate::unified_log::info(
-            "GROK_CLIENT_VERSION",
+            "AXON_CLIENT_VERSION",
             None,
             Some(serde_json::json!({ "version": version })),
         );
@@ -1399,7 +1399,7 @@ pub async fn run_leader(
                 watch_paths.push(home.join(".claude.json"));
             }
             let auth_scope = agent_config.grok_com_config.auth_scope();
-            // Gated on user_grok_home() so a cwd-relative .grok/auth.json is never
+            // Gated on user_grok_home() so a cwd-relative .axon/auth.json is never
             // read as the user auth store when no home resolves.
             let initial_auth_key_hash = axon_config::user_grok_home()
                 .map(|g| g.join("auth.json"))
@@ -1581,7 +1581,7 @@ pub async fn run_leader(
                             }
                         }
                         ConfigUpdate::ModelsCacheChanged => {
-                            // External write to ~/.grok/models_cache.json
+                            // External write to ~/.axon/models_cache.json
                             // (another grok process fetched a fresher /v1/models
                             // catalog). Injected into the agent's ACP stream —
                             // NOT applied directly on the manager — so it is

@@ -89,7 +89,7 @@ On first launch, Grok opens your browser to authenticate with grok.com:
 grok
 ```
 
-Credentials are stored in `~/.grok/auth.json` and persist across sessions. Tokens expire after 7 days; Grok will prompt you to re-authenticate when needed.
+Credentials are stored in `~/.axon/auth.json` and persist across sessions. Tokens expire after 7 days; Grok will prompt you to re-authenticate when needed.
 
 ### Re-authenticate
 
@@ -104,7 +104,7 @@ grok login
 For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
 
 ```bash
-export XAI_API_KEY="xai-..."
+export XAI_API_KEY="axon-..."
 grok
 ```
 
@@ -122,7 +122,7 @@ Authenticate developers via your own Identity Provider (Okta, Azure AD, Auth0) i
 **2. Configure the CLI** (config file or env vars):
 
 ```toml
-# ~/.grok/config.toml
+# ~/.axon/config.toml
 [grok_com_config.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
@@ -130,16 +130,16 @@ client_id = "0oa1b2c3d4e5f6g7h8i9"
 
 ```bash
 # Or via environment variables
-export GROK_OIDC_ISSUER="https://acme.okta.com"
-export GROK_OIDC_CLIENT_ID="0oa1b2c3d4e5f6g7h8i9"
+export AXON_OIDC_ISSUER="https://acme.okta.com"
+export AXON_OIDC_CLIENT_ID="0oa1b2c3d4e5f6g7h8i9"
 ```
 
 Customers typically also override the API endpoint to point at their own proxy:
 ```bash
-export GROK_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
+export AXON_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
 ```
 
-**3. Run `grok`.** The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.grok/auth.json`. The OIDC token is sent as `Authorization: Bearer` to the configured proxy. Tokens auto-refresh silently via the stored `refresh_token`.
+**3. Run `grok`.** The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.axon/auth.json`. The OIDC token is sent as `Authorization: Bearer` to the configured proxy. Tokens auto-refresh silently via the stored `refresh_token`.
 
 **Optional fields:**
 
@@ -169,7 +169,7 @@ Grok is provider-agnostic — it doesn't know or care how your binary authentica
 1. Grok runs your command via `sh -c "<command>"`
 2. Your binary does whatever auth flow it needs (SSO login, device code, cert exchange, etc.)
 3. **stderr** → displayed directly to the user (use for login URLs, status messages, progress)
-4. **stdout** → captured by Grok and saved to `~/.grok/auth.json` as the access token
+4. **stdout** → captured by Grok and saved to `~/.axon/auth.json` as the access token
 5. exit 0 → success; exit non-zero → Grok falls through to interactive login
 
 #### The stdout / stderr Contract
@@ -216,7 +216,7 @@ echo "eyJhbGciOiJSUzI1NiIs..."
 #### Configuration
 
 ```toml
-# ~/.grok/config.toml
+# ~/.axon/config.toml
 [auth]
 auth_provider_command = "/usr/local/bin/my-auth-provider"
 auth_provider_label = "Acme Corp"   # optional — customizes the TUI login button
@@ -225,9 +225,9 @@ auth_token_ttl = 3600               # optional — token lifetime in seconds (se
 
 ```bash
 # Or via environment variables
-export GROK_AUTH_PROVIDER_COMMAND="/usr/local/bin/my-auth-provider"
-export GROK_AUTH_PROVIDER_LABEL="Acme Corp"   # optional
-export GROK_AUTH_TOKEN_TTL=3600               # optional
+export AXON_AUTH_PROVIDER_COMMAND="/usr/local/bin/my-auth-provider"
+export AXON_AUTH_PROVIDER_LABEL="Acme Corp"   # optional
+export AXON_AUTH_TOKEN_TTL=3600               # optional
 ```
 
 If your binary outputs a bare token string (not JSON with `expires_in`), set `auth_token_ttl` to the token's expected lifetime in seconds. Without it, Grok cannot detect expiry proactively and will only refresh after a 401.
@@ -266,11 +266,11 @@ echo "{\"access_token\": \"$TOKEN\", \"expires_in\": 3600}"
 
 #### Example: Auth Binary with Refresh Support
 
-When Grok needs to refresh an expired token, it re-runs your binary with `GROK_AUTH_EXPIRED=1` set in the environment. Your binary can use this to take a faster silent-refresh path:
+When Grok needs to refresh an expired token, it re-runs your binary with `AXON_AUTH_EXPIRED=1` set in the environment. Your binary can use this to take a faster silent-refresh path:
 
 ```bash
 #!/bin/sh
-if [ "$GROK_AUTH_EXPIRED" = "1" ]; then
+if [ "$AXON_AUTH_EXPIRED" = "1" ]; then
     # Token expired — attempt silent refresh (no user interaction)
     echo "Refreshing token..." >&2
     TOKEN=$(my-company-auth --refresh --silent)
@@ -288,7 +288,7 @@ fi
 echo "{\"access_token\": \"$TOKEN\", \"expires_in\": 3600}"
 ```
 
-`GROK_AUTH_EXPIRED` is optional — if your binary ignores it, Grok still works. It just runs the same flow for both login and refresh.
+`AXON_AUTH_EXPIRED` is optional — if your binary ignores it, Grok still works. It just runs the same flow for both login and refresh.
 
 ### Automatic Credential Refresh
 
@@ -307,7 +307,7 @@ This is transparent — you don't need to do anything. Grok handles it in the ba
 ```bash
 # Grok refreshes tokens 5 minutes before expiry by default.
 # Set to 0 to only refresh on 401. Set higher for very short-lived tokens.
-export GROK_AUTH_EARLY_INVALIDATION_SECS=300
+export AXON_AUTH_EARLY_INVALIDATION_SECS=300
 ```
 
 **Keep in mind:**
@@ -341,8 +341,8 @@ If you've authenticated with `grok login`, you can use the stored credentials to
 ```bash
 curl -s -N -X POST "https://cli-chat-proxy.grok.com/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(jq -r '."https://accounts.x.ai/sign-in".key' ~/.grok/auth.json)" \
-  -H "X-XAI-Token-Auth: xai-grok-cli" \
+  -H "Authorization: Bearer $(jq -r '."https://accounts.x.ai/sign-in".key' ~/.axon/auth.json)" \
+  -H "X-XAI-Token-Auth: axon-cli" \
   -H "x-grok-model-override: grok-build" \
   -d '{
     "model": "grok-build",
@@ -355,8 +355,8 @@ curl -s -N -X POST "https://cli-chat-proxy.grok.com/v1/chat/completions" \
 
 | Header                           | Required | Purpose                                                                                                                                                                                   |
 | -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authorization: Bearer <token>`  | Yes      | Session token from `~/.grok/auth.json` (set by `grok login`)                                                                                                                              |
-| `X-XAI-Token-Auth: xai-grok-cli` | Yes      | Tells the auth middleware to validate as a CLI session token                                                                                                                              |
+| `Authorization: Bearer <token>`  | Yes      | Session token from `~/.axon/auth.json` (set by `grok login`)                                                                                                                              |
+| `X-XAI-Token-Auth: axon-cli` | Yes      | Tells the auth middleware to validate as a CLI session token                                                                                                                              |
 | `x-grok-model-override: <model>` | Yes\*    | The proxy uses this header (not the JSON body) to route to the correct backend. \*Can be omitted for `grok-build` which is on the default route, but always safe to include. |
 
 **Streaming vs non-streaming:**
@@ -1272,7 +1272,7 @@ Grok implements the [Agent Client Protocol (ACP)](https://agentclientprotocol.co
 
 ## Configuration
 
-Grok reads configuration from `~/.grok/config.toml`. If the file doesn't exist, Grok uses sensible defaults. You only need to specify values you want to override.
+Grok reads configuration from `~/.axon/config.toml`. If the file doesn't exist, Grok uses sensible defaults. You only need to specify values you want to override.
 
 Each feature section below documents its own config. This section covers the general-purpose settings that don't have their own top-level section.
 
@@ -1291,8 +1291,8 @@ max_thoughts_width = 120               # max column width for reasoning display
 
 [features]
 support_permission = false             # prompt before tool execution
-telemetry = false                      # anonymous usage telemetry (env: GROK_TELEMETRY_ENABLED)
-feedback = false                       # feedback system (env: GROK_FEEDBACK_ENABLED)
+telemetry = false                      # anonymous usage telemetry (env: AXON_TELEMETRY_ENABLED)
+feedback = false                       # feedback system (env: AXON_FEEDBACK_ENABLED)
 lsp_tools = false                      # expose the lsp tool (see LSP Servers below)
 codebase_indexing = true               # code graph indexing (true, false, or glob patterns)
 
@@ -1301,7 +1301,7 @@ auto_compact_threshold_percent = 85    # auto-compact at this % of context windo
 load_envrc = true                      # load .envrc environment variables into bash commands
 
 [tools]
-respect_gitignore = true               # filter gitignored files from tools (env: GROK_RESPECT_GITIGNORE)
+respect_gitignore = true               # filter gitignored files from tools (env: AXON_RESPECT_GITIGNORE)
 
 [toolset.bash]
 timeout_secs = 120.0                   # command timeout in seconds
@@ -1324,14 +1324,14 @@ Configure telemetry destinations and credentials. Empty values disable the corre
 
 ```toml
 [telemetry]
-events_url = "https://example.com/events"  # env: GROK_TELEMETRY_EVENTS_URL
-events_api_key = "..."                      # env: GROK_TELEMETRY_EVENTS_API_KEY
-mixpanel_token = "..."                      # env: GROK_TELEMETRY_MIXPANEL_TOKEN
-mixpanel_enabled = true                     # env: GROK_TELEMETRY_MIXPANEL_ENABLED
-trace_upload = true                         # env: GROK_TELEMETRY_TRACE_UPLOAD
+events_url = "https://example.com/events"  # env: AXON_TELEMETRY_EVENTS_URL
+events_api_key = "..."                      # env: AXON_TELEMETRY_EVENTS_API_KEY
+mixpanel_token = "..."                      # env: AXON_TELEMETRY_MIXPANEL_TOKEN
+mixpanel_enabled = true                     # env: AXON_TELEMETRY_MIXPANEL_ENABLED
+trace_upload = true                         # env: AXON_TELEMETRY_TRACE_UPLOAD
 ```
 
-When building from source, defaults can also be baked into the binary at compile time by setting `GROK_TELEMETRY_BUILD_EVENTS_URL`, `GROK_TELEMETRY_BUILD_EVENTS_API_KEY`, and `GROK_TELEMETRY_BUILD_MIXPANEL_TOKEN` in the build environment (providing a Mixpanel token this way also enables Mixpanel by default). Config-file and runtime env values override build-time defaults.
+When building from source, defaults can also be baked into the binary at compile time by setting `AXON_TELEMETRY_BUILD_EVENTS_URL`, `AXON_TELEMETRY_BUILD_EVENTS_API_KEY`, and `AXON_TELEMETRY_BUILD_MIXPANEL_TOKEN` in the build environment (providing a Mixpanel token this way also enables Mixpanel by default). Config-file and runtime env values override build-time defaults.
 
 ### LSP Servers
 
@@ -1348,8 +1348,8 @@ Reference: [Language Server Protocol](https://microsoft.github.io/language-serve
 
 Grok looks for server definitions in:
 
-- project config: `<repo>/.grok/lsp.json`
-- user config: `~/.grok/lsp.json`
+- project config: `<repo>/.axon/lsp.json`
+- user config: `~/.axon/lsp.json`
 
 If the same server name appears in both places, the project config wins.
 
@@ -1357,13 +1357,13 @@ If the same server name appears in both places, the project config wins.
 
 Having an `lsp.json` file is enough for passive diagnostics. The model-visible `lsp` tool is exposed when both of these are true:
 
-- LSP tools are enabled (`GROK_LSP_TOOLS=1` or `[features] lsp_tools = true`)
+- LSP tools are enabled (`AXON_LSP_TOOLS=1` or `[features] lsp_tools = true`)
 - the merged LSP configuration is non-empty
 
 Enable the tool for one run:
 
 ```bash
-GROK_LSP_TOOLS=1 grok
+AXON_LSP_TOOLS=1 grok
 ```
 
 Or enable it in config:
@@ -1427,7 +1427,7 @@ Examples:
 
 #### Notes
 
-- Passive diagnostics do **not** require `GROK_LSP_TOOLS=1`; they run whenever an applicable server is configured and starts successfully.
+- Passive diagnostics do **not** require `AXON_LSP_TOOLS=1`; they run whenever an applicable server is configured and starts successfully.
 - Passive diagnostics are currently driven by `search_replace` edits; they are not a general watcher for arbitrary shell or git mutations in the workspace.
 - The `lsp` tool is intentionally hidden when disabled or unconfigured so the model does not plan around unavailable capabilities.
 - Same-workspace subagents reuse the parent session's live LSP runtime instead of starting a duplicate server pool.
@@ -1473,7 +1473,7 @@ Add project-specific instructions by creating an agent rules file (e.g., `AGENTS
 
 Grok scans for agent rules in this order:
 
-1. `~/.grok/` (global rules)
+1. `~/.axon/` (global rules)
 2. If inside a git repo: every directory from the repo root → current working directory (inclusive)
 3. If **not** inside a git repo: only the current working directory
 
@@ -1497,14 +1497,14 @@ Grok discovers skills from these directories (in priority order):
 
 | Location                    | Scope | Priority |
 | --------------------------- | ----- | -------- |
-| `./.grok/skills/`           | Local | Highest  |
-| `<repo_root>/.grok/skills/` | Repo  | Medium   |
-| `~/.grok/skills/`           | User  | Lowest   |
+| `./.axon/skills/`           | Local | Highest  |
+| `<repo_root>/.axon/skills/` | Repo  | Medium   |
+| `~/.axon/skills/`           | User  | Lowest   |
 | `~/.claude/skills/`         | User  | Lowest   |
 
 Skills with the same name are deduplicated — higher priority locations override lower ones.
 
-Repo-scoped skills (Local and Repo) respect `.gitignore` and are filtered out if ignored. User-scoped skills (`~/.grok/skills/`) are outside the repo and never filtered.
+Repo-scoped skills (Local and Repo) respect `.gitignore` and are filtered out if ignored. User-scoped skills (`~/.axon/skills/`) are outside the repo and never filtered.
 
 ### Configuration
 
@@ -1521,7 +1521,7 @@ ignore = ["~/my-team-skills/wip"]     # paths to exclude
 Each skill lives in its own directory with a `SKILL.md` file:
 
 ```
-~/.grok/skills/
+~/.axon/skills/
 └── commit/
     └── SKILL.md
 ```
@@ -1576,15 +1576,15 @@ Users can reference skills as `/skill-name` (e.g., `/commit`). When you see this
 
 Agent profiles control the system prompt, toolset, and behavior of a session. A profile is a `.md` file with YAML frontmatter, or a named agent discovered from disk.
 
-Grok discovers agent definitions from `.grok/agents/` (project), `~/.grok/agents/` (user), and built-in agents. Priority (highest wins):
+Grok discovers agent definitions from `.axon/agents/` (project), `~/.axon/agents/` (user), and built-in agents. Priority (highest wins):
 
 1. `--agent-profile <PATH>` CLI flag
 2. `[agent]` section in `config.toml`
-3. `GROK_AGENT` env var
+3. `AXON_AGENT` env var
 4. Default `grok-build` agent
 
 ```toml
-# ~/.grok/config.toml
+# ~/.axon/config.toml
 [agent]
 name = "my-custom-agent"             # Discovered by name
 # definition = "/path/to/agent.md"   # OR: explicit path
@@ -1593,7 +1593,7 @@ name = "my-custom-agent"             # Discovered by name
 ```bash
 grok --agent-profile ./my-agent.md
 # or
-export GROK_AGENT="my-custom-agent"
+export AXON_AGENT="my-custom-agent"
 ```
 
 ---
@@ -1605,11 +1605,11 @@ Subagents spawn independent child sessions that handle tasks in parallel. Each c
 ### Disabling
 
 ```bash
-export GROK_SUBAGENTS=0              # Environment variable
+export AXON_SUBAGENTS=0              # Environment variable
 ```
 
 ```toml
-# ~/.grok/config.toml
+# ~/.axon/config.toml
 [subagents]
 enabled = false
 ```
@@ -1641,14 +1641,14 @@ Roles define reusable capability/model defaults. Personas layer tone and behavio
 description = "Deep research agent"
 default_capability_mode = "read-only"
 model = "grok-build"
-prompt_file = ".grok/prompts/researcher.md"
+prompt_file = ".axon/prompts/researcher.md"
 
 [subagents.personas.concise]
 instructions = "Be extremely concise. No filler words."
-# instructions_file = ".grok/personas/concise.md"  # or load from file
+# instructions_file = ".axon/personas/concise.md"  # or load from file
 ```
 
-Both are also discovered from `.grok/roles/*.toml` and `.grok/personas/*.toml` files respectively. If a requested persona is not found, the spawn fails (fail-closed).
+Both are also discovered from `.axon/roles/*.toml` and `.axon/personas/*.toml` files respectively. If a requested persona is not found, the spawn fails (fail-closed).
 
 ---
 
@@ -1660,14 +1660,14 @@ Plugins extend Grok with additional tools, skills, and MCP servers from external
 
 | Location                    | Scope   |
 | --------------------------- | ------- |
-| `.grok/plugins/`            | Project |
-| `~/.grok/plugins/`          | User    |
+| `.axon/plugins/`            | Project |
+| `~/.axon/plugins/`          | User    |
 | `--plugin-dir <PATH>` (CLI) | Session |
 
 ### Configuration
 
 ```toml
-# ~/.grok/config.toml
+# ~/.axon/config.toml
 [plugins]
 paths = ["~/my-plugins/custom-tools"]       # additional plugin directories
 disabled = ["user/a1b2c3d4/noisy-plugin"]   # plugin IDs to skip
@@ -1681,7 +1681,7 @@ Manage plugins at runtime with `/plugins list`, `/plugins reload`, or `/plugins 
 
 Hooks run project scripts on tool and session lifecycle events (pre/post-tool-use, session start/end). Projects must be explicitly trusted before their hooks execute.
 
-Grok discovers hooks from `.grok/hooks/` in the project directory. Manage them with:
+Grok discovers hooks from `.axon/hooks/` in the project directory. Manage them with:
 
 ```
 /hooks-list              # show hooks loaded in this session
@@ -1723,11 +1723,11 @@ You can override specific fields of built-in models without redefining everythin
 
 ```toml
 # Override just the API key for a default model
-[model.grok-build]
+[model.axon-build]
 api_key = "my-api-key"
 
 # Override temperature and add a custom API key
-[model.grok-4.20-0309-reasoning]
+[model.axon-4.20-0309-reasoning]
 temperature = 0.5
 api_key = "sk-custom"
 ```
@@ -1739,7 +1739,7 @@ api_key = "sk-custom"
 2. Prefetched models from remote `/v1/models`
 3. Hardcoded defaults — lowest priority
 
-**Web search model:** Set `[models] web_search`, `GROK_WEB_SEARCH_MODEL`, or `--web-search-model` to point the `web_search` tool at a different model. The target endpoint must support the Responses API and web search.
+**Web search model:** Set `[models] web_search`, `AXON_WEB_SEARCH_MODEL`, or `--web-search-model` to point the `web_search` tool at a different model. The target endpoint must support the Responses API and web search.
 
 > **Overriding with a custom model:** Setting `[models] web_search` alone is not
 > enough if the model isn't already in the catalog (built-in defaults or
@@ -1823,30 +1823,30 @@ Point Grok at a custom OpenAI-compatible `/v1/models` endpoint instead of the de
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GROK_MODELS_BASE_URL` | Yes | Base URL for inference / chat completions (e.g. `https://api.acme.com/v1`). The model list is fetched from `{base_url}/models` automatically |
+| `AXON_MODELS_BASE_URL` | Yes | Base URL for inference / chat completions (e.g. `https://api.acme.com/v1`). The model list is fetched from `{base_url}/models` automatically |
 | `XAI_API_KEY` | Yes | API key sent as `Authorization: Bearer` to the custom endpoint |
-| `GROK_MODELS_LIST_URL` | No | Override the model list URL if it differs from `{base_url}/models` |
+| `AXON_MODELS_LIST_URL` | No | Override the model list URL if it differs from `{base_url}/models` |
 
 **Setup:**
 
 ```bash
-export GROK_MODELS_BASE_URL="https://api.acme.com/v1"
-export XAI_API_KEY="xai-..."
+export AXON_MODELS_BASE_URL="https://api.acme.com/v1"
+export XAI_API_KEY="axon-..."
 grok
 ```
 
-Grok fetches the model list from `{GROK_MODELS_BASE_URL}/models` on startup and sends inference requests to `GROK_MODELS_BASE_URL`. This follows the standard OpenAI-compatible convention used by OpenAI, Anthropic, OpenRouter, Groq, Together.ai, and others.
+Grok fetches the model list from `{AXON_MODELS_BASE_URL}/models` on startup and sends inference requests to `AXON_MODELS_BASE_URL`. This follows the standard OpenAI-compatible convention used by OpenAI, Anthropic, OpenRouter, Groq, Together.ai, and others.
 
-If your model list endpoint differs from `{base_url}/models`, set `GROK_MODELS_LIST_URL` explicitly.
+If your model list endpoint differs from `{base_url}/models`, set `AXON_MODELS_LIST_URL` explicitly.
 
-**Combining with `[endpoints]` config:** You can also set endpoints in `~/.grok/config.toml`:
+**Combining with `[endpoints]` config:** You can also set endpoints in `~/.axon/config.toml`:
 
 ```toml
 [endpoints]
 models_base_url = "https://api.acme.com/v1"
 
 # Override just the API key for a specific model
-[model.grok-build]
+[model.axon-build]
 api_key = "my-api-key"
 ```
 
@@ -1862,7 +1862,7 @@ Extend Grok's capabilities with [Model Context Protocol](https://modelcontextpro
 
 ### Configuration
 
-MCP servers are configured in `~/.grok/config.toml`:
+MCP servers are configured in `~/.axon/config.toml`:
 
 ```toml
 [mcp_servers.<name>]
@@ -1878,36 +1878,36 @@ tool_timeouts = { create_issue = 120, search = 30 }  # Per-tool timeout override
 
 ### Project-Scoped MCP Servers
 
-MCP servers can also be configured per-project in `.grok/config.toml`. Grok walks from the current directory up to the git repo root, loading `.grok/config.toml` at each level:
+MCP servers can also be configured per-project in `.axon/config.toml`. Grok walks from the current directory up to the git repo root, loading `.axon/config.toml` at each level:
 
 | Location                        | Scope             | Priority |
 | ------------------------------- | ----------------- | -------- |
-| `~/.grok/config.toml`           | All projects      | Lowest   |
-| `<repo-root>/.grok/config.toml` | This repository   | ↑        |
-| `<cwd>/.grok/config.toml`       | Current directory | Highest  |
+| `~/.axon/config.toml`           | All projects      | Lowest   |
+| `<repo-root>/.axon/config.toml` | This repository   | ↑        |
+| `<cwd>/.axon/config.toml`       | Current directory | Highest  |
 
 If a project defines a server with the same name as a global one, the project version **replaces** it entirely (fields are not merged — omitted fields get defaults, not the global values). Servers defined only in the global config are unaffected.
 
-**Example:** commit a `.grok/config.toml` in your repo to share MCP servers across the team:
+**Example:** commit a `.axon/config.toml` in your repo to share MCP servers across the team:
 
 ```
 my-project/
-├── .grok/
+├── .axon/
 │   └── config.toml
 ├── src/
 └── ...
 ```
 
 ```toml
-# .grok/config.toml
+# .axon/config.toml
 [mcp_servers.linear]
 command = "npx"
 args = ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
 ```
 
-If you also have a `linear` server in `~/.grok/config.toml`, the project version replaces it entirely.
+If you also have a `linear` server in `~/.axon/config.toml`, the project version replaces it entirely.
 
-> **Note:** Only `[mcp_servers]` is supported in project-scoped `.grok/config.toml`. Other config sections (models, shortcuts, etc.) are only read from `~/.grok/config.toml`.
+> **Note:** Only `[mcp_servers]` is supported in project-scoped `.axon/config.toml`. Other config sections (models, shortcuts, etc.) are only read from `~/.axon/config.toml`.
 
 ### Tool Naming
 
@@ -1975,18 +1975,18 @@ See the [MCP Server Registry](https://github.com/modelcontextprotocol/servers) f
 
 ## Memory
 
-> **Experimental:** requires `--experimental-memory` (or `GROK_MEMORY=1` / `[memory] enabled = true` in config).
+> **Experimental:** requires `--experimental-memory` (or `AXON_MEMORY=1` / `[memory] enabled = true` in config).
 
 Cross-session memory lets Grok remember facts, decisions, code patterns, and debugging workflows across separate sessions in the same project.
 
 ### How it works
 
-Memory is stored as Markdown files under `~/.grok/memory/`:
-- **Global** (`~/.grok/memory/MEMORY.md`) — facts that apply across all your projects
-- **Workspace** (`~/.grok/memory/<project-slug>-<hash8>/MEMORY.md`) — project-specific conventions and context
-- **Session logs** (`~/.grok/memory/<project-slug>-<hash8>/sessions/`) — per-session summaries
+Memory is stored as Markdown files under `~/.axon/memory/`:
+- **Global** (`~/.axon/memory/MEMORY.md`) — facts that apply across all your projects
+- **Workspace** (`~/.axon/memory/<project-slug>-<hash8>/MEMORY.md`) — project-specific conventions and context
+- **Session logs** (`~/.axon/memory/<project-slug>-<hash8>/sessions/`) — per-session summaries
 
-Workspace directories are suffixed with a short hash for uniqueness (e.g. `xai-a3f7b2c9/`). The hash is derived from the git remote URL so all clones and worktrees of the same repository share the same memory directory.
+Workspace directories are suffixed with a short hash for uniqueness (e.g. `axon-a3f7b2c9/`). The hash is derived from the git remote URL so all clones and worktrees of the same repository share the same memory directory.
 
 An SQLite index enables fast hybrid search (FTS5 keyword + optional vector KNN) across all memory files.
 
@@ -1997,11 +1997,11 @@ An SQLite index enables fast hybrid search (FTS5 keyword + optional vector KNN) 
 grok --experimental-memory
 
 # Environment variable (persists for the shell session)
-export GROK_MEMORY=1
+export AXON_MEMORY=1
 grok
 
 # Config file (persists permanently)
-# ~/.grok/config.toml
+# ~/.axon/config.toml
 [memory]
 enabled = true
 ```
@@ -2024,7 +2024,7 @@ This summary is searchable in future sessions but does **not** capture full cont
 
 ### Capturing rich knowledge with `/flush`
 
-For richer capture — decisions, patterns, debugging workflows, API discoveries — use `/flush` in the TUI. This triggers an LLM-generated summary of the current session's most important content and writes it to a dated session log under `~/.grok/memory/<project-slug>-<hash8>/sessions/`, where it is indexed and searchable in future sessions.
+For richer capture — decisions, patterns, debugging workflows, API discoveries — use `/flush` in the TUI. This triggers an LLM-generated summary of the current session's most important content and writes it to a dated session log under `~/.axon/memory/<project-slug>-<hash8>/sessions/`, where it is indexed and searchable in future sessions.
 
 Use `/flush` when you want to preserve important context before compaction or at any point during a productive session.
 
@@ -2068,13 +2068,13 @@ grok memory stats
 
 ### Configuration reference
 
-Key options under `[memory]` in `~/.grok/config.toml`:
+Key options under `[memory]` in `~/.axon/config.toml`:
 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `enabled` | `false` | Enable memory (can also be set via CLI flag or env var) |
 | `session.save_on_end` | `true` | Write the lightweight metadata summary on session end |
-| `watcher.enabled` | `true` | Watch `~/.grok/memory/` for external edits and reindex on search |
+| `watcher.enabled` | `true` | Watch `~/.axon/memory/` for external edits and reindex on search |
 | `search.max_results` | `6` | Default number of memory results to return |
 | `search.min_score` | `0.35` | Minimum relevance score threshold for explicit memory search and recovery paths |
 | `initial_injection.enabled` | `true` | Enable automatic first-turn memory injection |
@@ -2116,16 +2116,16 @@ grok --sandbox strict
 | Profile         | FS Read            | FS Write                  | Child Network | Use Case                 |
 | --------------- | ------------------ | ------------------------- | ------------- | ------------------------ |
 | `off` (default) | Unrestricted       | Unrestricted              | Unrestricted  | No sandbox               |
-| `workspace`     | Everywhere         | CWD + `/tmp` + `~/.grok/` | Allowed       | Normal development       |
-| `read-only`     | Everywhere         | `~/.grok/` only           | Blocked       | Exploration, code review |
-| `strict`        | CWD + system paths | CWD + `/tmp` + `~/.grok/` | Blocked       | Untrusted code           |
+| `workspace`     | Everywhere         | CWD + `/tmp` + `~/.axon/` | Allowed       | Normal development       |
+| `read-only`     | Everywhere         | `~/.axon/` only           | Blocked       | Exploration, code review |
+| `strict`        | CWD + system paths | CWD + `/tmp` + `~/.axon/` | Blocked       | Untrusted code           |
 
-Sensitive paths (`~/.ssh/`, `~/.aws/`, `~/.gnupg/`, `~/.grok/auth/`) are always
+Sensitive paths (`~/.ssh/`, `~/.aws/`, `~/.gnupg/`, `~/.axon/auth/`) are always
 write-protected regardless of profile.
 
 ### Custom Profiles
 
-Create `~/.grok/sandbox.toml` (global) or `.grok/sandbox.toml` (per-project):
+Create `~/.axon/sandbox.toml` (global) or `.axon/sandbox.toml` (per-project):
 
 ```toml
 [profiles.devbox]
@@ -2177,7 +2177,7 @@ model cannot convince the agent to relax restrictions at runtime.
 
 ### Event Logging
 
-Sandbox events (profile applied, violations) are logged to `~/.grok/sandbox-events.jsonl`
+Sandbox events (profile applied, violations) are logged to `~/.axon/sandbox-events.jsonl`
 for telemetry and debugging.
 
 ---
@@ -2194,7 +2194,7 @@ grok inspect --json   # machine-readable JSON
 The output shows all loaded configuration organized by type:
 
 - **Project Instructions** — AGENTS.md / CLAUDE.md files with token counts
-- **Skills** — from `.grok/skills/`, `~/.grok/skills/`, plugins, and config paths
+- **Skills** — from `.axon/skills/`, `~/.axon/skills/`, plugins, and config paths
 - **Agents** — built-in, user-defined, and plugin-provided subagents
 - **Plugins** — discovered plugins with what each provides (skills, agents, hooks, MCPs)
 - **MCP Servers** — from `config.toml`, plugins, `~/.claude.json`, and `.mcp.json`
@@ -2208,13 +2208,13 @@ Plugin-provided components appear in their respective sections with a `[plugin: 
 
 ## Claude Code Compatibility
 
-Grok automatically discovers configuration from Claude Code directories alongside native `.grok/` paths. No extra setup is needed.
+Grok automatically discovers configuration from Claude Code directories alongside native `.axon/` paths. No extra setup is needed.
 
 ### What is picked up
 
 | Component         | Claude Code location                                 | How Grok uses it                 |
 | ----------------- | ---------------------------------------------------- | -------------------------------- |
-| **Skills**        | `.claude/skills/`, `~/.claude/skills/`               | Loaded as skills (same as `.grok/skills/`) |
+| **Skills**        | `.claude/skills/`, `~/.claude/skills/`               | Loaded as skills (same as `.axon/skills/`) |
 | **Agents**        | `.claude/agents/`, `~/.claude/agents/`               | Loaded as subagents              |
 | **Plugins**       | `.claude/plugins/`, `~/.claude/plugins/`             | Discovered with all components   |
 | **Installed plugins** | `~/.claude/plugins/installed_plugins.json`        | Each `installPath` is loaded     |
@@ -2272,7 +2272,7 @@ disallowedTools:
 
 ### `web_fetch`
 
-Fetch a specific URL and return its content as markdown. **Disabled by default** — enable with `GROK_WEB_FETCH=1`. 
+Fetch a specific URL and return its content as markdown. **Disabled by default** — enable with `AXON_WEB_FETCH=1`. 
 
 When no custom `allowed_domains` is set, the tool permits a default allowlist of useful documentation sites (SpaceXAI, language docs, frameworks, cloud providers, databases, etc.). Domains not on the allowlist prompt the user for approval; `--always-approve` auto-approves all. Domain matching is case-insensitive, strips `www.` prefixes, and supports path-scoped entries (e.g. `x.ai/company`).
 
@@ -2284,10 +2284,10 @@ Grok automatically persists conversations to disk. This works across all modes: 
 
 ### Storage Layout
 
-Sessions are stored under `~/.grok/sessions/`, organized by URL-encoded working directory:
+Sessions are stored under `~/.axon/sessions/`, organized by URL-encoded working directory:
 
 ```
-~/.grok/sessions/<encoded-cwd>/<session-id>/
+~/.axon/sessions/<encoded-cwd>/<session-id>/
   summary.json            # metadata: title, timestamps, model, message count
   updates.jsonl           # ACP session update stream (conversation + tool calls)
   chat_history.jsonl      # raw chat messages sent to the model
@@ -2363,19 +2363,19 @@ The agent persists all session updates automatically. Clients can reconnect and 
 
 | Path                  | Description                                         |
 | --------------------- | --------------------------------------------------- |
-| `~/.grok/config.toml` | Configuration file                                  |
-| `~/.grok/sessions/`   | Persisted sessions (organized by working directory) |
-| `~/.grok/auth.json`   | Authentication credentials (auto-managed)           |
-| `~/.grok/memory/`     | Cross-session memory files and index                |
-| `~/.grok/skills/`     | User-scoped skill definitions                       |
-| `~/.grok/plugins/`    | User-scoped plugins                                 |
-| `~/.grok/agents/`     | User-scoped agent definitions                       |
-| `.grok/config.toml`   | Project-scoped config (MCP servers)                 |
-| `.grok/skills/`       | Project-scoped skill definitions                    |
-| `.grok/plugins/`      | Project-scoped plugins                              |
-| `.grok/agents/`       | Project-scoped agent definitions                    |
-| `.grok/hooks/`        | Project-scoped hooks                                |
-| `.grok/lsp.json`      | LSP server configuration                            |
+| `~/.axon/config.toml` | Configuration file                                  |
+| `~/.axon/sessions/`   | Persisted sessions (organized by working directory) |
+| `~/.axon/auth.json`   | Authentication credentials (auto-managed)           |
+| `~/.axon/memory/`     | Cross-session memory files and index                |
+| `~/.axon/skills/`     | User-scoped skill definitions                       |
+| `~/.axon/plugins/`    | User-scoped plugins                                 |
+| `~/.axon/agents/`     | User-scoped agent definitions                       |
+| `.axon/config.toml`   | Project-scoped config (MCP servers)                 |
+| `.axon/skills/`       | Project-scoped skill definitions                    |
+| `.axon/plugins/`      | Project-scoped plugins                              |
+| `.axon/agents/`       | Project-scoped agent definitions                    |
+| `.axon/hooks/`        | Project-scoped hooks                                |
+| `.axon/lsp.json`      | LSP server configuration                            |
 | `~/.claude/skills/`   | User-scoped skills (Claude Code compat)             |
 | `~/.claude/plugins/`  | User-scoped plugins (Claude Code compat)            |
 | `~/.claude.json`      | MCP servers (Claude Code compat)                    |
@@ -2388,26 +2388,26 @@ The agent persists all session updates automatically. Clients can reconnect and 
 | Variable                         | Description                                                                                              |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `XAI_API_KEY`         | API key from [console.x.ai](https://console.x.ai). Used for custom endpoint auth and API key login      |
-| `GROK_CLI_CHAT_PROXY_BASE_URL`  | Override the cli-chat-proxy URL (default: `https://cli-chat-proxy.grok.com/v1`)                          |
-| `GROK_MODELS_BASE_URL`          | Custom base URL for inference. Model list auto-fetched from `{base_url}/models` (see [Custom Models Endpoint](#custom-models-endpoint)) |
-| `GROK_MODELS_LIST_URL`          | Override the model list URL if it differs from `{GROK_MODELS_BASE_URL}/models`                                              |
-| `GROK_AUTH_PROVIDER_COMMAND`     | External auth binary (alternative to config file). See [External Auth Provider](#external-auth-provider) |
-| `GROK_AUTH_TOKEN_TTL`            | Token lifetime in seconds for external auth providers that output bare tokens. See [External Auth Provider](#external-auth-provider) |
-| `GROK_AUTH_EARLY_INVALIDATION_SECS` | Seconds before `expires_at` to consider a token expired (default: `300`). See [Automatic Credential Refresh](#automatic-credential-refresh) |
-| `GROK_OIDC_ISSUER`              | OIDC issuer URL (alternative to config file). See [OIDC](#oidc-customer-sso)                             |
-| `GROK_OIDC_CLIENT_ID`           | OIDC client ID (alternative to config file). See [OIDC](#oidc-customer-sso)                              |
-| `GROK_HOME`                     | Override config directory (default: `~/.grok`)                                                           |
-| `GROK_SUBAGENTS`                | Enable (`1`) or disable (`0`) subagent/task tool support                                                 |
-| `GROK_MEMORY`                   | Enable (`1`) or disable (`0`) cross-session memory                                                       |
-| `GROK_AGENT`                    | Custom agent definition path or name (see [Agent Profiles](#agent-profiles))                             |
-| `GROK_WEB_FETCH`                | Enable (`1`) or disable (`0`) the `web_fetch` tool                                                       |
-| `GROK_WEB_FETCH_PROXY`          | Egress proxy URL for `web_fetch` requests (overridden by `[toolset.web_fetch] proxy_endpoint`)           |
-| `GROK_RESPECT_GITIGNORE`        | Disable `.gitignore` filtering in tools when set to `0`                                                  |
-| `GROK_FEEDBACK_ENABLED`         | Enable (`1`) or disable (`0`) feedback system independently from telemetry                               |
-| `GROK_DEPLOYMENT_KEY`           | Management API key for enterprise deployments                                                            |
-| `GROK_LOG_FILE`                 | Enable file logging by providing a file path (the value is used verbatim as the path)                    |
-| `GROK_DEBUG_LOG`                | Debug firehose (set by `--debug`): truthy routes per-session logs to `~/.grok/debug/<sessionId>.txt`, a path writes that one file |
-| `RUST_LOG`                      | Log filter for stderr (headless `-p` defaults to `off`, other non-TUI modes to `error`; TUI captures stderr) and for the `GROK_LOG_FILE` log; the `--debug` firehose ignores it |
+| `AXON_CLI_CHAT_PROXY_BASE_URL`  | Override the cli-chat-proxy URL (default: `https://cli-chat-proxy.grok.com/v1`)                          |
+| `AXON_MODELS_BASE_URL`          | Custom base URL for inference. Model list auto-fetched from `{base_url}/models` (see [Custom Models Endpoint](#custom-models-endpoint)) |
+| `AXON_MODELS_LIST_URL`          | Override the model list URL if it differs from `{AXON_MODELS_BASE_URL}/models`                                              |
+| `AXON_AUTH_PROVIDER_COMMAND`     | External auth binary (alternative to config file). See [External Auth Provider](#external-auth-provider) |
+| `AXON_AUTH_TOKEN_TTL`            | Token lifetime in seconds for external auth providers that output bare tokens. See [External Auth Provider](#external-auth-provider) |
+| `AXON_AUTH_EARLY_INVALIDATION_SECS` | Seconds before `expires_at` to consider a token expired (default: `300`). See [Automatic Credential Refresh](#automatic-credential-refresh) |
+| `AXON_OIDC_ISSUER`              | OIDC issuer URL (alternative to config file). See [OIDC](#oidc-customer-sso)                             |
+| `AXON_OIDC_CLIENT_ID`           | OIDC client ID (alternative to config file). See [OIDC](#oidc-customer-sso)                              |
+| `AXON_HOME`                     | Override config directory (default: `~/.axon`)                                                           |
+| `AXON_SUBAGENTS`                | Enable (`1`) or disable (`0`) subagent/task tool support                                                 |
+| `AXON_MEMORY`                   | Enable (`1`) or disable (`0`) cross-session memory                                                       |
+| `AXON_AGENT`                    | Custom agent definition path or name (see [Agent Profiles](#agent-profiles))                             |
+| `AXON_WEB_FETCH`                | Enable (`1`) or disable (`0`) the `web_fetch` tool                                                       |
+| `AXON_WEB_FETCH_PROXY`          | Egress proxy URL for `web_fetch` requests (overridden by `[toolset.web_fetch] proxy_endpoint`)           |
+| `AXON_RESPECT_GITIGNORE`        | Disable `.gitignore` filtering in tools when set to `0`                                                  |
+| `AXON_FEEDBACK_ENABLED`         | Enable (`1`) or disable (`0`) feedback system independently from telemetry                               |
+| `AXON_DEPLOYMENT_KEY`           | Management API key for enterprise deployments                                                            |
+| `AXON_LOG_FILE`                 | Enable file logging by providing a file path (the value is used verbatim as the path)                    |
+| `AXON_DEBUG_LOG`                | Debug firehose (set by `--debug`): truthy routes per-session logs to `~/.axon/debug/<sessionId>.txt`, a path writes that one file |
+| `RUST_LOG`                      | Log filter for stderr (headless `-p` defaults to `off`, other non-TUI modes to `error`; TUI captures stderr) and for the `AXON_LOG_FILE` log; the `--debug` firehose ignores it |
 
 ---
 
@@ -2431,14 +2431,14 @@ Reload your shell or run `source ~/.bashrc`.
 Alternative (Grok-managed location):
 
 ```bash
-mkdir -p ~/.grok/completions/bash
-grok completions bash > ~/.grok/completions/bash/grok.bash
+mkdir -p ~/.axon/completions/bash
+grok completions bash > ~/.axon/completions/bash/grok.bash
 ```
 
 Add to `~/.bashrc`:
 
 ```bash
-[[ -r "$HOME/.grok/completions/bash/grok.bash" ]] && source "$HOME/.grok/completions/bash/grok.bash"
+[[ -r "$HOME/.axon/completions/bash/grok.bash" ]] && source "$HOME/.axon/completions/bash/grok.bash"
 ```
 
 ### Zsh
@@ -2461,14 +2461,14 @@ compinit
 Alternative (Grok-managed location):
 
 ```bash
-mkdir -p ~/.grok/completions/zsh
-grok completions zsh > ~/.grok/completions/zsh/_grok
+mkdir -p ~/.axon/completions/zsh
+grok completions zsh > ~/.axon/completions/zsh/_grok
 ```
 
 Add to `~/.zshrc`:
 
 ```zsh
-fpath=("$HOME/.grok/completions/zsh" $fpath)
+fpath=("$HOME/.axon/completions/zsh" $fpath)
 autoload -Uz compinit
 compinit
 ```
@@ -2483,24 +2483,24 @@ Regenerate completions after upgrading `grok` — the script reflects the CLI of
 
 ### Debug logging
 
-Write logs to a file for debugging. The TUI captures stderr, so `RUST_LOG` alone won't produce visible output in production — use `grok --debug` or `GROK_LOG_FILE` instead:
+Write logs to a file for debugging. The TUI captures stderr, so `RUST_LOG` alone won't produce visible output in production — use `grok --debug` or `AXON_LOG_FILE` instead:
 
 ```bash
-# Per-session debug log (~/.grok/debug/<sessionId>.txt)
+# Per-session debug log (~/.axon/debug/<sessionId>.txt)
 grok --debug
 
 # Log to a custom path
-GROK_LOG_FILE=/tmp/grok-debug.log grok
+AXON_LOG_FILE=/tmp/grok-debug.log grok
 
 # Tail the most-recently-opened session's log in another terminal (Unix symlink)
-tail -f ~/.grok/debug/latest.txt
+tail -f ~/.axon/debug/latest.txt
 ```
 
-The `--debug` firehose uses a fixed filter (first-party crates at `debug`) and is not narrowed by `RUST_LOG`. A `GROK_LOG_FILE` log defaults to `debug` and honors `RUST_LOG`, so you can set module-level filters for targeted debugging:
+The `--debug` firehose uses a fixed filter (first-party crates at `debug`) and is not narrowed by `RUST_LOG`. A `AXON_LOG_FILE` log defaults to `debug` and honors `RUST_LOG`, so you can set module-level filters for targeted debugging:
 
 ```bash
 # Debug auth, info for everything else
-GROK_LOG_FILE=/tmp/grok-debug.log RUST_LOG="info,xai_grok_shell::auth=debug" grok
+AXON_LOG_FILE=/tmp/grok-debug.log RUST_LOG="info,xai_grok_shell::auth=debug" grok
 ```
 
 ### Authentication fails
@@ -2548,16 +2548,16 @@ Session files are plain JSON/JSONL and can be inspected directly:
 
 ```bash
 # Find sessions for the current directory
-ls ~/.grok/sessions/
+ls ~/.axon/sessions/
 
 # Read session metadata
-cat ~/.grok/sessions/<encoded-cwd>/<session-id>/summary.json | jq .
+cat ~/.axon/sessions/<encoded-cwd>/<session-id>/summary.json | jq .
 
 # View conversation history
-cat ~/.grok/sessions/<encoded-cwd>/<session-id>/updates.jsonl | head -20
+cat ~/.axon/sessions/<encoded-cwd>/<session-id>/updates.jsonl | head -20
 
 # Count turns in a session
-wc -l ~/.grok/sessions/<encoded-cwd>/<session-id>/chat_history.jsonl
+wc -l ~/.axon/sessions/<encoded-cwd>/<session-id>/chat_history.jsonl
 ```
 
 ### Context window full

@@ -28,7 +28,7 @@ const DROP_BATCH_SIZE: usize = 64;
 /// Format: https://grok.com/build/{sessionId}
 pub fn build_share_url(session_id: &str) -> String {
     let base_url =
-        std::env::var("GROK_CODE_WEB_URL").unwrap_or_else(|_| "https://grok.com".to_string());
+        std::env::var("AXON_CODE_WEB_URL").unwrap_or_else(|_| "https://grok.com".to_string());
     format!("{}/build/{}", base_url, session_id)
 }
 

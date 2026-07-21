@@ -43,7 +43,7 @@ pub struct WebFetchParams {
     /// When true, allow fetches to **explicit** loopback hosts only
     /// (`localhost`, `127.0.0.0/8`, `::1`). Private/metadata stay blocked.
     /// Default: `false` (fail closed). Set via `[toolset.web_fetch]
-    /// allow_local = true` or `GROK_WEB_FETCH_ALLOW_LOCAL=1`.
+    /// allow_local = true` or `AXON_WEB_FETCH_ALLOW_LOCAL=1`.
     #[serde(default)]
     pub allow_local: Option<bool>,
 }

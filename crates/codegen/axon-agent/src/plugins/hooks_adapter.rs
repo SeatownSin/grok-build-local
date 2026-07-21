@@ -143,13 +143,13 @@ fn process_hooks_content(
         warnings.push(msg);
     }
 
-    // Build plugin env vars. `GROK_PLUGIN_*` is the native contract;
+    // Build plugin env vars. `AXON_PLUGIN_*` is the native contract;
     // `CLAUDE_PLUGIN_*` aliases the same values for external hooks that read
     // those names.
     let plugin_env: HashMap<String, String> = HashMap::from([
-        ("GROK_PLUGIN_ROOT".to_string(), plugin_root.to_string()),
+        ("AXON_PLUGIN_ROOT".to_string(), plugin_root.to_string()),
         ("CLAUDE_PLUGIN_ROOT".to_string(), plugin_root.to_string()),
-        ("GROK_PLUGIN_DATA".to_string(), plugin_data.to_string()),
+        ("AXON_PLUGIN_DATA".to_string(), plugin_data.to_string()),
         ("CLAUDE_PLUGIN_DATA".to_string(), plugin_data.to_string()),
     ]);
 
@@ -344,7 +344,7 @@ mod tests {
         assert_eq!(specs.len(), 1);
         assert!(specs[0].name.starts_with("plugin/my-plugin/"));
         assert_eq!(
-            specs[0].extra_env.get("GROK_PLUGIN_ROOT").unwrap(),
+            specs[0].extra_env.get("AXON_PLUGIN_ROOT").unwrap(),
             "/path/to/plugin"
         );
         assert_eq!(
@@ -352,7 +352,7 @@ mod tests {
             "/path/to/plugin"
         );
         assert_eq!(
-            specs[0].extra_env.get("GROK_PLUGIN_DATA").unwrap(),
+            specs[0].extra_env.get("AXON_PLUGIN_DATA").unwrap(),
             "/path/to/data"
         );
 
@@ -384,7 +384,7 @@ mod tests {
         assert_eq!(specs.len(), 1);
         assert!(specs[0].name.starts_with("plugin/inline-plugin/"));
         assert_eq!(
-            specs[0].extra_env.get("GROK_PLUGIN_ROOT").unwrap(),
+            specs[0].extra_env.get("AXON_PLUGIN_ROOT").unwrap(),
             "/path/to/plugin"
         );
         assert!(warnings.is_empty());
@@ -412,7 +412,7 @@ mod tests {
     }
 
     /// Regression: hook commands that reference
-    /// `${CLAUDE_PLUGIN_ROOT}` (or its `GROK_PLUGIN_ROOT` alias) must be
+    /// `${CLAUDE_PLUGIN_ROOT}` (or its `AXON_PLUGIN_ROOT` alias) must be
     /// substituted at config-load time so the runner spawns the real
     /// plugin path. Without substitution the runner's pre-spawn env-var
     /// check refuses to run such hooks (the dispatcher fail-opens so the
@@ -424,7 +424,7 @@ mod tests {
                 "PreToolUse": [
                     {"hooks": [
                         {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre.sh"},
-                        {"type": "command", "command": "${GROK_PLUGIN_ROOT}/hooks/alias.sh"},
+                        {"type": "command", "command": "${AXON_PLUGIN_ROOT}/hooks/alias.sh"},
                         {"type": "command", "command": "${CLAUDE_PLUGIN_DATA}/cache/post.sh"}
                     ]}
                 ]
@@ -473,7 +473,7 @@ mod tests {
             "command_raw must preserve the source string verbatim, got {raws:?}"
         );
         assert!(
-            raws.contains(&"${GROK_PLUGIN_ROOT}/hooks/alias.sh"),
+            raws.contains(&"${AXON_PLUGIN_ROOT}/hooks/alias.sh"),
             "command_raw must preserve the source string verbatim, got {raws:?}"
         );
         assert!(
@@ -543,8 +543,8 @@ mod tests {
     /// Plugin hook JSON may declare its own `env` map. The user-declared
     /// keys land in `extra_env`, but the plugin adapter MUST override
     /// any user-declared value for keys the plugin owns
-    /// (CLAUDE_PLUGIN_ROOT, GROK_PLUGIN_ROOT, CLAUDE_PLUGIN_DATA,
-    /// GROK_PLUGIN_DATA). This preserves the plugin contract while still
+    /// (CLAUDE_PLUGIN_ROOT, AXON_PLUGIN_ROOT, CLAUDE_PLUGIN_DATA,
+    /// AXON_PLUGIN_DATA). This preserves the plugin contract while still
     /// supporting user-defined env vars on plugin hooks.
     #[test]
     fn parse_plugin_hooks_user_env_merged_with_plugin_precedence() {
@@ -561,9 +561,9 @@ mod tests {
                             "env": {
                                 "FOO": "bar",
                                 "CLAUDE_PLUGIN_ROOT": "/user/wins?",
-                                "GROK_PLUGIN_ROOT": "/user/wins?",
+                                "AXON_PLUGIN_ROOT": "/user/wins?",
                                 "CLAUDE_PLUGIN_DATA": "/user/wins?",
-                                "GROK_PLUGIN_DATA": "/user/wins?"
+                                "AXON_PLUGIN_DATA": "/user/wins?"
                             }
                         }
                     ]}
@@ -589,14 +589,14 @@ mod tests {
         );
 
         // All four plugin-owned keys: plugin wins, user's attempt is
-        // overridden. CLAUDE_PLUGIN_ROOT and GROK_PLUGIN_ROOT both map
-        // to plugin_root; CLAUDE_PLUGIN_DATA and GROK_PLUGIN_DATA both
+        // overridden. CLAUDE_PLUGIN_ROOT and AXON_PLUGIN_ROOT both map
+        // to plugin_root; CLAUDE_PLUGIN_DATA and AXON_PLUGIN_DATA both
         // map to plugin_data.
         for (key, expected) in [
             ("CLAUDE_PLUGIN_ROOT", "/actual/plugin/root"),
-            ("GROK_PLUGIN_ROOT", "/actual/plugin/root"),
+            ("AXON_PLUGIN_ROOT", "/actual/plugin/root"),
             ("CLAUDE_PLUGIN_DATA", "/actual/plugin/data"),
-            ("GROK_PLUGIN_DATA", "/actual/plugin/data"),
+            ("AXON_PLUGIN_DATA", "/actual/plugin/data"),
         ] {
             assert_eq!(
                 specs[0].extra_env.get(key).map(String::as_str),

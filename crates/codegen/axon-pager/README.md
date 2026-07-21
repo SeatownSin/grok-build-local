@@ -1,4 +1,4 @@
-# xai-grok-pager
+# axon-pager
 
 Terminal UI (TUI) for Grok Build. Provides the interactive full-screen interface
 including the scrollback view, prompt input, session management, and all modal
@@ -58,6 +58,6 @@ src/
 - [Terminal Support & Troubleshooting](docs/user-guide/21-terminal-support.md) — tmux/SSH truecolor, clipboard, mouse, diagnostics, /terminal-setup
 - [Hooks & Plugins Guide](docs/hooks-and-plugins.md) — managing hooks, plugins, and marketplace sources
 - [Custom Hooks Guide](docs/custom-hooks.md) — creating, configuring, and writing your own hooks
-- [Hook Examples](../xai-grok-hooks/examples/README.md) — sample hooks for common workflows
-- [Hooks Crate (`xai-grok-hooks`)](../xai-grok-hooks/) — hook runtime, event types, and execution engine
-- [Plugin Marketplace Crate (`xai-grok-plugin-marketplace`)](../xai-grok-plugin-marketplace/) — marketplace source loading, scanning, and install
+- [Hook Examples](../axon-hooks/examples/README.md) — sample hooks for common workflows
+- [Hooks Crate (`axon-hooks`)](../axon-hooks/) — hook runtime, event types, and execution engine
+- [Plugin Marketplace Crate (`axon-plugin-marketplace`)](../axon-plugin-marketplace/) — marketplace source loading, scanning, and install

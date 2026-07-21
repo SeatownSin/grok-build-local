@@ -20,11 +20,11 @@ use crate::process::spawn_piped_with_stderr_capture;
 
 /// Env var naming the binary that elects/hosts the leader in a two-binary
 /// (version-skew) test. Falls back to [`grok_binary`]'s resolution.
-pub const LEADER_BINARY_ENV: &str = "GROK_BINARY_LEADER";
+pub const LEADER_BINARY_ENV: &str = "AXON_BINARY_LEADER";
 
 /// Env var naming the binary for the second (usually newer) client in a
 /// two-binary test. Falls back to [`grok_binary`]'s resolution.
-pub const CLIENT_BINARY_ENV: &str = "GROK_BINARY_CLIENT";
+pub const CLIENT_BINARY_ENV: &str = "AXON_BINARY_CLIENT";
 
 fn role_binary(env_key: &str) -> PathBuf {
     if let Ok(path) = std::env::var(env_key) {
@@ -36,12 +36,12 @@ fn role_binary(env_key: &str) -> PathBuf {
 }
 
 /// Binary for the leader-electing side of a version-skew test
-/// (`GROK_BINARY_LEADER`, else the shared [`grok_binary`] resolution).
+/// (`AXON_BINARY_LEADER`, else the shared [`grok_binary`] resolution).
 pub fn leader_binary() -> PathBuf {
     role_binary(LEADER_BINARY_ENV)
 }
 
-/// Binary for the client side of a version-skew test (`GROK_BINARY_CLIENT`,
+/// Binary for the client side of a version-skew test (`AXON_BINARY_CLIENT`,
 /// else the shared [`grok_binary`] resolution).
 pub fn client_binary() -> PathBuf {
     role_binary(CLIENT_BINARY_ENV)
@@ -129,27 +129,27 @@ impl LeaderStdioClient {
         cmd.args(["agent", "--leader", "stdio"])
             .current_dir(cwd)
             // Hermetic env: the developer's shell may export GROK_* vars
-            // (e.g. GROK_LEADER_SOCKET pointing at a REAL leader on this
+            // (e.g. AXON_LEADER_SOCKET pointing at a REAL leader on this
             // machine). env_clear + explicit allowlist guarantees the test
             // can never touch a leader outside its sandbox home.
             .env_clear()
             .env("PATH", std::env::var("PATH").unwrap_or_default())
             .env("HOME", home)
-            .env("GROK_HOME", home.join(".grok"))
+            .env("AXON_HOME", home.join(".axon"))
             // Pin the socket inside the sandbox. The lock file is the
             // sibling `.lock` (leader.sock -> leader.lock), and the spawned
             // leader subprocess inherits/forwards this env var, so every
             // (re-)elected leader binds the same sandboxed path.
-            .env("GROK_LEADER_SOCKET", home.join(".grok").join("leader.sock"))
-            .env("GROK_CLI_CHAT_PROXY_BASE_URL", server.url())
-            .env("GROK_XAI_API_BASE_URL", server.url())
+            .env("AXON_LEADER_SOCKET", home.join(".axon").join("leader.sock"))
+            .env("AXON_CLI_CHAT_PROXY_BASE_URL", server.url())
+            .env("AXON_XAI_API_BASE_URL", server.url())
             .env("XAI_API_KEY", "test-key-for-ci")
-            .env("GROK_TELEMETRY_ENABLED", "false")
-            .env("GROK_FEEDBACK_ENABLED", "false")
-            .env("GROK_TRACE_UPLOAD", "false")
-            .env("GROK_INSTRUMENTATION", "disabled")
+            .env("AXON_TELEMETRY_ENABLED", "false")
+            .env("AXON_FEEDBACK_ENABLED", "false")
+            .env("AXON_TRACE_UPLOAD", "false")
+            .env("AXON_INSTRUMENTATION", "disabled")
             // Inherited by the spawned leader, whose stderr goes to
-            // ~/.grok/leader.log — keep it chatty for diagnosis.
+            // ~/.axon/leader.log — keep it chatty for diagnosis.
             .env("RUST_LOG", "axon_shell=debug");
 
         let (mut child, stderr) = spawn_piped_with_stderr_capture(cmd);
@@ -284,7 +284,7 @@ impl LeaderStdioClient {
 }
 
 pub fn leader_lock_path(home: &Path) -> PathBuf {
-    home.join(".grok").join("leader.lock")
+    home.join(".axon").join("leader.lock")
 }
 
 pub fn read_leader_pid(home: &Path) -> Option<u32> {
@@ -350,5 +350,5 @@ pub async fn wait_for_replay_notifications(
 }
 
 pub fn leader_log(home: &Path) -> String {
-    std::fs::read_to_string(home.join(".grok").join("leader.log")).unwrap_or_default()
+    std::fs::read_to_string(home.join(".axon").join("leader.log")).unwrap_or_default()
 }

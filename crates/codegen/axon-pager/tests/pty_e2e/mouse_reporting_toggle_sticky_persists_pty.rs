@@ -77,7 +77,7 @@ async fn mouse_reporting_toggle_sticky_persists_pty() {
     assert!(
         saw_toggle,
         "mouse toggle must produce sticky off and/or on toast (config_seeded={})\nscreen:\n{}",
-        content.home().join(".grok").join("config.toml").exists(),
+        content.home().join(".axon").join("config.toml").exists(),
         harness.screen_contents()
     );
 

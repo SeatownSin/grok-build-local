@@ -22,7 +22,7 @@
 //! runs, and asserts only invariants: zero scans with the machinery off, a
 //! small bounded number per rebase with it on.
 //!
-//! Knobs: GROK_PERF_GIT_FILES (default 300), GROK_PERF_GIT_PICKS (default 6).
+//! Knobs: AXON_PERF_GIT_FILES (default 300), AXON_PERF_GIT_PICKS (default 6).
 //! Keep the rebase under ~15s or the terminal tool auto-backgrounds the
 //! command and the turn wall time loses meaning.
 
@@ -74,8 +74,8 @@ impl ScanCounter {
 }
 
 fn install_global_scan_counter() -> ScanCounter {
-    // GROK_E2E_LOG=<filter> tees shell logs to stderr for local debugging.
-    let filter = std::env::var("GROK_E2E_LOG").ok();
+    // AXON_E2E_LOG=<filter> tees shell logs to stderr for local debugging.
+    let filter = std::env::var("AXON_E2E_LOG").ok();
     ScanCounter(
         axon_test_utils::tracing_capture::install_prefix_counter_global(
             &[REFRESH_SCAN_LOG_PREFIX, REFRESH_SKIP_LOG_PREFIX],
@@ -226,8 +226,8 @@ async fn run_storm(
     counter: &ScanCounter,
     label: &str,
 ) -> RunStats {
-    let files = env_usize("GROK_PERF_GIT_FILES", 300);
-    let picks = env_usize("GROK_PERF_GIT_PICKS", 6);
+    let files = env_usize("AXON_PERF_GIT_FILES", 300);
+    let picks = env_usize("AXON_PERF_GIT_PICKS", 6);
     let (repo, base) = build_repo(files, picks);
     eprintln!(
         "[perf] {label}: repo ~{files} files, {picks} picks at {:?}",
@@ -430,13 +430,13 @@ fn git_rebase_refresh_storm_e2e() {
     // SAFETY: the only live threads are the mock runtime's workers, which
     // serve HTTP and never read the process environment.
     unsafe {
-        std::env::set_var("GROK_HOME", grok_home.path());
-        std::env::set_var("GROK_CLI_CHAT_PROXY_BASE_URL", server.url());
-        std::env::set_var("GROK_XAI_API_BASE_URL", server.url());
+        std::env::set_var("AXON_HOME", grok_home.path());
+        std::env::set_var("AXON_CLI_CHAT_PROXY_BASE_URL", server.url());
+        std::env::set_var("AXON_XAI_API_BASE_URL", server.url());
         std::env::set_var("XAI_API_KEY", "test-key-for-ci");
-        std::env::set_var("GROK_TELEMETRY_ENABLED", "false");
-        std::env::set_var("GROK_FEEDBACK_ENABLED", "false");
-        std::env::set_var("GROK_TRACE_UPLOAD", "false");
+        std::env::set_var("AXON_TELEMETRY_ENABLED", "false");
+        std::env::set_var("AXON_FEEDBACK_ENABLED", "false");
+        std::env::set_var("AXON_TRACE_UPLOAD", "false");
     }
 
     let agent_rt = tokio::runtime::Builder::new_current_thread()

@@ -68,7 +68,7 @@ impl ContentController {
         self.server.url()
     }
 
-    /// Isolated `$HOME` directory that the pager should use (keeps its ~/.grok
+    /// Isolated `$HOME` directory that the pager should use (keeps its ~/.axon
     /// cache/state out of the real home during tests).
     pub fn home(&self) -> &Path {
         self.home.path()
@@ -83,25 +83,25 @@ impl ContentController {
         let grok_home = self
             .home
             .path()
-            .join(".grok")
+            .join(".axon")
             .to_string_lossy()
             .into_owned();
         vec![
             ("HOME".into(), home),
-            // Explicit GROK_HOME prevents leaking the real user's
+            // Explicit AXON_HOME prevents leaking the real user's
             // config.toml when $HOME alone isn't sufficient (e.g. if
-            // GROK_HOME is set in the test runner's env).
-            ("GROK_HOME".into(), grok_home),
-            ("GROK_CLI_CHAT_PROXY_BASE_URL".into(), self.url()),
-            ("GROK_XAI_API_BASE_URL".into(), self.url()),
+            // AXON_HOME is set in the test runner's env).
+            ("AXON_HOME".into(), grok_home),
+            ("AXON_CLI_CHAT_PROXY_BASE_URL".into(), self.url()),
+            ("AXON_XAI_API_BASE_URL".into(), self.url()),
             ("XAI_API_KEY".into(), "test-key-for-ci".into()),
-            ("GROK_TELEMETRY_ENABLED".into(), "false".into()),
-            ("GROK_FEEDBACK_ENABLED".into(), "false".into()),
-            ("GROK_TRACE_UPLOAD".into(), "false".into()),
+            ("AXON_TELEMETRY_ENABLED".into(), "false".into()),
+            ("AXON_FEEDBACK_ENABLED".into(), "false".into()),
+            ("AXON_TRACE_UPLOAD".into(), "false".into()),
             // Keep unrelated autocomplete work out of PTY timing assertions.
-            ("GROK_PROMPT_SUGGESTIONS".into(), "false".into()),
+            ("AXON_PROMPT_SUGGESTIONS".into(), "false".into()),
             // Compatibility set_turns remains request-FIFO, so retries stay off.
-            ("GROK_MAX_RETRIES".into(), "0".into()),
+            ("AXON_MAX_RETRIES".into(), "0".into()),
         ]
     }
 
@@ -284,17 +284,17 @@ mod tests {
 
         assert_eq!(get("HOME").as_deref(), content.home().to_str());
         assert_eq!(
-            get("GROK_HOME").as_deref(),
-            content.home().join(".grok").to_str()
+            get("AXON_HOME").as_deref(),
+            content.home().join(".axon").to_str()
         );
-        assert_eq!(get("GROK_CLI_CHAT_PROXY_BASE_URL"), Some(content.url()));
-        assert_eq!(get("GROK_XAI_API_BASE_URL"), Some(content.url()));
+        assert_eq!(get("AXON_CLI_CHAT_PROXY_BASE_URL"), Some(content.url()));
+        assert_eq!(get("AXON_XAI_API_BASE_URL"), Some(content.url()));
         assert_eq!(get("XAI_API_KEY").as_deref(), Some("test-key-for-ci"));
-        assert_eq!(get("GROK_TELEMETRY_ENABLED").as_deref(), Some("false"));
-        assert_eq!(get("GROK_FEEDBACK_ENABLED").as_deref(), Some("false"));
-        assert_eq!(get("GROK_TRACE_UPLOAD").as_deref(), Some("false"));
-        assert_eq!(get("GROK_PROMPT_SUGGESTIONS").as_deref(), Some("false"));
-        assert_eq!(get("GROK_MAX_RETRIES").as_deref(), Some("0"));
+        assert_eq!(get("AXON_TELEMETRY_ENABLED").as_deref(), Some("false"));
+        assert_eq!(get("AXON_FEEDBACK_ENABLED").as_deref(), Some("false"));
+        assert_eq!(get("AXON_TRACE_UPLOAD").as_deref(), Some("false"));
+        assert_eq!(get("AXON_PROMPT_SUGGESTIONS").as_deref(), Some("false"));
+        assert_eq!(get("AXON_MAX_RETRIES").as_deref(), Some("0"));
         assert_eq!(env.len(), 10, "env list must not silently grow or shrink");
     }
 }

@@ -153,7 +153,7 @@ pub(super) fn handle_settings_update(notif: &acp::ExtNotification, app: &mut App
     // TODO: extract resolve_session_picker_grouped helper (duplicates event_loop.rs:143-160)
     // Respect env var > config > remote precedence (mirrors event_loop.rs startup).
     if let Some(remote_val) = update.session_picker_grouped {
-        let resolved = std::env::var("GROK_SESSION_PICKER_GROUPED")
+        let resolved = std::env::var("AXON_SESSION_PICKER_GROUPED")
             .ok()
             .and_then(|v| match v.as_str() {
                 "1" | "true" => Some(true),
@@ -400,7 +400,7 @@ pub(super) fn handle_announcements_update(notif: &acp::ExtNotification, app: &mu
 
 /// Apply half of [`handle_announcements_update`], with config layers injected
 /// so the merge/prune behavior is unit-testable without disk state.
-/// `resolve_announcements` honors `GROK_ANNOUNCEMENTS_OVERRIDE` first, so a
+/// `resolve_announcements` honors `AXON_ANNOUNCEMENTS_OVERRIDE` first, so a
 /// backend push can't reintroduce announcements when the override is set.
 pub(super) fn apply_announcements_update(
     app: &mut AppView,

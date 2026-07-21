@@ -259,7 +259,7 @@ pub async fn ensure_latest_on_disk(update_config: &UpdateConfig) -> Result<Ensur
 }
 
 /// Disk-version probe gated on the installer actually maintaining the
-/// managed `~/.grok/bin/grok` symlink.
+/// managed `~/.axon/bin/grok` symlink.
 ///
 /// Only the internal (install.sh / CDN) and gh-release installers write that
 /// symlink. npm manages its own global install, so for npm a symlink left
@@ -279,7 +279,7 @@ fn env_installer() -> Option<&'static str> {
     // The "internal" channel (x.ai CDN + GCS mirror) is removed: this
     // build never contacts xAI infrastructure, so both the env override
     // and the managed-by marker map to GitHub Releases instead.
-    if let Ok(v) = std::env::var("GROK_INSTALLER") {
+    if let Ok(v) = std::env::var("AXON_INSTALLER") {
         return match v.to_ascii_lowercase().as_str() {
             "npm" => Some("npm"),
             "internal" => Some("gh-release"),
@@ -287,10 +287,10 @@ fn env_installer() -> Option<&'static str> {
             _ => None,
         };
     }
-    if std::env::var_os("GROK_MANAGED_BY_NPM").is_some() {
+    if std::env::var_os("AXON_MANAGED_BY_NPM").is_some() {
         return Some("npm");
     }
-    if std::env::var_os("GROK_MANAGED_BY_INTERNAL").is_some() {
+    if std::env::var_os("AXON_MANAGED_BY_INTERNAL").is_some() {
         return Some("gh-release");
     }
     if std::env::var_os("npm_config_user_agent").is_some() {
@@ -648,7 +648,7 @@ async fn run_update_subcommand(run_mode: UpdateRunMode) -> Result<Option<tokio::
 ///
 /// `current_exe()` resolves symlinks via `/proc/self/exe` (see proc(5)),
 /// so it returns the old versioned target after a symlink swap.
-/// Prefer `~/.grok/bin/grok` which always points to the latest version.
+/// Prefer `~/.axon/bin/grok` which always points to the latest version.
 fn resolve_restart_exe() -> Result<std::path::PathBuf> {
     let canonical = grok_application();
     if canonical.exists() {
@@ -665,7 +665,7 @@ pub fn restart_grok() -> Result<()> {
         cmd.arg(arg);
     }
     cmd.env_clear();
-    cmd.envs(std::env::vars_os().filter(|(k, _)| k != "GROK_AUTO_UPDATE"));
+    cmd.envs(std::env::vars_os().filter(|(k, _)| k != "AXON_AUTO_UPDATE"));
     eprintln!("Restarting Grok...");
 
     // Use exec on Unix to replace the current process, avoiding stdio issues
@@ -1039,7 +1039,7 @@ pub async fn download_silent(url: &str, dest: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
-/// Delete `~/.grok/models_cache.json` after a successful update.
+/// Delete `~/.axon/models_cache.json` after a successful update.
 ///
 /// The cache embeds the binary version and will be treated as a miss by the
 /// new binary anyway, but removing it eagerly avoids a wasted disk read +
@@ -1053,7 +1053,7 @@ async fn remove_stale_models_cache() {
     }
 }
 
-/// Remove the stale `grok-pager` symlink/binary from `~/.grok/bin/` left by
+/// Remove the stale `grok-pager` symlink/binary from `~/.axon/bin/` left by
 /// older installations that shipped a separate pager binary.
 async fn remove_stale_pager(bin_dir: &std::path::Path) {
     let name = if cfg!(windows) {
@@ -1155,8 +1155,8 @@ async fn smoke_test_binary(binary_path: &std::path::Path) -> bool {
 
 /// Test-only entry point: same as [`install_internal`] but reads from
 /// `gcs_base_url` instead of the hardcoded GCS bucket. Persists installer
-/// config and writes to `~/.grok/bin/`, so callers must isolate
-/// `GROK_HOME`.
+/// config and writes to `~/.axon/bin/`, so callers must isolate
+/// `AXON_HOME`.
 #[doc(hidden)]
 pub async fn install_internal_from_base(
     target: Option<&str>,
@@ -1167,7 +1167,7 @@ pub async fn install_internal_from_base(
     activate_verified_download(&download).await
 }
 
-/// A downloaded and smoke-tested binary in `~/.grok/downloads/`, not yet
+/// A downloaded and smoke-tested binary in `~/.axon/downloads/`, not yet
 /// activated as the managed `grok`/`agent`.
 struct VerifiedDownload {
     version: String,
@@ -1237,7 +1237,7 @@ async fn activate_verified_download(download: &VerifiedDownload) -> Result<()> {
     let bin_dir = grok_home.join("bin");
     tokio::fs::create_dir_all(&bin_dir).await?;
 
-    // Atomic swap of ~/.grok/bin/{grok,agent} -> downloaded binary.
+    // Atomic swap of ~/.axon/bin/{grok,agent} -> downloaded binary.
     let link_path = swap_managed_bin_links(&download.binary_path, &bin_dir).await?;
 
     remove_stale_pager(&bin_dir).await;
@@ -1268,7 +1268,7 @@ async fn activate_verified_download(download: &VerifiedDownload) -> Result<()> {
 /// Failures are silently ignored — completions are a nice-to-have, not a
 /// requirement for a successful update.
 async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path::Path) {
-    // Derive $HOME independently — grok_home may be overridden via GROK_HOME
+    // Derive $HOME independently — grok_home may be overridden via AXON_HOME
     // env var, so grok_home.parent() isn't necessarily the user's home dir.
     #[allow(deprecated)]
     let user_home = std::env::home_dir().unwrap_or_default();
@@ -1300,13 +1300,13 @@ async fn regenerate_completions(binary: &std::path::Path, grok_home: &std::path:
 
 /// Compute a relative symlink target from `link` to `target`.
 ///
-/// When both paths share a grandparent (e.g. `~/.grok/bin/grok` and
-/// `~/.grok/downloads/grok-0.1.203-linux-x86_64`), returns a relative path
+/// When both paths share a grandparent (e.g. `~/.axon/bin/grok` and
+/// `~/.axon/downloads/grok-0.1.203-linux-x86_64`), returns a relative path
 /// like `../downloads/grok-0.1.203-linux-x86_64`.  When they share the same
 /// parent directory, returns just the filename.  Falls back to the absolute
 /// `target` path for any other layout.
 ///
-/// Relative symlinks survive Docker bind-mounts where `~/.grok/` is mapped
+/// Relative symlinks survive Docker bind-mounts where `~/.axon/` is mapped
 /// into a container with a different `$HOME` (and thus a different absolute
 /// prefix).
 #[cfg(unix)]
@@ -1330,7 +1330,7 @@ fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> 
     target.to_path_buf()
 }
 
-/// Swap `~/.grok/bin/{grok,agent}` to point at `binary_path`. Returns the
+/// Swap `~/.axon/bin/{grok,agent}` to point at `binary_path`. Returns the
 /// `grok` link path (for [`regenerate_completions`]).
 ///
 /// `grok` and `agent` are first-class entry points that the bootstrap
@@ -1339,7 +1339,7 @@ fn relative_symlink_target(target: &std::path::Path, link: &std::path::Path) -> 
 /// leaves `agent` pinned at the previous version.
 ///
 /// Unix: atomic symlink swap with relative target (survives Docker
-/// bind-mounts of `~/.grok/`). Windows: [`windows_replace_exe`].
+/// bind-mounts of `~/.axon/`). Windows: [`windows_replace_exe`].
 ///
 /// **All-or-nothing.** Each link's prior state is captured (Unix: prior
 /// symlink target; Windows: `.rollback.bak`; or `Absent` marker via
@@ -2060,11 +2060,11 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
         tokio::fs::set_permissions(&binary_path, std::fs::Permissions::from_mode(0o755)).await?;
     }
 
-    // Atomic swap of ~/.grok/bin/{grok,agent} -> downloaded binary.
+    // Atomic swap of ~/.axon/bin/{grok,agent} -> downloaded binary.
     swap_managed_bin_links(&binary_path, &bin_dir).await?;
 
     // Update grok-latest -> versioned binary so any existing symlinks that route
-    // through it (e.g. /usr/local/bin/grok -> ~/.grok/downloads/grok-latest)
+    // through it (e.g. /usr/local/bin/grok -> ~/.axon/downloads/grok-latest)
     // resolve to the newly installed version.
     #[cfg(unix)]
     {
@@ -2076,14 +2076,14 @@ async fn install_gh_release(target: Option<&str>) -> Result<()> {
     }
 
     // Also update /usr/local/bin/{grok,agent} if either points directly into
-    // ~/.grok/downloads/ (legacy layout — skips the grok-latest indirection).
+    // ~/.axon/downloads/ (legacy layout — skips the grok-latest indirection).
     // Permission errors ignored.
     #[cfg(unix)]
     for name in ["grok", "agent"] {
         let system_link = std::path::PathBuf::from(format!("/usr/local/bin/{name}"));
         if let Ok(existing_target) = tokio::fs::read_link(&system_link).await {
             let target_str = existing_target.to_string_lossy();
-            if target_str.contains(".grok/downloads/") && !target_str.ends_with("grok-latest") {
+            if target_str.contains(".axon/downloads/") && !target_str.ends_with("grok-latest") {
                 // Try to update; ignore permission errors
                 let _ = atomic_symlink_swap(&binary_path, &system_link).await;
             }
@@ -2144,7 +2144,7 @@ fn create_temp_npmrc(npm_registry: Option<&str>) -> Result<Option<std::path::Pat
 /// the code signature of the mmap'd executable pages once the backing file
 /// inode is unlinked.
 ///
-/// While our postinstall.js now uses versioned binaries under ~/.grok/bin/
+/// While our postinstall.js now uses versioned binaries under ~/.axon/bin/
 /// (so processes launched from there are safe), older installations or npx
 /// invocations may still be running the vendored binary directly.
 #[cfg(target_os = "macos")]
@@ -2441,7 +2441,7 @@ pub async fn run_update(
     refresh_deployment_config().await;
     eprintln!("  ✓ grok v{} installed successfully!", target_version);
 
-    if !force && std::env::var_os("GROK_AUTO_UPDATE").is_none() {
+    if !force && std::env::var_os("AXON_AUTO_UPDATE").is_none() {
         eprintln!("  Please restart Grok.");
     }
     Ok(Some(target_version.to_string()))
@@ -2486,8 +2486,8 @@ mod tests {
         // name onto a single `grok-0.1.tmp`; the helper must keep distinct
         // versions distinct AND make repeated attempts (same process, e.g.
         // concurrent tokio tasks) unique.
-        let dest_181 = std::path::Path::new("/home/u/.grok/downloads/grok-0.1.181-linux-x86_64");
-        let dest_182 = std::path::Path::new("/home/u/.grok/downloads/grok-0.1.182-linux-x86_64");
+        let dest_181 = std::path::Path::new("/home/u/.axon/downloads/grok-0.1.181-linux-x86_64");
+        let dest_182 = std::path::Path::new("/home/u/.axon/downloads/grok-0.1.182-linux-x86_64");
 
         let a = tmp_download_path(dest_181);
         let b = tmp_download_path(dest_182);
@@ -2510,7 +2510,7 @@ mod tests {
         );
         assert_eq!(
             a.parent(),
-            std::path::Path::new("/home/u/.grok/downloads").into(),
+            std::path::Path::new("/home/u/.axon/downloads").into(),
             "temp file must stay in the destination directory for atomic rename"
         );
     }
@@ -2933,8 +2933,8 @@ mod tests {
     #[test]
     fn test_relative_symlink_target_sibling_dirs() {
         // bin/grok -> ../downloads/grok-0.1.203
-        let target = std::path::Path::new("/home/alice/.grok/downloads/grok-0.1.203");
-        let link = std::path::Path::new("/home/alice/.grok/bin/grok");
+        let target = std::path::Path::new("/home/alice/.axon/downloads/grok-0.1.203");
+        let link = std::path::Path::new("/home/alice/.axon/bin/grok");
         let result = relative_symlink_target(target, link);
         assert_eq!(
             result,
@@ -2946,8 +2946,8 @@ mod tests {
     #[test]
     fn test_relative_symlink_target_same_dir() {
         // downloads/grok-latest -> grok-0.1.203 (same directory)
-        let target = std::path::Path::new("/home/alice/.grok/downloads/grok-0.1.203");
-        let link = std::path::Path::new("/home/alice/.grok/downloads/grok-latest");
+        let target = std::path::Path::new("/home/alice/.axon/downloads/grok-0.1.203");
+        let link = std::path::Path::new("/home/alice/.axon/downloads/grok-latest");
         let result = relative_symlink_target(target, link);
         assert_eq!(result, std::path::PathBuf::from("grok-0.1.203"));
     }
@@ -2955,26 +2955,26 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn test_relative_symlink_target_cross_tree_stays_absolute() {
-        // /usr/local/bin/grok -> /home/alice/.grok/downloads/grok-0.1.203
+        // /usr/local/bin/grok -> /home/alice/.axon/downloads/grok-0.1.203
         // Different grandparents — should stay absolute.
-        let target = std::path::Path::new("/home/alice/.grok/downloads/grok-0.1.203");
+        let target = std::path::Path::new("/home/alice/.axon/downloads/grok-0.1.203");
         let link = std::path::Path::new("/usr/local/bin/grok");
         let result = relative_symlink_target(target, link);
         assert_eq!(
             result,
-            std::path::PathBuf::from("/home/alice/.grok/downloads/grok-0.1.203")
+            std::path::PathBuf::from("/home/alice/.axon/downloads/grok-0.1.203")
         );
     }
 
     #[cfg(unix)]
     #[tokio::test]
     async fn test_relative_symlink_survives_directory_move() {
-        // Simulates Docker bind-mount: create ~/.grok/ layout at path A,
+        // Simulates Docker bind-mount: create ~/.axon/ layout at path A,
         // then move it to path B and verify the symlink still resolves.
         let dir = tempfile::tempdir().unwrap();
 
         // Create alice's layout
-        let alice = dir.path().join("alice").join(".grok");
+        let alice = dir.path().join("alice").join(".axon");
         let alice_downloads = alice.join("downloads");
         let alice_bin = alice.join("bin");
         std::fs::create_dir_all(&alice_downloads).unwrap();
@@ -2989,10 +2989,10 @@ mod tests {
         // Verify it works at the original location
         assert_eq!(std::fs::read_to_string(&link).unwrap(), "binary-content");
 
-        // "Bind-mount" to bob: copy the entire .grok tree
+        // "Bind-mount" to bob: copy the entire .axon tree
         let bob_home = dir.path().join("bob");
         std::fs::create_dir_all(&bob_home).unwrap();
-        let bob = bob_home.join(".grok");
+        let bob = bob_home.join(".axon");
         let copy_status = std::process::Command::new("cp")
             .args(["-a", alice.to_str().unwrap(), bob.to_str().unwrap()])
             .status()
@@ -4223,9 +4223,9 @@ mod tests {
     // env_installer — env-var based, must run serially.
     //
     // Resolution order (matches function body):
-    //   1. GROK_INSTALLER (npm | internal | gh-release | gh)
-    //   2. GROK_MANAGED_BY_NPM       → npm
-    //   3. GROK_MANAGED_BY_INTERNAL  → internal
+    //   1. AXON_INSTALLER (npm | internal | gh-release | gh)
+    //   2. AXON_MANAGED_BY_NPM       → npm
+    //   3. AXON_MANAGED_BY_INTERNAL  → internal
     //   4. npm_config_user_agent      → npm
     //   5. None
     // ──────────────────────────────────────────────────────────────────────
@@ -4241,9 +4241,9 @@ mod tests {
     impl InstallerEnvGuard {
         fn isolate() -> Self {
             const VARS: &[&str] = &[
-                "GROK_INSTALLER",
-                "GROK_MANAGED_BY_NPM",
-                "GROK_MANAGED_BY_INTERNAL",
+                "AXON_INSTALLER",
+                "AXON_MANAGED_BY_NPM",
+                "AXON_MANAGED_BY_INTERNAL",
                 "npm_config_user_agent",
                 "NPM_TOKEN",
             ];
@@ -4281,7 +4281,7 @@ mod tests {
     #[serial_test::serial]
     fn test_env_installer_explicit_npm() {
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "npm") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "npm") };
         assert_eq!(env_installer(), Some("npm"));
     }
 
@@ -4291,7 +4291,7 @@ mod tests {
         // The internal (x.ai CDN) channel is removed; the legacy env value
         // resolves to GitHub Releases so stale environments keep updating.
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "internal") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "internal") };
         assert_eq!(env_installer(), Some("gh-release"));
     }
 
@@ -4299,7 +4299,7 @@ mod tests {
     #[serial_test::serial]
     fn test_env_installer_explicit_gh_release() {
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "gh-release") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "gh-release") };
         assert_eq!(env_installer(), Some("gh-release"));
     }
 
@@ -4308,7 +4308,7 @@ mod tests {
     fn test_env_installer_explicit_gh_alias() {
         // `gh` is shorthand for `gh-release`.
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "gh") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "gh") };
         assert_eq!(env_installer(), Some("gh-release"));
     }
 
@@ -4316,10 +4316,10 @@ mod tests {
     #[serial_test::serial]
     fn test_env_installer_explicit_uppercase_normalized() {
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "NPM") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "NPM") };
         assert_eq!(env_installer(), Some("npm"));
 
-        unsafe { std::env::set_var("GROK_INSTALLER", "Gh-Release") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "Gh-Release") };
         assert_eq!(env_installer(), Some("gh-release"));
     }
 
@@ -4328,16 +4328,16 @@ mod tests {
     fn test_env_installer_explicit_unknown_value_returns_none() {
         // CRITICAL: when the explicit env var is set to something we don't
         // recognize, we early-return None. This means we do NOT fall through
-        // to the other env vars or to config. So `GROK_INSTALLER=brew`
+        // to the other env vars or to config. So `AXON_INSTALLER=brew`
         // disables the env-installer detection entirely.
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "brew") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "brew") };
         // Even if MANAGED_BY_NPM is also set, the explicit var wins (and rejects).
-        unsafe { std::env::set_var("GROK_MANAGED_BY_NPM", "1") };
+        unsafe { std::env::set_var("AXON_MANAGED_BY_NPM", "1") };
         assert_eq!(
             env_installer(),
             None,
-            "explicit GROK_INSTALLER=brew must early-return None, not fall through"
+            "explicit AXON_INSTALLER=brew must early-return None, not fall through"
         );
     }
 
@@ -4345,7 +4345,7 @@ mod tests {
     #[serial_test::serial]
     fn test_env_installer_explicit_empty_returns_none() {
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_INSTALLER", "") };
+        unsafe { std::env::set_var("AXON_INSTALLER", "") };
         assert_eq!(env_installer(), None);
     }
 
@@ -4353,7 +4353,7 @@ mod tests {
     #[serial_test::serial]
     fn test_env_installer_managed_by_npm() {
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_MANAGED_BY_NPM", "1") };
+        unsafe { std::env::set_var("AXON_MANAGED_BY_NPM", "1") };
         assert_eq!(env_installer(), Some("npm"));
     }
 
@@ -4362,7 +4362,7 @@ mod tests {
     fn test_env_installer_managed_by_npm_any_value() {
         // The check is `is_some` — any value (including empty) wins.
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_MANAGED_BY_NPM", "") };
+        unsafe { std::env::set_var("AXON_MANAGED_BY_NPM", "") };
         assert_eq!(env_installer(), Some("npm"));
     }
 
@@ -4370,7 +4370,7 @@ mod tests {
     #[serial_test::serial]
     fn test_env_installer_managed_by_internal_maps_to_gh_release() {
         let _g = InstallerEnvGuard::isolate();
-        unsafe { std::env::set_var("GROK_MANAGED_BY_INTERNAL", "1") };
+        unsafe { std::env::set_var("AXON_MANAGED_BY_INTERNAL", "1") };
         assert_eq!(env_installer(), Some("gh-release"));
     }
 
@@ -4397,7 +4397,7 @@ mod tests {
         // resolution path matters for future maintainers.)
         let _g = InstallerEnvGuard::isolate();
         unsafe {
-            std::env::set_var("GROK_MANAGED_BY_NPM", "1");
+            std::env::set_var("AXON_MANAGED_BY_NPM", "1");
             std::env::set_var("npm_config_user_agent", "npm/10");
         }
         assert_eq!(env_installer(), Some("npm"));
@@ -4406,12 +4406,12 @@ mod tests {
     #[test]
     #[serial_test::serial]
     fn test_env_installer_explicit_internal_wins_over_npm_managed() {
-        // GROK_INSTALLER (even the legacy "internal" value) must override
+        // AXON_INSTALLER (even the legacy "internal" value) must override
         // an inherited MANAGED_BY_NPM; it now resolves to gh-release.
         let _g = InstallerEnvGuard::isolate();
         unsafe {
-            std::env::set_var("GROK_INSTALLER", "internal");
-            std::env::set_var("GROK_MANAGED_BY_NPM", "1");
+            std::env::set_var("AXON_INSTALLER", "internal");
+            std::env::set_var("AXON_MANAGED_BY_NPM", "1");
         }
         assert_eq!(env_installer(), Some("gh-release"));
     }

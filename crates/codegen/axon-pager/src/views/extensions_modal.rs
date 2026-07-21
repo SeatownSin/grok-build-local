@@ -2197,8 +2197,8 @@ pub(crate) fn mcp_section_children_hidden(
 pub fn derive_source_label(source_dir: &str) -> (String, bool) {
     let grok = axon_config::grok_home();
     let source_path = std::path::Path::new(source_dir);
-    // Plugin / installed-plugin dirs, under the user grok home (GROK_HOME-aware)
-    // or a project-scoped `{cwd}/.grok/<subdir>/`. Returns the first path
+    // Plugin / installed-plugin dirs, under the user grok home (AXON_HOME-aware)
+    // or a project-scoped `{cwd}/.axon/<subdir>/`. Returns the first path
     // component after the subdir (the plugin's install directory name).
     let plugin_name = |subdir: &str| -> Option<String> {
         let first_comp = |p: &std::path::Path| {
@@ -2207,13 +2207,13 @@ pub fn derive_source_label(source_dir: &str) -> (String, bool) {
                 .map(|c| c.as_os_str().to_string_lossy().into_owned())
                 .filter(|s| !s.is_empty())
         };
-        // User grok home (GROK_HOME-aware).
+        // User grok home (AXON_HOME-aware).
         if let Ok(rest) = source_path.strip_prefix(grok.join(subdir))
             && let Some(name) = first_comp(rest)
         {
             return Some(name);
         }
-        // Project-scoped `.grok/<subdir>/<name>` anywhere in the path.
+        // Project-scoped `.axon/<subdir>/<name>` anywhere in the path.
         // Component-based so it works regardless of path separator.
         let comps: Vec<_> = source_path
             .components()
@@ -2221,13 +2221,13 @@ pub fn derive_source_label(source_dir: &str) -> (String, bool) {
             .collect();
         comps
             .windows(3)
-            .find(|w| w[0] == ".grok" && w[1] == subdir && !w[2].is_empty())
+            .find(|w| w[0] == ".axon" && w[1] == subdir && !w[2].is_empty())
             .map(|w| w[2].clone())
     };
     if let Some(name) = plugin_name("plugins").or_else(|| plugin_name("installed-plugins")) {
         return (format!("Plugin: {name}"), false);
     }
-    // Global hooks under $GROK_HOME/hooks
+    // Global hooks under $AXON_HOME/hooks
     let global_hooks = grok.join("hooks");
     let global_str = global_hooks.display().to_string();
     if source_dir == global_str || source_dir.starts_with(&format!("{global_str}/")) {
@@ -2238,7 +2238,7 @@ pub fn derive_source_label(source_dir: &str) -> (String, bool) {
         return ("Claude settings".into(), false);
     }
     // Project hooks
-    if source_dir.ends_with("/.grok/hooks") || source_dir.contains("/.grok/hooks/") {
+    if source_dir.ends_with("/.axon/hooks") || source_dir.contains("/.axon/hooks/") {
         return ("Project hooks".into(), false);
     }
     // Custom directory — removable
@@ -2321,8 +2321,8 @@ fn skill_source_str(skill: &SkillInfo) -> String {
             }
             axon_tools::types::config_source::ConfigSource::Project { path } => {
                 let s = path.display().to_string();
-                if s.contains("/.grok/") {
-                    ".grok/skills".into()
+                if s.contains("/.axon/") {
+                    ".axon/skills".into()
                 } else if s.contains("/.claude/") {
                     ".claude/skills".into()
                 } else {
@@ -3916,15 +3916,15 @@ mod tests {
 
     #[test]
     fn derive_source_label_detects_project_scoped_plugins() {
-        // Regression: project-scoped `{cwd}/.grok/plugins/<name>/` must label as
+        // Regression: project-scoped `{cwd}/.axon/plugins/<name>/` must label as
         // a (non-removable) plugin, not a removable "Custom" source. The user
-        // grok-home branch is GROK_HOME-aware; this covers the project fallback.
-        let (label, is_custom) = derive_source_label("/repo/work/.grok/plugins/my-plugin/hooks");
+        // grok-home branch is AXON_HOME-aware; this covers the project fallback.
+        let (label, is_custom) = derive_source_label("/repo/work/.axon/plugins/my-plugin/hooks");
         assert_eq!(label, "Plugin: my-plugin");
         assert!(!is_custom);
 
         let (label, is_custom) =
-            derive_source_label("/repo/work/.grok/installed-plugins/vendor-abc123/skills");
+            derive_source_label("/repo/work/.axon/installed-plugins/vendor-abc123/skills");
         assert_eq!(label, "Plugin: vendor-abc123");
         assert!(!is_custom);
     }
@@ -5671,7 +5671,7 @@ mod tests {
         axon_hooks_plugins_types::MarketplaceScanResult {
             source_name: "local-plugins".into(),
             source_kind: "local".into(),
-            source_url_or_path: "/home/user/.grok/marketplace/local".into(),
+            source_url_or_path: "/home/user/.axon/marketplace/local".into(),
             plugins: vec![
                 TestPlugin {
                     name: "my-linter",

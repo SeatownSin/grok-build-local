@@ -11,7 +11,7 @@ A plugin is a directory that holds any combination of these components:
 - **Skills** -- a `skills/` directory of SKILL.md files
 - **Slash commands** -- a `commands/` directory of command files
 - **Agents** -- an `agents/` directory of agent definitions
-- **Hooks** -- a `hooks/hooks.json` file of lifecycle hooks. Plugin hooks also receive `GROK_PLUGIN_ROOT` and `GROK_PLUGIN_DATA` (see the [Hooks guide](10-hooks.md) for every environment variable passed to hooks).
+- **Hooks** -- a `hooks/hooks.json` file of lifecycle hooks. Plugin hooks also receive `AXON_PLUGIN_ROOT` and `AXON_PLUGIN_DATA` (see the [Hooks guide](10-hooks.md) for every environment variable passed to hooks).
 - **MCP servers** -- a `.mcp.json` file of server configurations
 - **LSP servers** -- a `.lsp.json` file of language server configurations
 
@@ -25,8 +25,8 @@ Plugin hooks receive two environment variables beyond the standard ones set for 
 
 | Variable             | Description |
 |----------------------|-------------|
-| `GROK_PLUGIN_ROOT`   | Absolute path to the plugin's installed directory. |
-| `GROK_PLUGIN_DATA`   | Absolute path to the plugin's writable data directory, for plugin state, caches, and logs. |
+| `AXON_PLUGIN_ROOT`   | Absolute path to the plugin's installed directory. |
+| `AXON_PLUGIN_DATA`   | Absolute path to the plugin's writable data directory, for plugin state, caches, and logs. |
 
 Grok sets these values and overrides any value you declare for the same key in the hook JSON's `env` map. (Grok also sets the `CLAUDE_PLUGIN_ROOT` and `CLAUDE_PLUGIN_DATA` aliases for compatibility.) See the [Hooks guide](10-hooks.md) for every environment variable passed to hooks.
 
@@ -40,8 +40,8 @@ Grok discovers plugins from these locations, in priority order:
 |----------|-------|-------|
 | `_meta.pluginDirs` (`session/new` / `session/load`) | Session -- loaded for that session only | Trusted automatically |
 | `--plugin-dir` (CLI flag, `grok agent`) | Process -- loaded for that agent process only | Trusted automatically |
-| `.grok/plugins/` | Project -- shared with the team through version control | Requires trust |
-| `~/.grok/plugins/` | User -- personal plugins for every project | Trusted automatically |
+| `.axon/plugins/` | Project -- shared with the team through version control | Requires trust |
+| `~/.axon/plugins/` | User -- personal plugins for every project | Trusted automatically |
 | `[plugins].paths` (config) | Custom directories you add in `config.toml` | Depends on location |
 
 Grok also reads the `.claude/plugins/` equivalents for compatibility. When two plugins share a name, the higher-priority location wins.
@@ -151,7 +151,7 @@ verified against the fetched checkout):
 require_sha = true
 ```
 
-or `GROK_MARKETPLACE_REQUIRE_SHA=1`. Both are tighten-only: either one enables
+or `AXON_MARKETPLACE_REQUIRE_SHA=1`. Both are tighten-only: either one enables
 the policy and neither can switch it back off. With the policy on, unpinned
 remote installs, marketplace installs without a published `sha`, and updates of
 branch-tracking installs are refused.
@@ -198,7 +198,7 @@ In an interactive session, these commands open the modal on a specific tab. They
 
 ## Configuration
 
-Configure plugin directories and per-plugin state in `~/.grok/config.toml`:
+Configure plugin directories and per-plugin state in `~/.axon/config.toml`:
 
 ```toml
 [plugins]
@@ -211,7 +211,7 @@ List a plugin in `disabled` to discover it but skip loading its components. List
 
 ### Hide the plugins UI
 
-To hide the hooks and plugins UI — the `/hooks` and `/plugins` commands and the scrollback annotations — set this in `~/.grok/pager.toml`:
+To hide the hooks and plugins UI — the `/hooks` and `/plugins` commands and the scrollback annotations — set this in `~/.axon/pager.toml`:
 
 ```toml
 disable_plugins = true
@@ -251,7 +251,7 @@ Add sources under `extraKnownMarketplaces`, keyed by name. Each entry's `source`
 }
 ```
 
-Place this file at `~/.grok/settings.json` or `~/.claude/settings.json`.
+Place this file at `~/.axon/settings.json` or `~/.claude/settings.json`.
 
 ---
 
@@ -259,7 +259,7 @@ Place this file at `~/.grok/settings.json` or `~/.claude/settings.json`.
 
 Enabling a plugin loads its skills, slash commands, and agents. Trust is separate and controls whether a plugin's code runs: even for an enabled plugin, its hooks, MCP servers, and LSP servers stay inactive until you trust it. This prevents an untrusted repository from running code on your machine.
 
-Grok trusts plugins from `~/.grok/plugins/` automatically. Project plugins in `.grok/plugins/` require explicit trust. To trust a plugin, install it with `--trust`:
+Grok trusts plugins from `~/.axon/plugins/` automatically. Project plugins in `.axon/plugins/` require explicit trust. To trust a plugin, install it with `--trust`:
 
 ```bash
 grok plugin install <source> --trust

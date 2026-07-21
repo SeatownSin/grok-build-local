@@ -20,7 +20,7 @@ use tokio::io::AsyncReadExt;
 
 pub use axon_config::shell::UnixShellKind;
 
-const INIT_MARKER: &str = "__GROK_STATIC_SHELL_MARKER__";
+const INIT_MARKER: &str = "__AXON_STATIC_SHELL_MARKER__";
 const INIT_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// A fixed snapshot of rc-defined functions and aliases, captured once.
@@ -133,7 +133,7 @@ impl StaticShellSnapshot {
                 "snap=$(command cat <&3); builtin shopt -s extglob 2>/dev/null; \
                  builtin shopt -s expand_aliases 2>/dev/null; \
                  builtin eval -- \"$snap\"; \
-                 builtin export GROK_AGENT=1; \
+                 builtin export AXON_AGENT=1; \
                  builtin export PWD=\"$(builtin pwd)\"; {sudo_inject}{search_inject}\
                  builtin eval \"$1\" 2>&1"
             ),
@@ -141,7 +141,7 @@ impl StaticShellSnapshot {
                 "snap=$(command cat <&3); \
                  builtin setopt nonomatch 2>/dev/null; \
                  builtin eval \"$snap\"; \
-                 builtin export GROK_AGENT=1; \
+                 builtin export AXON_AGENT=1; \
                  builtin export PWD=\"$(builtin pwd)\"; \
                  builtin setopt aliases 2>/dev/null; {sudo_inject}{search_inject}\
                  builtin eval \"$1\" 2>&1"

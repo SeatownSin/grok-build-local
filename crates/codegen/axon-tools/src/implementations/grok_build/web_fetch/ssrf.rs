@@ -4,7 +4,7 @@
 //! - Non-public addresses (loopback, RFC 1918, link-local, CGNAT, TEST-NET,
 //!   multicast, etc.) are blocked by default.
 //! - Local access is opt-in via tool params (`WebFetchParams::allow_local`,
-//!   set from `[toolset.web_fetch] allow_local` or `GROK_WEB_FETCH_ALLOW_LOCAL=1`).
+//!   set from `[toolset.web_fetch] allow_local` or `AXON_WEB_FETCH_ALLOW_LOCAL=1`).
 //!   Even when enabled, only **explicit** loopback hosts are allowed
 //!   (`localhost`, `127.0.0.0/8` literals, `::1`). A public hostname that
 //!   resolves to loopback/private stays blocked.

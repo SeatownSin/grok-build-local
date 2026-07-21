@@ -318,16 +318,16 @@ pub struct SuggestionController {
     tab_pending: Option<u64>,
     /// Whether the as-you-type suggestion pipeline (debounced fetches +
     /// ghost rendering) is enabled. Resolved at construction from the
-    /// `GROK_SUGGESTIONS` env var. Tab-triggered completion in bash mode
+    /// `AXON_SUGGESTIONS` env var. Tab-triggered completion in bash mode
     /// deliberately does NOT consult this — it is always on.
     pub enabled: bool,
     /// Completion dropdown state (populated from `SuggestResponse.completions`).
     pub dropdown: CompletionDropdownState,
     /// Whether AI-powered suggestions are enabled.
-    /// Resolved at construction from `GROK_SUGGESTIONS_AI` env var.
+    /// Resolved at construction from `AXON_SUGGESTIONS_AI` env var.
     pub ai_enabled: bool,
     /// Model to use for AI suggestions. Sent in the `x.ai/suggest` request.
-    /// Resolved at construction from `GROK_SUGGESTIONS_AI_MODEL` env var.
+    /// Resolved at construction from `AXON_SUGGESTIONS_AI_MODEL` env var.
     pub ai_model: Option<String>,
 }
 
@@ -338,10 +338,10 @@ impl SuggestionController {
             generation: 0,
             last_request_text: String::new(),
             tab_pending: None,
-            enabled: axon_config::env_bool("GROK_SUGGESTIONS").unwrap_or(false),
+            enabled: axon_config::env_bool("AXON_SUGGESTIONS").unwrap_or(false),
             dropdown: CompletionDropdownState::default(),
-            ai_enabled: axon_config::env_bool("GROK_SUGGESTIONS_AI").unwrap_or(false),
-            ai_model: std::env::var("GROK_SUGGESTIONS_AI_MODEL")
+            ai_enabled: axon_config::env_bool("AXON_SUGGESTIONS_AI").unwrap_or(false),
+            ai_model: std::env::var("AXON_SUGGESTIONS_AI_MODEL")
                 .ok()
                 .filter(|s| !s.is_empty()),
         }

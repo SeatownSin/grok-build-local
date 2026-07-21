@@ -44,7 +44,7 @@ Press `Ctrl+M` from the scrollback pane to open the model picker. It lists all a
 
 ### Config Default
 
-Set a persistent default in `~/.grok/config.toml`:
+Set a persistent default in `~/.axon/config.toml`:
 
 ```toml
 [models]
@@ -71,7 +71,7 @@ To send provider-specific authentication or version headers -- for example, Anth
 
 ## Configuring Custom Models
 
-Add custom model endpoints in `~/.grok/config.toml` under `[model.<name>]` sections:
+Add custom model endpoints in `~/.axon/config.toml` under `[model.<name>]` sections:
 
 ```toml
 [model.my-model]
@@ -96,7 +96,7 @@ Grok resolves the API key in this order:
 1. The `api_key` field in the model config
 2. The environment variable(s) named by `env_key` — a single string or an array of names. The first set, non-empty value wins (for example `env_key = ["ANTHROPIC_AUTH_TOKEN", "LC_ANTHROPIC_AUTH_TOKEN"]` for SSH `LC_*` forwarding)
 3. Your signed-in session token (from `grok login`), for a model with no `api_key`/`env_key` of its own
-4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `GROK_CODE_XAI_API_KEY` for backward compatibility)
+4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `AXON_CODE_XAI_API_KEY` for backward compatibility)
 
 **Exception — no-auth endpoints:** a model with `no_auth = true`, or any
 model whose `base_url` is a loopback address, skips this chain entirely
@@ -145,11 +145,11 @@ You can override specific fields of built-in models without redefining everythin
 
 ```toml
 # Override only the API key for a default model
-[model.grok-build]
+[model.axon-build]
 api_key = "my-api-key"
 
 # Override temperature and add a custom API key
-[model.grok-build]
+[model.axon-build]
 temperature = 0.5
 api_key = "sk-custom"
 ```
@@ -278,7 +278,7 @@ default = "local-llama"
 With no Grok login and only local models configured, the CLI makes no
 network requests at startup. If you *are* signed in but want to suppress
 the remaining startup fetch of the hosted model catalog, disable remote
-fetches in `~/.grok/config.toml` (deliberately config-only — no env var
+fetches in `~/.axon/config.toml` (deliberately config-only — no env var
 can re-arm it):
 
 ```toml
@@ -304,15 +304,15 @@ Point Grok at a custom OpenAI-compatible `/v1/models` endpoint instead of the de
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GROK_MODELS_BASE_URL` | Yes | Base URL for inference. Grok fetches the model list from `{base_url}/models`. |
-| `XAI_API_KEY` | No for loopback URLs | API key sent as `Authorization: Bearer`. Grok also accepts `GROK_CODE_XAI_API_KEY`. Loopback endpoints (e.g. `http://localhost:11434/v1`) are queried without auth when no key is set. |
-| `GROK_MODELS_LIST_URL` | No | Override the model-list URL when it differs from `{base_url}/models`. |
+| `AXON_MODELS_BASE_URL` | Yes | Base URL for inference. Grok fetches the model list from `{base_url}/models`. |
+| `XAI_API_KEY` | No for loopback URLs | API key sent as `Authorization: Bearer`. Grok also accepts `AXON_CODE_XAI_API_KEY`. Loopback endpoints (e.g. `http://localhost:11434/v1`) are queried without auth when no key is set. |
+| `AXON_MODELS_LIST_URL` | No | Override the model-list URL when it differs from `{base_url}/models`. |
 
 ### Setup
 
 ```bash
-export GROK_MODELS_BASE_URL="https://api.acme.com/v1"
-export XAI_API_KEY="xai-..."
+export AXON_MODELS_BASE_URL="https://api.acme.com/v1"
+export XAI_API_KEY="axon-..."
 grok
 ```
 
@@ -323,7 +323,7 @@ grok
 models_base_url = "https://api.acme.com/v1"
 
 # Override only the API key for a specific model
-[model.grok-build]
+[model.axon-build]
 api_key = "my-api-key"
 ```
 
@@ -347,7 +347,7 @@ web_search = "grok-4.20-multi-agent"
 Or via environment variable:
 
 ```bash
-export GROK_WEB_SEARCH_MODEL="grok-4.20-multi-agent"
+export AXON_WEB_SEARCH_MODEL="grok-4.20-multi-agent"
 ```
 
 If you point web search at a custom model, you also need a `[model.*]` entry so Grok can reach it. Server-side ("backend") web search runs only when the model sets `supports_backend_search = true` (and the build enables backend search); it does not depend on `api_backend`:
@@ -433,7 +433,7 @@ curl -s https://api.example.com/v1/models \
 ### Debug Logging
 
 ```bash
-RUST_LOG=debug GROK_LOG_FILE=/tmp/grok.log grok
+RUST_LOG=debug AXON_LOG_FILE=/tmp/grok.log grok
 tail -f /tmp/grok.log
 ```
 

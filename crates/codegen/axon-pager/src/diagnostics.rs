@@ -352,7 +352,7 @@ fn sandbox_profile_conflict_warning_from(conflicts: Vec<String>) -> Option<Termi
     Some(TerminalWarning {
         category: WarningCategory::SandboxProfileConflict,
         message: format!(
-            "Your project sandbox profile conflicts with user config.\nProfile: {profiles}\nProject config: .grok/sandbox.toml\nUser config: ~/.grok/sandbox.toml"
+            "Your project sandbox profile conflicts with user config.\nProfile: {profiles}\nProject config: .axon/sandbox.toml\nUser config: ~/.axon/sandbox.toml"
         ),
         fix: Some("Using the user profile instead.".to_string()),
         config_path: None,
@@ -2482,7 +2482,7 @@ mod tests {
                 line.starts_with(&format!("  themes       {n}/{total}: ")),
                 "level {level:?}: {line}"
             );
-            assert!(line.contains("groknight") && line.contains("grokday"));
+            assert!(line.contains("axonnight") && line.contains("axonday"));
             assert!(!line.contains("tokyonight"));
         }
     }

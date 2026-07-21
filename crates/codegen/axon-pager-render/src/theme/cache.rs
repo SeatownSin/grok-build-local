@@ -1,7 +1,7 @@
 //! In-memory theme cache + resolution.
 //!
 //! The pager reads the active `ThemeKind` on every render frame, so the
-//! lookup must be cheaper than re-loading from `~/.grok/config.toml`.
+//! lookup must be cheaper than re-loading from `~/.axon/config.toml`.
 //! [`current_kind`] returns the in-memory value, lazily seeding from the
 //! shell's layered effective config on first call.
 //!
@@ -72,7 +72,7 @@ pub struct AutoThemeConfig {
 
 /// Get the current theme kind.
 ///
-/// On the first call, reads from `~/.grok/config.toml` (via the shell's
+/// On the first call, reads from `~/.axon/config.toml` (via the shell's
 /// `load_effective_config`). After that, returns the in-memory value
 /// (updated by [`set`]).
 pub fn current_kind() -> ThemeKind {
@@ -159,7 +159,7 @@ pub fn invalidate_auto_theme_config() {
 /// Called once at startup. Returns the concrete `ThemeKind` (never `Auto`).
 ///
 /// Precedence:
-/// 1. Environment variable (`GROK_THEME`)
+/// 1. Environment variable (`AXON_THEME`)
 /// 2. Config file (`[ui].theme`)
 /// 3. Default: `GrokNight`
 #[must_use]

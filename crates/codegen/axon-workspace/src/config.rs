@@ -713,9 +713,9 @@ pub struct WorkspaceConfig {
     pub event_buffer_capacity: usize,
     /// Pluggable [`SessionContext`] / [`ToolRegistryBuilder`] producer.
     pub session_factory: Arc<dyn SessionContextFactory>,
-    /// Global hook sources (e.g. `~/.claude/settings.json`, `~/.grok/hooks/`).
+    /// Global hook sources (e.g. `~/.claude/settings.json`, `~/.axon/hooks/`).
     pub hook_global_sources: Vec<HookSourceConfig>,
-    /// Project-scoped hook sources (e.g. `<project>/.grok/hooks/`).
+    /// Project-scoped hook sources (e.g. `<project>/.axon/hooks/`).
     pub hook_project_sources: Vec<HookSourceConfig>,
     /// Skill discovery configuration: additional skill paths and
     /// path-prefix ignore list. Stored on `WorkspaceShared` for
@@ -741,7 +741,7 @@ pub struct WorkspaceConfig {
     /// Runtime-tunable timing/threshold config for the tool server.
     pub status_config: crate::status_config::StatusConfig,
     /// Folder-trust verdict for repo-local (project-scoped) LSP servers from
-    /// `<cwd>/.grok/lsp.json`: `false` drops them at load, `true` keeps them. The
+    /// `<cwd>/.axon/lsp.json`: `false` drops them at load, `true` keeps them. The
     /// shell caller resolves the verdict and threads it in; callers without a
     /// folder-trust decision pass `true`.
     pub project_lsp_trusted: bool,
@@ -763,7 +763,7 @@ pub struct WorkspaceServerMetadata {
     /// Sandbox that provisioned this server. Absent for local servers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sandbox_id: Option<String>,
-    /// Logical sandbox-service session UUID, from the `GROK_SESSION_ID` env
+    /// Logical sandbox-service session UUID, from the `AXON_SESSION_ID` env
     /// var. Present whenever that var is set (every sandbox container, start
     /// and restore), absent otherwise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -782,7 +782,7 @@ impl WorkspaceServerMetadata {
     /// Merge an env-sourced logical session id into caller-supplied
     /// tool-server metadata (`None` on the restore/local path).
     ///
-    /// `env_session_id` is the raw `GROK_SESSION_ID`; empty is normalized to
+    /// `env_session_id` is the raw `AXON_SESSION_ID`; empty is normalized to
     /// absent. An explicit `session_id` already in `metadata` is never
     /// clobbered. A non-object `metadata` value is returned unchanged (a
     /// defensive no-op — the sole caller always sends an object).
@@ -914,7 +914,7 @@ impl std::fmt::Debug for AgentSessionConfig {
 pub enum HookSourceConfig {
     /// A single JSON settings file (e.g. `~/.claude/settings.json`).
     SettingsFile(PathBuf),
-    /// A directory of `*.json` hook files (e.g. `~/.grok/hooks/`).
+    /// A directory of `*.json` hook files (e.g. `~/.axon/hooks/`).
     Directory(PathBuf),
 }
 /// Filesystem isolation strategy for a forked session.

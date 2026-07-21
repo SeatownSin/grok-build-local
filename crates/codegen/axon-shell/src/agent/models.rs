@@ -663,12 +663,12 @@ impl ModelsManager {
         }
     }
 
-    /// Hot-reload the catalog from `~/.grok/models_cache.json` after an
+    /// Hot-reload the catalog from `~/.axon/models_cache.json` after an
     /// external write (detected by the config file watcher).
     ///
     /// A long-running leader otherwise only refreshes its catalog from its
     /// *own* fetch paths (startup prefetch, auth change, response-header etag).
-    /// When another grok process sharing `~/.grok` (a `--no-leader` run, a
+    /// When another grok process sharing `~/.axon` (a `--no-leader` run, a
     /// newer client, grok-desktop) fetches a fresher `/v1/models` catalog and
     /// persists it, this picks it up without a network round-trip.
     ///
@@ -1684,7 +1684,7 @@ pub(crate) fn resolve_default_model(
 
     let model_pref = config::resolve_string_flag(
         cfg.default_model_override.as_deref(),
-        "GROK_DEFAULT_MODEL",
+        "AXON_DEFAULT_MODEL",
         cfg.models.default.as_deref(),
         cfg.remote_settings
             .as_ref()
@@ -3162,7 +3162,7 @@ mod tests {
     #[serial]
     fn resolve_falls_back_to_session_when_nothing_set() {
         let _unset = EnvGuard::unset("XAI_API_KEY");
-        let _unset_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+        let _unset_legacy = EnvGuard::unset("AXON_CODE_XAI_API_KEY");
         let endpoints = config::EndpointsConfig::default();
         assert_eq!(
             ModelFetchAuth::resolve(&endpoints, false),
@@ -3175,7 +3175,7 @@ mod tests {
     #[serial]
     fn resolve_deployment_key_when_no_session_or_api_key() {
         let _unset = EnvGuard::unset("XAI_API_KEY");
-        let _unset_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+        let _unset_legacy = EnvGuard::unset("AXON_CODE_XAI_API_KEY");
         let endpoints = config::EndpointsConfig {
             deployment_key: Some("deploy-key".to_owned()),
             ..config::EndpointsConfig::default()
@@ -3242,7 +3242,7 @@ mod tests {
     #[serial]
     fn prefetch_env_resolves_when_remote_fetch_enabled() {
         let _unset = EnvGuard::unset("XAI_API_KEY");
-        let _unset_legacy = EnvGuard::unset("GROK_CODE_XAI_API_KEY");
+        let _unset_legacy = EnvGuard::unset("AXON_CODE_XAI_API_KEY");
         let endpoints = config::EndpointsConfig {
             deployment_key: Some("deploy-key".to_owned()),
             ..config::EndpointsConfig::default()

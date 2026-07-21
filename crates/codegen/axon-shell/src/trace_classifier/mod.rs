@@ -1036,7 +1036,7 @@ pub fn parse_trace_file(path: &Path) -> Result<Vec<TurnRecord>> {
 /// cached non-expired credentials return immediately; an expired
 /// OIDC token with a `refresh_token` is silently refreshed and the
 /// refreshed credential is re-persisted to disk; the external auth
-/// provider command (if `GROK_AUTH_PROVIDER_COMMAND` is set) is
+/// provider command (if `AXON_AUTH_PROVIDER_COMMAND` is set) is
 /// tried last. The replay never prompts interactively — an auth.json
 /// with a stale OIDC entry and no `refresh_token` surfaces an error
 /// the user can act on.
@@ -2444,19 +2444,19 @@ mod tests {
     /// teardown. Each can short-circuit our `AuthManager` setup
     /// against the test's tempdir if left in place:
     /// * `XAI_API_KEY` — would return early from `resolve_api_key`.
-    /// * `GROK_AUTH` — inline-JSON credentials override that bypasses
+    /// * `AXON_AUTH` — inline-JSON credentials override that bypasses
     ///   the on-disk read entirely (`AuthManager::new`).
-    /// * `GROK_AUTH_PATH` — overrides the auth.json path; if set to
-    ///   the operator's real `~/.grok/auth.json`, the test would read
+    /// * `AXON_AUTH_PATH` — overrides the auth.json path; if set to
+    ///   the operator's real `~/.axon/auth.json`, the test would read
     ///   live OIDC credentials instead of the scratch fixture.
-    /// * `GROK_AUTH_PROVIDER_COMMAND` — selects an external
+    /// * `AXON_AUTH_PROVIDER_COMMAND` — selects an external
     ///   refresher that could mint credentials independent of the
     ///   fixture.
     const ISOLATED_ENV_KEYS: &[&str] = &[
         "XAI_API_KEY",
-        "GROK_AUTH",
-        "GROK_AUTH_PATH",
-        "GROK_AUTH_PROVIDER_COMMAND",
+        "AXON_AUTH",
+        "AXON_AUTH_PATH",
+        "AXON_AUTH_PROVIDER_COMMAND",
     ];
 
     /// Async helper: clear every env var in [`ISOLATED_ENV_KEYS`]

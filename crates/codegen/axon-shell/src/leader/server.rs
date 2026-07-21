@@ -1095,7 +1095,7 @@ async fn handle_workspace_start(
         .to_string_lossy(), "cwd" : cwd_path.display().to_string(), }
     );
     let upload_queue_enabled =
-        std::env::var("GROK_WORKSPACE_UPLOAD_QUEUE_ENABLED").as_deref() != Ok("false");
+        std::env::var("AXON_WORKSPACE_UPLOAD_QUEUE_ENABLED").as_deref() != Ok("false");
     crate::agent::folder_trust::resolve_and_record(&cwd_path, None, false);
     let project_lsp_trusted = crate::agent::folder_trust::project_scope_allowed(&cwd_path);
     let handle = axon_workspace::connect_local_workspace(

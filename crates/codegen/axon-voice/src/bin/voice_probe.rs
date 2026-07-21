@@ -118,14 +118,14 @@ fn parse_args(argv: Vec<String>) -> Args {
 fn load_config(path: Option<&std::path::Path>) -> VoiceConfig {
     // The probe has no shell config stack; env is the resolved fallback
     // (config table still beats it, matching the pager's precedence).
-    let env_base = std::env::var("GROK_XAI_API_BASE_URL").ok();
+    let env_base = std::env::var("AXON_XAI_API_BASE_URL").ok();
     if let Some(path) = path
         && let Ok(raw) = std::fs::read_to_string(path)
         && let Ok(table) = toml::from_str::<toml::Table>(&raw)
     {
         return VoiceConfig::from_config_table(&table, env_base.as_deref());
     }
-    if let Ok(home) = std::env::var("GROK_HOME")
+    if let Ok(home) = std::env::var("AXON_HOME")
         && let Ok(raw) = std::fs::read_to_string(PathBuf::from(home).join("config.toml"))
         && let Ok(table) = toml::from_str::<toml::Table>(&raw)
     {
@@ -135,7 +135,7 @@ fn load_config(path: Option<&std::path::Path>) -> VoiceConfig {
         std::env::var("HOME")
             .map(PathBuf::from)
             .unwrap_or_default()
-            .join(".grok/config.toml"),
+            .join(".axon/config.toml"),
     ) && let Ok(table) = toml::from_str::<toml::Table>(&raw)
     {
         return VoiceConfig::from_config_table(&table, env_base.as_deref());
@@ -154,7 +154,7 @@ Environment:
   XAI_API_KEY     required
   RUST_LOG        optional (default info,axon_voice=debug)
 
-Reads [voice] from ~/.grok/config.toml unless --config PATH is set.
+Reads [voice] from ~/.axon/config.toml unless --config PATH is set.
 "#
     );
 }

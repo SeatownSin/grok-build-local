@@ -20,7 +20,7 @@ use std::sync::OnceLock;
 /// keep a `/fullscreen` relaunch stuck in minimal, and vice-versa. Consumed
 /// (read **and removed**) exactly once at startup by
 /// [`take_screen_mode_env_override`]; not a public user interface.
-pub(crate) const GROK_SCREEN_MODE_ENV: &str = "GROK_SCREEN_MODE";
+pub(crate) const AXON_SCREEN_MODE_ENV: &str = "AXON_SCREEN_MODE";
 
 /// Argv tokens (`--long`, `-s`, and their aliases) of [`super::cli::PagerArgs`]
 /// flags that consume a following value token when not written as
@@ -184,7 +184,7 @@ pub(crate) fn build_screen_mode_relaunch_args(
 
     out.push(OsString::from("--resume"));
     out.push(OsString::from(session_id));
-    // Keep a CLI mode flag for hand-pasted resume hints that omit GROK_SCREEN_MODE.
+    // Keep a CLI mode flag for hand-pasted resume hints that omit AXON_SCREEN_MODE.
     if want_minimal {
         out.push(OsString::from("--minimal"));
     } else {
@@ -210,7 +210,7 @@ pub(crate) fn screen_mode_relaunch_resume_hint(session_id: &str, want_minimal: b
     } else {
         "--fullscreen"
     };
-    format!("{GROK_SCREEN_MODE_ENV}={mode} grok {flag} --resume {session_id}")
+    format!("{AXON_SCREEN_MODE_ENV}={mode} grok {flag} --resume {session_id}")
 }
 
 /// Replace the current process with a relaunch into the requested screen mode.
@@ -226,7 +226,7 @@ pub(crate) fn exec_screen_mode_relaunch(session_id: &str, want_minimal: bool) ->
     let mut cmd = std::process::Command::new(&exe);
     cmd.args(&args);
     // Force mode resolution even when config.toml has the opposite preference.
-    cmd.env(GROK_SCREEN_MODE_ENV, screen_mode_env_value(want_minimal));
+    cmd.env(AXON_SCREEN_MODE_ENV, screen_mode_env_value(want_minimal));
 
     let mode_label = screen_mode_env_value(want_minimal);
     let reverse = if want_minimal {
@@ -298,7 +298,7 @@ pub(crate) fn exec_screen_mode_relaunch(session_id: &str, want_minimal: bool) ->
     }
 }
 
-/// Parse a [`GROK_SCREEN_MODE_ENV`] or config `[ui] screen_mode` value
+/// Parse a [`AXON_SCREEN_MODE_ENV`] or config `[ui] screen_mode` value
 /// (pure; unit-tested directly).
 ///
 /// Case- and whitespace-insensitive for the known tokens, matching
@@ -327,7 +327,7 @@ pub(crate) fn parse_screen_mode(value: Option<&str>) -> Option<super::ScreenMode
     }
 }
 
-/// Consume the one-shot screen-mode override env (see [`GROK_SCREEN_MODE_ENV`]).
+/// Consume the one-shot screen-mode override env (see [`AXON_SCREEN_MODE_ENV`]).
 ///
 /// Reads **and removes** the variable so the override is truly one-shot: it
 /// must not linger in this process's environment where every spawned child
@@ -342,13 +342,13 @@ pub(crate) fn parse_screen_mode(value: Option<&str>) -> Option<super::ScreenMode
 ///
 /// Call once, early in [`crate::app::run`].
 pub(crate) fn take_screen_mode_env_override() -> Option<super::ScreenMode> {
-    let raw = std::env::var_os(GROK_SCREEN_MODE_ENV);
+    let raw = std::env::var_os(AXON_SCREEN_MODE_ENV);
     if raw.is_some() {
         // SAFETY: called once during pager startup, before the event loop and
         // before this process spawns threads that read the environment. Any
         // set value is removed (even an unparseable one) so children never
         // inherit the override.
-        unsafe { std::env::remove_var(GROK_SCREEN_MODE_ENV) };
+        unsafe { std::env::remove_var(AXON_SCREEN_MODE_ENV) };
     }
     parse_screen_mode(raw.as_deref().and_then(OsStr::to_str))
 }
@@ -775,19 +775,19 @@ mod tests {
     fn take_env_override_consumes_the_variable() {
         // The override is one-shot: children of the relaunched process must not
         // inherit a forced screen mode. Sole test touching this env var.
-        unsafe { std::env::set_var(GROK_SCREEN_MODE_ENV, "minimal") };
+        unsafe { std::env::set_var(AXON_SCREEN_MODE_ENV, "minimal") };
         assert_eq!(
             take_screen_mode_env_override(),
             Some(super::super::ScreenMode::Minimal)
         );
         assert!(
-            std::env::var_os(GROK_SCREEN_MODE_ENV).is_none(),
+            std::env::var_os(AXON_SCREEN_MODE_ENV).is_none(),
             "env var must be removed after being read"
         );
         // Unparseable values are still removed (never leak to children).
-        unsafe { std::env::set_var(GROK_SCREEN_MODE_ENV, "bogus") };
+        unsafe { std::env::set_var(AXON_SCREEN_MODE_ENV, "bogus") };
         assert_eq!(take_screen_mode_env_override(), None);
-        assert!(std::env::var_os(GROK_SCREEN_MODE_ENV).is_none());
+        assert!(std::env::var_os(AXON_SCREEN_MODE_ENV).is_none());
         // Absent stays absent.
         assert_eq!(take_screen_mode_env_override(), None);
     }
@@ -828,16 +828,16 @@ mod tests {
 
     #[test]
     fn failed_relaunch_hint_includes_screen_mode_env() {
-        // Recovery command must carry GROK_SCREEN_MODE so following the
+        // Recovery command must carry AXON_SCREEN_MODE so following the
         // hint after a failed `/fullscreen` does not reopen minimal/inline. The
         // explicit flag keeps the resume in the right mode if the env is dropped.
         assert_eq!(
             screen_mode_relaunch_resume_hint("abc-sid", false),
-            "GROK_SCREEN_MODE=fullscreen grok --fullscreen --resume abc-sid"
+            "AXON_SCREEN_MODE=fullscreen grok --fullscreen --resume abc-sid"
         );
         assert_eq!(
             screen_mode_relaunch_resume_hint("abc-sid", true),
-            "GROK_SCREEN_MODE=minimal grok --minimal --resume abc-sid"
+            "AXON_SCREEN_MODE=minimal grok --minimal --resume abc-sid"
         );
     }
 

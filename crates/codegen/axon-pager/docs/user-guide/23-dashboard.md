@@ -16,7 +16,7 @@ Three entry points, all opening the same view:
 - **`/dashboard`** (aliases **`/agents-dashboard`**, **`/sessions`**) — open
   from inside an active session.
 - **Ctrl+\\** — same as the slash command, two keystrokes. Configurable
-  in `~/.grok/config.toml` under `[keybindings]` like every other shortcut.
+  in `~/.axon/config.toml` under `[keybindings]` like every other shortcut.
 
 ---
 
@@ -145,7 +145,7 @@ guide here is intentionally short and cross-references the plan as
 the source of truth.
 
 All shortcuts are registered under `When::DashboardFocused` and can be
-rebound via `~/.grok/config.toml`.
+rebound via `~/.axon/config.toml`.
 
 ---
 
@@ -323,7 +323,7 @@ The query supports the same prefixes as before (they are only honoured
 ## Persistence
 
 Per-user dashboard preferences live under `[dashboard]` in
-`~/.grok/config.toml`:
+`~/.axon/config.toml`:
 
 ```toml
 [dashboard]
@@ -337,7 +337,7 @@ Pinned/reorder entries are keyed by **session id**, not by the
 per-process `AgentId(usize)`, so they survive restarts and don't
 attach to whatever agent happens to share the old slot number.
 
-Set `GROK_AGENT_DASHBOARD=0` to force-disable the feature for a single
+Set `AXON_AGENT_DASHBOARD=0` to force-disable the feature for a single
 pager invocation; the slash command and CLI subcommand will print a
 friendly toast.
 

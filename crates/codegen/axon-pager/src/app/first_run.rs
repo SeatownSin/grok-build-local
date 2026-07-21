@@ -5,7 +5,7 @@
 //! we detect that state at startup (before the TUI's terminal setup), we run a
 //! small plain-terminal wizard: probe for a running local model server, let the
 //! user pick a model (or enter an endpoint manually), and write it to
-//! `~/.grok/config.toml`. The caller then reloads config and the TUI starts
+//! `~/.axon/config.toml`. The caller then reloads config and the TUI starts
 //! straight into a session — no login, no race.
 
 use std::io::{IsTerminal, Write};
@@ -101,7 +101,7 @@ fn banner() {
 /// Message shown when the user quits setup without configuring a model.
 fn print_quit_hint() {
     println!();
-    println!("  No model configured. Add a [model.*] entry to ~/.grok/config.toml");
+    println!("  No model configured. Add a [model.*] entry to ~/.axon/config.toml");
     println!("  (see the custom-models guide), then run grok again.");
     println!();
 }

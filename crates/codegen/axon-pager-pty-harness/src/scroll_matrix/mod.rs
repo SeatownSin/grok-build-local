@@ -1,7 +1,7 @@
 //! Scroll validation matrix.
 //!
 //! The scroll matrix drives the pager binary in a PTY with
-//! `GROK_SCROLL_LOG` pointed at a tempfile, then validates the pager's
+//! `AXON_SCROLL_LOG` pointed at a tempfile, then validates the pager's
 //! flight-recorder JSONL (producer:
 //! `axon-pager/src/input/scroll_log.rs`) against gesture invariants.
 //!

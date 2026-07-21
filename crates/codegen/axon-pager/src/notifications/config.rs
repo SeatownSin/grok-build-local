@@ -166,7 +166,7 @@ sleep_prevention = true
 progress_bar = true
 # Show an automatic \"where was I\" session recap when you return after being away.
 # Shell session_recap is on by default; disable via [features] session_recap or
-# GROK_SESSION_RECAP=0. Manual /recap uses only the shell flag.
+# AXON_SESSION_RECAP=0. Manual /recap uses only the shell flag.
 session_recap = true
 # Minimum seconds unfocused (\"stepped away\") before requesting a recap; a
 # debounce against quick tab blips. The \"3 min since the last turn\" timing is
@@ -181,7 +181,7 @@ enabled = true
 items = [\"action-required\", \"spinner\", \"activity\", \"session-name\", \"grok\"]
 
 # [[ui.notifications.hooks]]
-# command = \"terminal-notifier -title 'Axon' -message '$GROK_MESSAGE'\"
+# command = \"terminal-notifier -title 'Axon' -message '$AXON_MESSAGE'\"
 # events = [\"turn_complete\", \"approval_required\"]
 # only_unfocused = true
 # timeout_secs = 10

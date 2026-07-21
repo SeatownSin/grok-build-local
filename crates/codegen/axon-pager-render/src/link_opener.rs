@@ -66,7 +66,7 @@ pub fn browser_unavailable_message(url: &str) -> String {
 pub fn open_url(url: &str) -> bool {
     // Test seam: PTY e2e must observe the open without launching a real
     // browser. When set, append the URL to the file and skip the OS opener.
-    if let Ok(path) = std::env::var("GROK_TEST_OPEN_URL_FILE") {
+    if let Ok(path) = std::env::var("AXON_TEST_OPEN_URL_FILE") {
         use std::io::Write;
         // Surface misconfiguration: a swallowed write leaves the PTY test
         // failing with a generic timeout and no clue why.
@@ -76,7 +76,7 @@ pub fn open_url(url: &str) -> bool {
             .open(&path)
             .and_then(|mut f| writeln!(f, "{url}"))
         {
-            tracing::warn!(error = %e, path, "GROK_TEST_OPEN_URL_FILE write failed");
+            tracing::warn!(error = %e, path, "AXON_TEST_OPEN_URL_FILE write failed");
             return false;
         }
         return true;

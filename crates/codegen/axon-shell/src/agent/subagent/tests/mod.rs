@@ -2525,16 +2525,16 @@ fn validate_subagent_type_recognizes_cli_agent_by_name() {
 #[test]
 #[serial_test::serial]
 fn subagent_await_budget_default_and_override() {
-    unsafe { std::env::remove_var("GROK_SUBAGENT_AWAIT_BUDGET_MS") };
+    unsafe { std::env::remove_var("AXON_SUBAGENT_AWAIT_BUDGET_MS") };
     assert_eq!(SUBAGENT_AWAIT_BUDGET, std::time::Duration::from_secs(600));
     assert_eq!(subagent_await_budget(), SUBAGENT_AWAIT_BUDGET);
-    unsafe { std::env::set_var("GROK_SUBAGENT_AWAIT_BUDGET_MS", "1500") };
+    unsafe { std::env::set_var("AXON_SUBAGENT_AWAIT_BUDGET_MS", "1500") };
     assert_eq!(subagent_await_budget(), std::time::Duration::from_millis(1500));
-    unsafe { std::env::set_var("GROK_SUBAGENT_AWAIT_BUDGET_MS", "0") };
+    unsafe { std::env::set_var("AXON_SUBAGENT_AWAIT_BUDGET_MS", "0") };
     assert_eq!(subagent_await_budget(), SUBAGENT_AWAIT_BUDGET);
-    unsafe { std::env::set_var("GROK_SUBAGENT_AWAIT_BUDGET_MS", "not-a-number") };
+    unsafe { std::env::set_var("AXON_SUBAGENT_AWAIT_BUDGET_MS", "not-a-number") };
     assert_eq!(subagent_await_budget(), SUBAGENT_AWAIT_BUDGET);
-    unsafe { std::env::remove_var("GROK_SUBAGENT_AWAIT_BUDGET_MS") };
+    unsafe { std::env::remove_var("AXON_SUBAGENT_AWAIT_BUDGET_MS") };
 }
 #[test]
 fn summarize_tool_config_uses_name_override_and_strips_namespace() {

@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-static GROK_HOME: OnceLock<PathBuf> = OnceLock::new();
+static AXON_HOME: OnceLock<PathBuf> = OnceLock::new();
 
 #[cfg(target_os = "macos")]
 const CLAUDE_MANAGED_SETTINGS_PATH: &str =
@@ -11,15 +11,15 @@ const CLAUDE_MANAGED_SETTINGS_PATH: &str =
 #[cfg(target_os = "linux")]
 const CLAUDE_MANAGED_SETTINGS_PATH: &str = "/etc/claude-code/managed-settings.json";
 
-/// The default user grok directory (`~/.grok`, canonicalized) used when
-/// `GROK_HOME` is unset. Exposed so callers (e.g. display helpers) can detect
+/// The default user grok directory (`~/.axon`, canonicalized) used when
+/// `AXON_HOME` is unset. Exposed so callers (e.g. display helpers) can detect
 /// whether [`grok_home()`] is the default without duplicating the computation.
 ///
 /// Uses [`dunce::canonicalize`] instead of [`std::fs::canonicalize`]: on
 /// Windows, std returns a verbatim path (`\\?\C:\Users\...`) which external
 /// tools choke on — e.g. `git clone` rejects `\\?\` destinations with
 /// "Invalid argument", breaking marketplace cache clones under
-/// `~/.grok/marketplace-cache`. `dunce` strips the prefix whenever the path
+/// `~/.axon/marketplace-cache`. `dunce` strips the prefix whenever the path
 /// is safely representable in legacy form; on non-Windows it is identical to
 /// `std::fs::canonicalize`.
 ///
@@ -28,43 +28,70 @@ const CLAUDE_MANAGED_SETTINGS_PATH: &str = "/etc/claude-code/managed-settings.js
 pub fn default_grok_home() -> PathBuf {
     #[allow(deprecated)]
     let home = std::env::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    dunce::canonicalize(&home).unwrap_or(home).join(".grok")
+    dunce::canonicalize(&home).unwrap_or(home).join(".axon")
 }
 
-/// Per-user config directory: `$GROK_HOME` or `~/.grok`. Created if needed.
+/// Per-user config directory: `$AXON_HOME` or `~/.axon`. Created if needed.
+///
+/// Honors the legacy `$GROK_HOME` env var and migrates a legacy `~/.grok`
+/// directory to `~/.axon` on first run, so installs from before the Axon
+/// rename keep their config, models, and sessions.
 pub fn grok_home() -> PathBuf {
-    GROK_HOME
+    AXON_HOME
         .get_or_init(|| {
-            let grok_home = if let Ok(v) = std::env::var("GROK_HOME") {
+            let home = if let Ok(v) = std::env::var("AXON_HOME") {
                 PathBuf::from(v)
+            } else if let Ok(v) = std::env::var("GROK_HOME") {
+                PathBuf::from(v) // back-compat with the pre-rename env var
             } else {
-                default_grok_home()
+                let dir = default_grok_home();
+                migrate_legacy_home(&dir);
+                dir
             };
-            let _ = std::fs::create_dir_all(&grok_home);
-            grok_home
+            let _ = std::fs::create_dir_all(&home);
+            home
         })
         .clone()
 }
 
+/// One-time migration for the Axon rename: if the new default home (`~/.axon`)
+/// does not exist yet but a legacy `~/.grok` does, move it across so existing
+/// configs/sessions carry over. Best-effort — a failure (cross-device, perms)
+/// simply leaves the legacy tree in place and starts fresh under `~/.axon`.
+fn migrate_legacy_home(new_home: &std::path::Path) {
+    if new_home.exists() {
+        return;
+    }
+    let Some(parent) = new_home.parent() else {
+        return;
+    };
+    let legacy = parent.join(".grok");
+    if legacy.is_dir() {
+        let _ = std::fs::rename(&legacy, new_home);
+    }
+}
+
 /// The user-global grok home, but only when one genuinely resolves: `Some` when
-/// `$GROK_HOME` is set or a home directory is found, `None` otherwise. Unlike
-/// [`grok_home()`], this never falls back to a cwd-relative `.grok`, so callers
+/// `$AXON_HOME` is set or a home directory is found, `None` otherwise. Unlike
+/// [`grok_home()`], this never falls back to a cwd-relative `.axon`, so callers
 /// that *scan* user-global grok resources (hooks, marketplace sources, ...) don't
-/// mistake a project's `.grok` tree for the user-global one when no home resolves.
+/// mistake a project's `.axon` tree for the user-global one when no home resolves.
 pub fn user_grok_home() -> Option<PathBuf> {
     #[allow(deprecated)]
-    let resolvable = std::env::var_os("GROK_HOME").is_some() || std::env::home_dir().is_some();
+    let resolvable = std::env::var_os("AXON_HOME").is_some()
+        || std::env::var_os("GROK_HOME").is_some()
+        || std::env::home_dir().is_some();
     resolvable.then(grok_home)
 }
 
-/// Canonical grok application path: `$GROK_HOME/bin/grok` (Unix) or `grok.exe` (Windows).
+/// Canonical grok application path: `$AXON_HOME/bin/grok` (Unix) or `grok.exe` (Windows).
 pub fn grok_application() -> PathBuf {
     grok_application_in(&grok_home())
 }
 
-/// [`grok_application`] under an explicit home instead of `$GROK_HOME`.
+/// [`grok_application`] under an explicit home instead of `$AXON_HOME`.
 pub fn grok_application_in(home: &std::path::Path) -> PathBuf {
-    let name = if cfg!(windows) { "grok.exe" } else { "grok" };
+    let name = if cfg!(windows) { "axon.exe" } else { "axon" };
     home.join("bin").join(name)
 }
 
@@ -312,7 +339,7 @@ mod tests {
         // canonicalization must yield a plain path. No-op assertion on Unix.
         let home = default_grok_home();
         assert!(!home.to_string_lossy().starts_with(r"\\?\"));
-        assert!(home.ends_with(".grok"));
+        assert!(home.ends_with(".axon"));
     }
 
     #[test]

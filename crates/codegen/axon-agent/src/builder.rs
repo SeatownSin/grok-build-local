@@ -44,7 +44,7 @@ pub struct AgentBuilder {
     /// Model-facing working directory for the system prompt `<user_info>` block.
     ///
     /// In forked sessions, the real `working_directory` is an overlay/worktree
-    /// path (e.g., `~/.grok/worktrees/project/fork-...-overlay`) that must stay
+    /// path (e.g., `~/.axon/worktrees/project/fork-...-overlay`) that must stay
     /// hidden from the model. When set, `PromptContext.working_directory` uses
     /// this value instead of `self.working_directory`, so the system prompt
     /// shows the original project path. Tool execution (`ToolContext.cwd`,
@@ -436,7 +436,7 @@ impl AgentBuilder {
     /// When `Enabled`, the `web_fetch` tool is registered and a `WebFetchClient`
     /// is injected into `Resources`. When `Disabled` (default), the tool is not
     /// registered. Feature-flagged via remote settings `web_fetch_enabled` and
-    /// `GROK_WEB_FETCH` env var.
+    /// `AXON_WEB_FETCH` env var.
     pub fn with_web_fetch_config(
         mut self,
         config: axon_tools::implementations::grok_build::web_fetch::WebFetchConfig,
@@ -571,7 +571,7 @@ impl AgentBuilder {
         self
     }
     /// Set the skills config (custom paths, ignore globs) from config.toml.
-    /// Without this, only auto-discovered skills (cwd/.grok/skills, ~/.grok/skills)
+    /// Without this, only auto-discovered skills (cwd/.axon/skills, ~/.axon/skills)
     /// are included — custom paths added via `x.ai/skills/add` would be ignored.
     pub fn with_skills_config(mut self, config: crate::prompt::skills::SkillsConfig) -> Self {
         self.skills_config = config;

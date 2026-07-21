@@ -748,7 +748,7 @@ impl MvpAgent {
             );
             return Err(acp::Error::auth_required().data(msg));
         };
-        let meta = if method_id.0.as_ref() == auth_method::GROK_COM_METHOD_ID {
+        let meta = if method_id.0.as_ref() == auth_method::AXON_COM_METHOD_ID {
             serde_json::json!({ "use_oauth" : true }).as_object().cloned()
         } else {
             arguments.meta
@@ -1388,13 +1388,13 @@ impl MvpAgent {
     }
     /// Prepare the web fetch configuration based on feature flags.
     ///
-    /// Enabled gate: `disable_web_search` kill-switch > `GROK_WEB_FETCH` env >
+    /// Enabled gate: `disable_web_search` kill-switch > `AXON_WEB_FETCH` env >
     /// remote settings `web_fetch_enabled` > default (false).
     ///
     /// Params resolution (TOML > env > remote settings > default):
-    /// - `proxy_endpoint`: `[toolset.web_fetch] proxy_endpoint` > `GROK_WEB_FETCH_PROXY` > remote settings > None
+    /// - `proxy_endpoint`: `[toolset.web_fetch] proxy_endpoint` > `AXON_WEB_FETCH_PROXY` > remote settings > None
     /// - `allowed_domains`: `[toolset.web_fetch] allowed_domains` > remote settings > built-in defaults
-    /// - `allow_local`: `[toolset.web_fetch] allow_local` > `GROK_WEB_FETCH_ALLOW_LOCAL` > false
+    /// - `allow_local`: `[toolset.web_fetch] allow_local` > `AXON_WEB_FETCH_ALLOW_LOCAL` > false
     pub(super) fn prepare_web_fetch_config(
         &self,
     ) -> axon_tools::implementations::grok_build::web_fetch::WebFetchConfig {
@@ -1938,7 +1938,7 @@ impl MvpAgent {
     /// Create a RelaySync instance if enabled and auth is available.
     /// RelaySync is only enabled when:
     /// 1. Running in TUI interactive mode (cfg.enable_relay_sync)
-    /// 2. Config file/env enables it ([relay] enabled or GROK_RELAY_SYNC_ENABLED)
+    /// 2. Config file/env enables it ([relay] enabled or AXON_RELAY_SYNC_ENABLED)
     /// 3. User is authenticated
     ///
     /// Returns a `RelaySync` instance whose connection state can be observed
@@ -2718,10 +2718,10 @@ impl MvpAgent {
     /// 2. `acp_agent_profile` from ACP `_meta.agentProfile` (remote clients).
     /// 3. `agent_profile_path` from CLI `--agent-profile`.
     /// 4. `agent_config` from config.toml `[agent]`.
-    /// 5. `GROK_AGENT` env var.
+    /// 5. `AXON_AGENT` env var.
     /// 6. Built-in default agent.
     ///
-    /// `GROK_AGENT` and an explicit `[agent] name` bypass step 1.
+    /// `AXON_AGENT` and an explicit `[agent] name` bypass step 1.
     /// Strict-harness classification is structural — see
     /// [`axon_agent::config::is_strict_harness_agent_type`].
     ///
@@ -2735,7 +2735,7 @@ impl MvpAgent {
         model_agent_type: Option<&str>,
     ) -> axon_agent::AgentDefinition {
         use axon_agent::AgentDefinition;
-        let grok_agent_env_set = std::env::var("GROK_AGENT")
+        let grok_agent_env_set = std::env::var("AXON_AGENT")
             .ok()
             .is_some_and(|s| !s.trim().is_empty());
         let config_agent_explicitly_set = agent_config.name.is_some();
@@ -2804,7 +2804,7 @@ impl MvpAgent {
                 name
             );
         }
-        let agent_name = std::env::var("GROK_AGENT").ok();
+        let agent_name = std::env::var("AXON_AGENT").ok();
         let resolved = match agent_name.as_deref() {
             Some("browser-use") | Some("browser_use") => AgentDefinition::browser_use(),
             Some("grok-build-concise") | Some("grok_build_concise") => {
@@ -3036,7 +3036,7 @@ impl MvpAgent {
                 .as_ref()
                 .and_then(|s| s.loc_tracking)
                 .unwrap_or(false)
-                || std::env::var("GROK_LOC_TRACKING")
+                || std::env::var("AXON_LOC_TRACKING")
                     .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
                     .unwrap_or(false));
         let (feedback_resolved, feedback_flags) = {
@@ -3310,7 +3310,7 @@ impl MvpAgent {
             if servers.is_empty() {
                 let user_path = axon_tools::util::grok_home::grok_home()
                     .join("lsp.json");
-                let project_path = tool_ctx.cwd.as_path().join(".grok").join("lsp.json");
+                let project_path = tool_ctx.cwd.as_path().join(".axon").join("lsp.json");
                 tracing::warn!(
                     cwd = % tool_ctx.cwd, user_lsp_path = % user_path.display(),
                     project_lsp_path = % project_path.display(),

@@ -3413,7 +3413,7 @@ fn suggestions_landing_after_bash_exit_are_dropped() {
     assert!(agent.prompt.suggestions.dropdown.items.is_empty());
 }
 
-/// The always-on pipeline end to end, with `GROK_SUGGESTIONS` semantics
+/// The always-on pipeline end to end, with `AXON_SUGGESTIONS` semantics
 /// OFF: Tab fires a deterministic fetch, and the landing response runs the
 /// terminal Tab semantics — a single file candidate splices in place
 /// immediately and the drill-down refetch rides out with the dispatch.

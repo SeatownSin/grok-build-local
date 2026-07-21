@@ -276,13 +276,13 @@ impl SessionFlags {
     /// `autoMode`) are emitted unconditionally (absent key ≠ off; see the
     /// emit-site comment below). `--no-ask-user` always forces
     /// `askUserQuestion: false` into the meta, even when paired with
-    /// `GROK_AGENT` — the env var chooses the *agent*, but the tool-strip is
+    /// `AXON_AGENT` — the env var chooses the *agent*, but the tool-strip is
     /// independent. Chat mode additionally stamps `x.ai/session.kind`.
     pub(super) fn to_meta(&self) -> Option<acp::Meta> {
         let mut meta = serde_json::Map::new();
         if self.chat_mode {
             if self.plan_mode || self.agent_override.is_some()
-                || std::env::var("GROK_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
+                || std::env::var("AXON_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
             {
                 tracing::warn!(
                     "chat mode active: omitting Build agentProfile (plan/agent override ignored)"
@@ -290,7 +290,7 @@ impl SessionFlags {
             }
         } else if let Some(ref profile) = self.agent_override {
             meta.insert("agentProfile".into(), profile.clone());
-        } else if std::env::var("GROK_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
+        } else if std::env::var("AXON_AGENT").ok().is_some_and(|s| !s.trim().is_empty())
         {} else if let Some(profile) = self.agent_profile() {
             meta.insert("agentProfile".into(), serde_json::json!(profile));
         }
@@ -1421,7 +1421,7 @@ pub(super) fn parse_auto_topup_response(
         Err(_) => AutoTopupFetch::Unchanged,
     }
 }
-/// A blocking flock on the shared, possibly-network `~/.grok` lock must never
+/// A blocking flock on the shared, possibly-network `~/.axon` lock must never
 /// stall the event-loop thread (and would hang exit on `/quit`); the registry
 /// is best-effort, so skip on contention.
 pub(super) fn unregister_active_session_best_effort(session_id: &acp::SessionId) {

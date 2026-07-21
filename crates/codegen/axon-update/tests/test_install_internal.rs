@@ -1,13 +1,13 @@
 //! End-to-end tests for `install_internal` — the GCS-bucket installer used
 //! when `installer = "internal"` is configured.
 //!
-//! Wires together a wiremock-mocked GCS bucket + an isolated `GROK_HOME`
+//! Wires together a wiremock-mocked GCS bucket + an isolated `AXON_HOME`
 //! tempdir so we can verify the full install pipeline:
 //!   fetch version → download grok binary → chmod → atomic symlink →
 //!   cleanup_old_downloads → persist installer config.
 //!
 //! The function reads `grok_home()` (a process-wide `OnceLock`), so all
-//! tests in this binary share a single `GROK_HOME` and run serially via
+//! tests in this binary share a single `AXON_HOME` and run serially via
 //! `#[serial]`.
 
 #![cfg(unix)]
@@ -254,7 +254,7 @@ async fn install_internal_chmods_binary_executable() {
 #[serial]
 async fn install_internal_cleans_up_stale_pager_symlink() {
     // Old installations shipped a separate grok-pager binary. Verify the
-    // update removes the stale symlink from ~/.grok/bin/.
+    // update removes the stale symlink from ~/.axon/bin/.
     let _ = test_home();
     reset_home();
     let platform = host_platform();

@@ -73,9 +73,9 @@ impl ThemeKind {
     /// Human-readable display name.
     pub fn display_name(self) -> &'static str {
         match self {
-            Self::GrokNight => "groknight",
+            Self::GrokNight => "axonnight",
             Self::TokyoNight => "tokyonight",
-            Self::GrokDay => "grokday",
+            Self::GrokDay => "axonday",
             Self::RosePineMoon => "rosepine-moon",
             Self::OscuraMidnight => "oscura-midnight",
             Self::Auto => "auto",
@@ -151,8 +151,8 @@ pub fn canonical_name(value: &str) -> Option<&'static str> {
 pub fn display_name_for_canonical(value: &str) -> &str {
     match value {
         "auto" => "Auto",
-        "groknight" => "Axon Night",
-        "grokday" => "Axon Day",
+        "axonnight" | "groknight" => "Axon Night",
+        "axonday" | "grokday" => "Axon Day",
         "tokyonight" => "Tokyo Night",
         "rosepine-moon" => "Rose Pine Moon",
         other => other,
@@ -262,7 +262,7 @@ impl Theme {
 
     /// Get the current theme, quantized to the terminal's color level.
     ///
-    /// Reads the active theme kind (loaded from `~/.grok/config.toml` on
+    /// Reads the active theme kind (loaded from `~/.axon/config.toml` on
     /// first call, then cached in memory), builds the theme from its
     /// `const fn` constructor, and quantizes to the terminal's color level.
     ///
@@ -299,7 +299,7 @@ impl Theme {
         let adapted = adapted.quantized(level);
         // ANSI16 chrome fallback — fires in two cases:
         //   1. Any terminal that only advertises 16-color support
-        //      (e.g., `TERM=xterm`, `TERM=ansi`, or `GROK_FORCE_COLOR_LEVEL=basic`),
+        //      (e.g., `TERM=xterm`, `TERM=ansi`, or `AXON_FORCE_COLOR_LEVEL=basic`),
         //      where naive quantization collapses every dark RGB onto `Color::Black`.
         //   2. Legacy Windows ConHost below TrueColor, kept for parity with the
         //      glyph fallback path also gated on `is_legacy_windows_console()`.

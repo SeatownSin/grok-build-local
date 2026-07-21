@@ -142,12 +142,12 @@ fn main() {
     println!("=== Real Session Memory Benchmark ===\n");
 
     // Require an explicit path — do not hardcode a real session location.
-    let updates_path = match std::env::var("GROK_SESSION_PATH") {
+    let updates_path = match std::env::var("AXON_SESSION_PATH") {
         Ok(p) => std::path::PathBuf::from(p),
         Err(_) => {
-            eprintln!("Set GROK_SESSION_PATH to a session's updates.jsonl path");
+            eprintln!("Set AXON_SESSION_PATH to a session's updates.jsonl path");
             eprintln!(
-                "Example: GROK_SESSION_PATH=$HOME/.grok/sessions/<cwd-encoded>/019e0000-0000-7000-8000-000000000001/updates.jsonl"
+                "Example: AXON_SESSION_PATH=$HOME/.axon/sessions/<cwd-encoded>/019e0000-0000-7000-8000-000000000001/updates.jsonl"
             );
             return;
         }
@@ -155,7 +155,7 @@ fn main() {
 
     if !updates_path.exists() {
         eprintln!("Session not found: {:?}", updates_path);
-        eprintln!("Set GROK_SESSION_PATH env var to point to a session's updates.jsonl");
+        eprintln!("Set AXON_SESSION_PATH env var to point to a session's updates.jsonl");
         return;
     }
 

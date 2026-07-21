@@ -963,9 +963,9 @@ thread_local! {
     /// Per-test override for the session `mermaid/` cache dir. View-side tests
     /// set this to a private tempdir so [`AgentView::mermaid_out_path`] resolves
     /// a hermetic, writable cache dir *without* mutating the process-global
-    /// `GROK_HOME` (whose `grok_home()` value is cached first-write-wins, an
+    /// `AXON_HOME` (whose `grok_home()` value is cached first-write-wins, an
     /// isolation hazard under the full parallel suite — PNGs could land in the
-    /// real `~/.grok`). Thread-local, so each parallel test is independent; the
+    /// real `~/.axon`). Thread-local, so each parallel test is independent; the
     /// `TempDir` guard lives here so the dir outlives the view. Mirrors the
     /// `subagent::REPLAY_GROK_HOME` test seam. Production never sets this.
     static TEST_MERMAID_DIR: std::cell::RefCell<Option<tempfile::TempDir>> =
@@ -1006,7 +1006,7 @@ impl AgentView {
     /// Per-session destination path for a diagram's PNG, or `None` until session
     /// identity is known (no on-disk cache before then).
     fn mermaid_out_path(&self, key: &MermaidCacheKey) -> Option<PathBuf> {
-        // Test seam: a hermetic per-test cache dir (no `GROK_HOME` mutation).
+        // Test seam: a hermetic per-test cache dir (no `AXON_HOME` mutation).
         #[cfg(test)]
         if let Some(path) = TEST_MERMAID_DIR.with(|d| {
             d.borrow()
@@ -2104,7 +2104,7 @@ mod tests {
     // session dir) can't.
 
     /// Point this test's session `mermaid/` cache dir at a private tempdir —
-    /// hermetic, with no process-global `GROK_HOME` mutation. The `TempDir` lives
+    /// hermetic, with no process-global `AXON_HOME` mutation. The `TempDir` lives
     /// in the [`TEST_MERMAID_DIR`] thread-local for the test thread's lifetime
     /// (so the dir outlives the view), and each parallel test gets its own dir,
     /// so there is no cross-test contamination and no `grok_home()` cache race.

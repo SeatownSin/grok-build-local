@@ -98,7 +98,7 @@ impl SlashCommand for ThemeCommand {
                 ""
             };
             // Show the human label ("Axon Night") but insert the canonical
-            // machine name ("groknight") so serialization is unchanged. Match
+            // machine name ("axonnight") so serialization is unchanged. Match
             // on both so typing either the label or the canonical finds it.
             let human = crate::theme::display_name_for_canonical(kind.display_name());
             ArgItem {
@@ -251,7 +251,7 @@ mod tests {
             let items = cmd.suggest_args(&ctx, "").expect("should return items");
             let groknight = items
                 .iter()
-                .find(|i| i.insert_text == "groknight")
+                .find(|i| i.insert_text == "axonnight")
                 .expect("groknight should be in list");
             assert!(
                 groknight.description.contains("(active)"),
@@ -307,10 +307,10 @@ mod tests {
                     ..crate::settings::PagerLocalSnapshot::default()
                 },
             };
-            let result = cmd.run(&mut ctx, "groknight");
+            let result = cmd.run(&mut ctx, "axonnight");
             match result {
                 CommandResult::Action(Action::SetTheme(name)) => {
-                    assert_eq!(name, "groknight");
+                    assert_eq!(name, "axonnight");
                 }
                 other => panic!("expected Action::SetTheme(\"groknight\"), got {other:?}"),
             }
@@ -410,7 +410,7 @@ mod tests {
             let result = cmd.run(&mut ctx, "dark");
             match result {
                 CommandResult::Action(Action::SetTheme(name)) => {
-                    assert_eq!(name, "groknight", "alias must normalise to canonical");
+                    assert_eq!(name, "axonnight", "alias must normalise to canonical");
                 }
                 other => panic!("expected Action::SetTheme(\"groknight\"), got {other:?}"),
             }
@@ -436,7 +436,7 @@ mod tests {
         with_test_env(|| {
             theme_cache::set(ThemeKind::GrokNight);
             let cmd = ThemeCommand;
-            cmd.preview_arg("grokday");
+            cmd.preview_arg("axonday");
             assert_eq!(Theme::current_kind(), ThemeKind::GrokDay);
         });
     }
@@ -465,11 +465,11 @@ mod tests {
             theme_cache::set(ThemeKind::GrokNight);
             let cmd = ThemeCommand;
             // Simulate user navigating into a different theme during preview.
-            cmd.preview_arg("grokday");
+            cmd.preview_arg("axonday");
             assert_eq!(Theme::current_kind(), ThemeKind::GrokDay);
 
             // Then Escape (or arg picker dismissal): restore.
-            cmd.cancel_preview("groknight");
+            cmd.cancel_preview("axonnight");
             assert_eq!(
                 Theme::current_kind(),
                 ThemeKind::GrokNight,

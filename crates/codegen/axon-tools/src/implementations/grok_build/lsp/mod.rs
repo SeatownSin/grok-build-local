@@ -96,7 +96,7 @@ impl axon_tool_runtime::Tool for LspTool {
                 .ok_or_else(|| {
                     axon_tool_runtime::ToolError::custom(
                         "process_manager",
-                        "LSP tool is unavailable. Configure ~/.grok/lsp.json or <cwd>/.grok/lsp.json and ensure the language server can start.",
+                        "LSP tool is unavailable. Configure ~/.axon/lsp.json or <cwd>/.axon/lsp.json and ensure the language server can start.",
                     )
                 })?
                 .clone();

@@ -18,9 +18,9 @@
 //! Sampling traffic uses process-wide shared clients owned by
 //! `axon_sampler::shared_http` (one HTTP/2 pooled client plus
 //! a pool-less HTTP/1.1 fallback shared across every
-//! `SamplingClient`). The sampler reads `GROK_POOL_*` /
-//! `GROK_CONNECT_TIMEOUT_SECS` once, when its shared client is
-//! first built, and `GROK_SAMPLER_SHARED_CLIENT=0` falls back to
+//! `SamplingClient`). The sampler reads `AXON_POOL_*` /
+//! `AXON_CONNECT_TIMEOUT_SECS` once, when its shared client is
+//! first built, and `AXON_SAMPLER_SHARED_CLIENT=0` falls back to
 //! a fresh client per `SamplingClient`.
 //!
 //! TLS root certificates are warmed at process start via
@@ -64,15 +64,15 @@ static CLIENT_TYPE: OnceLock<ClientType> = OnceLock::new();
 // functions below.
 pub use axon_sampler::OriginClientInfo;
 
-/// Construct an [`OriginClientInfo`] from `GROK_CLIENT_NAME` /
-/// `GROK_CLIENT_VERSION` env vars. Returns `None` when
-/// `GROK_CLIENT_NAME` is unset.
+/// Construct an [`OriginClientInfo`] from `AXON_CLIENT_NAME` /
+/// `AXON_CLIENT_VERSION` env vars. Returns `None` when
+/// `AXON_CLIENT_NAME` is unset.
 pub fn origin_client_info_from_env() -> Option<OriginClientInfo> {
-    std::env::var("GROK_CLIENT_NAME")
+    std::env::var("AXON_CLIENT_NAME")
         .ok()
         .map(|product| OriginClientInfo {
             product,
-            version: std::env::var("GROK_CLIENT_VERSION").ok(),
+            version: std::env::var("AXON_CLIENT_VERSION").ok(),
         })
 }
 
@@ -236,9 +236,9 @@ pub fn client_type_from_origin(origin: Option<&OriginClientInfo>) -> ClientType 
     ClientType::from_client_identifier(origin.map(|o| o.product.as_str()))
 }
 
-/// Process-level client identifier (`GROK_CLIENT_NAME` env var, default `"grok-shell"`).
+/// Process-level client identifier (`AXON_CLIENT_NAME` env var, default `"grok-shell"`).
 pub fn process_client_identifier() -> String {
-    std::env::var("GROK_CLIENT_NAME").unwrap_or_else(|_| "grok-shell".to_string())
+    std::env::var("AXON_CLIENT_NAME").unwrap_or_else(|_| "grok-shell".to_string())
 }
 
 /// Header telling cli-chat-proxy whether this process is a single-prompt
