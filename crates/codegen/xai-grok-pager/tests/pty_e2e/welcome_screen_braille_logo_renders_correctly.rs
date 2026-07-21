@@ -35,7 +35,7 @@ async fn welcome_screen_braille_logo_renders_correctly() {
     // byte characters each (e.g. Cyrillic). Check for a few that only
     // appear in the logo — not in any ASCII menu label.
     //
-    // From logo07.txt line 2: ⣠⣾⠿⠛
+    // From the Axon X mark (logo07.txt): ⣾ in the tapering arms, ⣿ at the center.
     assert!(
         screen.contains('⣾'),
         "Braille character ⣾ (U+28FE) not found in screen — \

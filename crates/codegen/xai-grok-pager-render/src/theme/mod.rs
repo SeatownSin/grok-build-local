@@ -105,9 +105,13 @@ impl ThemeKind {
         let lower = name.to_lowercase();
         match lower.as_str() {
             "auto" | "system" => Some(Self::Auto),
-            "groknight" | "grok-night" | "dark" => Some(Self::GrokNight),
+            "axonnight" | "axon-night" | "groknight" | "grok-night" | "dark" => {
+                Some(Self::GrokNight)
+            }
             "tokyonight" | "tokyo-night" | "tokyo" => Some(Self::TokyoNight),
-            "grokday" | "grok-day" | "light" | "day" => Some(Self::GrokDay),
+            "axonday" | "axon-day" | "grokday" | "grok-day" | "light" | "day" => {
+                Some(Self::GrokDay)
+            }
             "rosepine" | "rose-pine" | "rosepine-moon" | "rose-pine-moon" => {
                 Some(Self::RosePineMoon)
             }
@@ -139,12 +143,16 @@ pub fn canonical_name(value: &str) -> Option<&'static str> {
 }
 
 /// Human-friendly display name for a canonical theme value (e.g.
-/// `"groknight"` → `"Grok Night"`). Falls back to `value` verbatim.
+/// `"groknight"` → `"Axon Night"`). Falls back to `value` verbatim.
+///
+/// The canonical machine names (`"groknight"`/`"grokday"`) are retained for
+/// config-serialization compatibility; only the human-facing labels are
+/// rebranded to Axon.
 pub fn display_name_for_canonical(value: &str) -> &str {
     match value {
         "auto" => "Auto",
-        "groknight" => "Grok Night",
-        "grokday" => "Grok Day",
+        "groknight" => "Axon Night",
+        "grokday" => "Axon Day",
         "tokyonight" => "Tokyo Night",
         "rosepine-moon" => "Rose Pine Moon",
         other => other,

@@ -25,19 +25,21 @@ mod palette {
     use super::*;
 
     // ── Backgrounds ─────────────────────────────────────────────────────
-    pub const BG: Color = rgb(10, 10, 10); //  #0a0a0a — Night (terminal bg)
-    pub const BG_DARK: Color = rgb(12, 12, 12); //  #0c0c0c — darkest
-    pub const BG_STORM_DARK: Color = rgb(17, 17, 17); //  #111111 — dark bg
-    pub const BG_STORM: Color = rgb(20, 20, 20); //  #141414 — main bg
-    pub const BG_HIGHLIGHT: Color = rgb(36, 36, 36); //  #242424 — highlight bg
+    // Cool cerebral cast: the neutral ramp carries a subtle blue bias (b > r,g)
+    // so the base reads as slate/blue-gray rather than pure neutral.
+    pub const BG: Color = rgb(9, 10, 13); //  #090a0d — Night (terminal bg)
+    pub const BG_DARK: Color = rgb(11, 12, 16); //  #0b0c10 — darkest
+    pub const BG_STORM_DARK: Color = rgb(15, 17, 21); //  #0f1115 — dark bg
+    pub const BG_STORM: Color = rgb(18, 20, 25); //  #121419 — main bg
+    pub const BG_HIGHLIGHT: Color = rgb(33, 36, 44); //  #21242c — highlight bg
 
     // ── Text / grays ────────────────────────────────────────────────────
-    pub const FG: Color = rgb(225, 225, 225); // #e1e1e1 — primary text
-    pub const FG_DARK: Color = rgb(200, 200, 200); // #c8c8c8 — secondary text
-    pub const FG_GUTTER: Color = rgb(65, 65, 65); //  #414141 — dim
-    pub const COMMENT: Color = rgb(108, 108, 108); //  #6c6c6c — muted
-    pub const DARK3: Color = rgb(90, 90, 90); //  #5a5a5a — medium gray
-    pub const DARK5: Color = rgb(120, 120, 120); // #787878 — bright gray
+    pub const FG: Color = rgb(224, 226, 230); // #e0e2e6 — primary text
+    pub const FG_DARK: Color = rgb(198, 201, 208); // #c6c9d0 — secondary text
+    pub const FG_GUTTER: Color = rgb(61, 65, 74); //  #3d414a — dim
+    pub const COMMENT: Color = rgb(103, 108, 119); //  #676c77 — muted
+    pub const DARK3: Color = rgb(85, 90, 101); //  #555a65 — medium gray
+    pub const DARK5: Color = rgb(114, 120, 132); // #727884 — bright gray
 
     // ── Accent colors (TokyoNight Night) ─────────────────────────────────
     pub const BLUE: Color = rgb(122, 162, 247); // #7aa2f7
@@ -68,9 +70,9 @@ impl Theme {
         Self {
             bg_base: BG_STORM,
             bg_light: BG_HIGHLIGHT,
-            bg_dark: rgb(28, 28, 28), // lighter than bg_base for visible code blocks
+            bg_dark: rgb(26, 28, 35), // lighter than bg_base for visible code blocks
             bg_highlight: BG_HIGHLIGHT,
-            bg_hover: rgb(44, 44, 44),
+            bg_hover: rgb(40, 44, 53),
             bg_terminal: BG,
 
             accent_user: FG_DARK,
@@ -86,7 +88,7 @@ impl Theme {
             text_primary: FG,
             text_secondary: FG_DARK,
 
-            gray_dim: rgb(88, 88, 88), // #585858 — slightly brighter than FG_GUTTER
+            gray_dim: rgb(83, 88, 99), // slightly brighter than FG_GUTTER
             gray: COMMENT,
             gray_bright: DARK5,
 
@@ -105,10 +107,10 @@ impl Theme {
 
             accent_remember: Color::Rgb(139, 195, 74), // #8BC34A — Material Design light green
 
-            selection_border: rgb(60, 60, 65),
-            prompt_border: rgb(50, 50, 55), // #323237 — dimmer prompt chrome
-            prompt_border_active: rgb(80, 80, 88), // #505058 — brighter when focused
-            hover_border: rgb(30, 30, 34),
+            selection_border: rgb(55, 60, 72),
+            prompt_border: rgb(46, 50, 62), // dimmer prompt chrome
+            prompt_border_active: rgb(74, 80, 96), // brighter when focused
+            hover_border: rgb(27, 30, 38),
 
             accent_model: TEAL,
 
@@ -122,7 +124,7 @@ impl Theme {
             diff_equal_fg: COMMENT,
             diff_gutter_fg: COMMENT,
 
-            bg_visual: rgb(54, 54, 54),
+            bg_visual: rgb(49, 54, 64),
 
             paste_bg: BG_STORM_DARK,
             paste_fg: FG_DARK,
@@ -144,7 +146,7 @@ impl Theme {
             md_task_checked: GREEN,
             md_task_unchecked: FG_DARK, // text_secondary
             md_muted: COMMENT,
-            md_code_bg: rgb(28, 28, 28),
+            md_code_bg: rgb(26, 28, 35),
             md_text: FG_DARK,
             link_fg: rgb(122, 166, 218), // #7aa6da -- soft blue for dark bg
         }

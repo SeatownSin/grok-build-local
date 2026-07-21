@@ -123,7 +123,9 @@ fn render_into(area: Rect, buf: &mut Buffer, theme: &Theme, logo: &str) {
     // that land on the same blended color share one Span to hold down the
     // per-frame allocation.
     let base = theme.gray;
-    let hilite = theme.text_primary;
+    // Cerebral cool sheen: the glint sweeps toward the theme's system-blue
+    // accent (not plain white), giving the mark an icy cast.
+    let hilite = theme.accent_system;
     let logo_lines: Vec<Line> = lines
         .iter()
         .enumerate()

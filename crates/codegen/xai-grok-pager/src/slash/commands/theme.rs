@@ -97,11 +97,15 @@ impl SlashCommand for ThemeCommand {
             } else {
                 ""
             };
+            // Show the human label ("Axon Night") but insert the canonical
+            // machine name ("groknight") so serialization is unchanged. Match
+            // on both so typing either the label or the canonical finds it.
+            let human = crate::theme::display_name_for_canonical(kind.display_name());
             ArgItem {
-                display: kind.display_name().to_string(),
-                match_text: kind.display_name().to_string(),
+                display: human.to_string(),
+                match_text: format!("{human} {}", kind.display_name()),
                 insert_text: kind.display_name().to_string(),
-                description: format!("{}{active}", kind.display_name()),
+                description: format!("{human}{active}"),
             }
         }));
 

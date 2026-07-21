@@ -79,7 +79,7 @@ pub fn emit_notification(
     let sequence: Cow<'_, str> = match protocol {
         NotificationProtocol::Osc9 => format!("\x1b]9;{body} \u{b7} {title}\x07").into(),
         NotificationProtocol::Osc99 => format!("\x1b]99;i=grok;{body} \u{b7} {title}\x1b\\").into(),
-        NotificationProtocol::Osc777 => format!("\x1b]777;notify;Grok;{body}\x1b\\").into(),
+        NotificationProtocol::Osc777 => format!("\x1b]777;notify;Axon;{body}\x1b\\").into(),
         NotificationProtocol::Bel => Cow::Borrowed("\x07"),
         NotificationProtocol::None => return,
     };

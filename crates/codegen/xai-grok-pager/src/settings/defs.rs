@@ -46,12 +46,12 @@ const THEME_CHOICES: &[EnumChoice] = &[
     },
     EnumChoice {
         canonical: "groknight",
-        display: "Grok Night",
-        description: "Neutral dark with magenta accent.",
+        display: "Axon Night",
+        description: "Cerebral dark, cool blue-gray base.",
     },
     EnumChoice {
         canonical: "grokday",
-        display: "Grok Day",
+        display: "Axon Day",
         description: "Light theme for bright environments.",
     },
     EnumChoice {
@@ -476,12 +476,12 @@ const VOICE_STT_LANGUAGE_CHOICES: &[EnumChoice] = &[
 const CONCRETE_THEME_CHOICES: &[EnumChoice] = &[
     EnumChoice {
         canonical: "groknight",
-        display: "Grok Night",
-        description: "Neutral dark with magenta accent.",
+        display: "Axon Night",
+        description: "Cerebral dark, cool blue-gray base.",
     },
     EnumChoice {
         canonical: "grokday",
-        display: "Grok Day",
+        display: "Axon Day",
         description: "Light theme for bright environments.",
     },
     EnumChoice {
