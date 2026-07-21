@@ -3,79 +3,79 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/build/xai-proto-build",
+    "crates/build/axon-proto-build",
     "crates/codegen/ptyctl",
     "crates/codegen/ptyctl-cli",
-    "crates/codegen/xai-acp-lib",
-    "crates/codegen/xai-agent-lifecycle",
-    "crates/codegen/xai-chat-state",
-    "crates/codegen/xai-codebase-graph",
-    "crates/codegen/xai-crash-handler",
-    "crates/codegen/xai-fast-worktree",
-    "crates/codegen/xai-file-utils",
-    "crates/codegen/xai-fsnotify",
-    "crates/codegen/xai-gix-status",
-    "crates/codegen/xai-grok-agent",
-    "crates/codegen/xai-grok-announcements",
-    "crates/codegen/xai-grok-auth",
-    "crates/codegen/xai-grok-config",
-    "crates/codegen/xai-grok-config-types",
-    "crates/codegen/xai-grok-env",
-    "crates/codegen/xai-grok-hooks",
-    "crates/codegen/xai-grok-http",
-    "crates/codegen/xai-grok-markdown",
-    "crates/codegen/xai-grok-markdown-core",
-    "crates/codegen/xai-grok-mcp",
-    "crates/codegen/xai-grok-memory",
-    "crates/codegen/xai-grok-mermaid",
-    "crates/codegen/xai-grok-models",
-    "crates/codegen/xai-grok-pager",
-    "crates/codegen/xai-grok-pager-bin",
-    "crates/codegen/xai-grok-pager-minimal",
-    "crates/codegen/xai-grok-pager-pty-harness",
-    "crates/codegen/xai-grok-pager-render",
-    "crates/codegen/xai-grok-paths",
-    "crates/codegen/xai-grok-plugin-marketplace",
-    "crates/codegen/xai-grok-sampler",
-    "crates/codegen/xai-grok-sampling-types",
-    "crates/codegen/xai-grok-sandbox",
-    "crates/codegen/xai-grok-secrets",
-    "crates/codegen/xai-grok-shared",
-    "crates/codegen/xai-grok-shell",
-    "crates/codegen/xai-grok-shell-base",
-    "crates/codegen/xai-grok-shell-session-support",
-    "crates/codegen/xai-grok-subagent-resolution",
-    "crates/codegen/xai-grok-telemetry",
-    "crates/codegen/xai-grok-test-support",
-    "crates/codegen/xai-grok-tools",
-    "crates/codegen/xai-grok-tools-api",
-    "crates/codegen/xai-grok-update",
-    "crates/codegen/xai-grok-version",
-    "crates/codegen/xai-grok-voice",
-    "crates/codegen/xai-grok-workspace",
-    "crates/codegen/xai-grok-workspace-client",
-    "crates/codegen/xai-grok-workspace-types",
-    "crates/codegen/xai-hooks-plugins-types",
-    "crates/codegen/xai-hunk-tracker",
-    "crates/codegen/xai-prompt-queue",
-    "crates/codegen/xai-ratatui-inline",
-    "crates/codegen/xai-ratatui-textarea",
-    "crates/codegen/xai-sqlite-journal",
-    "crates/codegen/xai-system-power",
-    "crates/codegen/xai-token-estimation",
-    "crates/codegen/xai-tracing-macros",
-    "crates/codegen/xai-tty-utils",
-    "crates/common/xai-circuit-breaker",
-    "crates/common/xai-computer-hub-core",
-    "crates/common/xai-computer-hub-mcp-adapter",
-    "crates/common/xai-computer-hub-sdk",
-    "crates/common/xai-grok-compaction",
-    "crates/common/xai-interjection-core",
-    "crates/common/xai-test-utils",
-    "crates/common/xai-tool-protocol",
-    "crates/common/xai-tool-runtime",
-    "crates/common/xai-tool-types",
-    "crates/common/xai-tracing",
+    "crates/codegen/axon-acp-lib",
+    "crates/codegen/axon-agent-lifecycle",
+    "crates/codegen/axon-chat-state",
+    "crates/codegen/axon-codebase-graph",
+    "crates/codegen/axon-crash-handler",
+    "crates/codegen/axon-fast-worktree",
+    "crates/codegen/axon-file-utils",
+    "crates/codegen/axon-fsnotify",
+    "crates/codegen/axon-gix-status",
+    "crates/codegen/axon-agent",
+    "crates/codegen/axon-announcements",
+    "crates/codegen/axon-auth",
+    "crates/codegen/axon-config",
+    "crates/codegen/axon-config-types",
+    "crates/codegen/axon-env",
+    "crates/codegen/axon-hooks",
+    "crates/codegen/axon-http",
+    "crates/codegen/axon-markdown",
+    "crates/codegen/axon-markdown-core",
+    "crates/codegen/axon-mcp",
+    "crates/codegen/axon-memory",
+    "crates/codegen/axon-mermaid",
+    "crates/codegen/axon-models",
+    "crates/codegen/axon-pager",
+    "crates/codegen/axon-pager-bin",
+    "crates/codegen/axon-pager-minimal",
+    "crates/codegen/axon-pager-pty-harness",
+    "crates/codegen/axon-pager-render",
+    "crates/codegen/axon-paths",
+    "crates/codegen/axon-plugin-marketplace",
+    "crates/codegen/axon-sampler",
+    "crates/codegen/axon-sampling-types",
+    "crates/codegen/axon-sandbox",
+    "crates/codegen/axon-secrets",
+    "crates/codegen/axon-shared",
+    "crates/codegen/axon-shell",
+    "crates/codegen/axon-shell-base",
+    "crates/codegen/axon-shell-session-support",
+    "crates/codegen/axon-subagent-resolution",
+    "crates/codegen/axon-telemetry",
+    "crates/codegen/axon-test-support",
+    "crates/codegen/axon-tools",
+    "crates/codegen/axon-tools-api",
+    "crates/codegen/axon-update",
+    "crates/codegen/axon-version",
+    "crates/codegen/axon-voice",
+    "crates/codegen/axon-workspace",
+    "crates/codegen/axon-workspace-client",
+    "crates/codegen/axon-workspace-types",
+    "crates/codegen/axon-hooks-plugins-types",
+    "crates/codegen/axon-hunk-tracker",
+    "crates/codegen/axon-prompt-queue",
+    "crates/codegen/axon-ratatui-inline",
+    "crates/codegen/axon-ratatui-textarea",
+    "crates/codegen/axon-sqlite-journal",
+    "crates/codegen/axon-system-power",
+    "crates/codegen/axon-token-estimation",
+    "crates/codegen/axon-tracing-macros",
+    "crates/codegen/axon-tty-utils",
+    "crates/common/axon-circuit-breaker",
+    "crates/common/axon-computer-hub-core",
+    "crates/common/axon-computer-hub-mcp-adapter",
+    "crates/common/axon-computer-hub-sdk",
+    "crates/common/axon-compaction",
+    "crates/common/axon-interjection-core",
+    "crates/common/axon-test-utils",
+    "crates/common/axon-tool-protocol",
+    "crates/common/axon-tool-runtime",
+    "crates/common/axon-tool-types",
+    "crates/common/axon-tracing",
     "prod/mc/cli-chat-proxy-types",
     "third_party/dagre_rust",
     "third_party/graphlib_rust",
@@ -270,53 +270,53 @@ whoami = "1.4"
 windows = { version = "0.61", features = ["Win32_Security", "Win32_Security_Authorization", "Win32_Foundation", "Win32_System_Threading", "Win32_System_JobObjects", "Win32_System_Console", "Win32_System_Pipes"] }
 wiremock = "0.6"
 wl-clipboard-rs = "0.9"
-xai-acp-lib = { path = "crates/codegen/xai-acp-lib" }
-xai-agent-lifecycle = { path = "crates/codegen/xai-agent-lifecycle" }
-xai-circuit-breaker = { path = "crates/common/xai-circuit-breaker" }
-xai-computer-hub-core = { path = "crates/common/xai-computer-hub-core" }
-xai-computer-hub-sdk = { path = "crates/common/xai-computer-hub-sdk" }
-xai-gix-status = { path = "crates/codegen/xai-gix-status" }
-xai-grok-agent = { path = "crates/codegen/xai-grok-agent" }
-xai-grok-announcements = { path = "crates/codegen/xai-grok-announcements" }
-xai-grok-auth = { path = "crates/codegen/xai-grok-auth" }
-xai-grok-config = { path = "crates/codegen/xai-grok-config" }
-xai-grok-config-types = { path = "crates/codegen/xai-grok-config-types" }
-xai-grok-env = { path = "crates/codegen/xai-grok-env" }
-xai-grok-http = { path = "crates/codegen/xai-grok-http" }
-xai-grok-markdown = { path = "crates/codegen/xai-grok-markdown" }
-xai-grok-markdown-core = { path = "crates/codegen/xai-grok-markdown-core" }
-xai-grok-mcp = { path = "crates/codegen/xai-grok-mcp" }
-xai-grok-memory = { path = "crates/codegen/xai-grok-memory" }
-xai-grok-mermaid = { path = "crates/codegen/xai-grok-mermaid" }
-xai-grok-models = { path = "crates/codegen/xai-grok-models" }
-xai-grok-sampler = { path = "crates/codegen/xai-grok-sampler" }
-xai-grok-secrets = { path = "crates/codegen/xai-grok-secrets" }
-xai-grok-shared = { path = "crates/codegen/xai-grok-shared" }
-xai-grok-shell = { path = "crates/codegen/xai-grok-shell" }
-xai-grok-shell-base = { path = "crates/codegen/xai-grok-shell-base" }
-xai-grok-shell-session-support = { path = "crates/codegen/xai-grok-shell-session-support" }
-xai-grok-telemetry = { path = "crates/codegen/xai-grok-telemetry" }
-xai-grok-test-support = { path = "crates/codegen/xai-grok-test-support" }
-xai-grok-tools = { path = "crates/codegen/xai-grok-tools" }
-xai-grok-tools-api = { path = "crates/codegen/xai-grok-tools-api" }
-xai-grok-version = { path = "crates/codegen/xai-grok-version" }
-xai-grok-workspace = { path = "crates/codegen/xai-grok-workspace" }
-xai-grok-workspace-types = { path = "crates/codegen/xai-grok-workspace-types" }
-xai-hooks-plugins-types = { path = "crates/codegen/xai-hooks-plugins-types" }
-xai-interjection-core = { path = "crates/common/xai-interjection-core" }
-xai-prompt-queue = { path = "crates/codegen/xai-prompt-queue" }
-xai-proto-build = { path = "crates/build/xai-proto-build" }
-xai-ratatui-inline = { path = "crates/codegen/xai-ratatui-inline" }
-xai-ratatui-textarea = { path = "crates/codegen/xai-ratatui-textarea" }
-xai-sqlite-journal = { path = "crates/codegen/xai-sqlite-journal" }
-xai-system-power = { path = "crates/codegen/xai-system-power" }
-xai-test-utils = { path = "crates/common/xai-test-utils" }
-xai-token-estimation = { path = "crates/codegen/xai-token-estimation" }
-xai-tool-protocol = { path = "crates/common/xai-tool-protocol" }
-xai-tool-runtime = { path = "crates/common/xai-tool-runtime" }
-xai-tool-types = { path = "crates/common/xai-tool-types" }
-xai-tracing = { path = "crates/common/xai-tracing" }
-xai-tty-utils = { path = "crates/codegen/xai-tty-utils" }
+axon-acp-lib = { path = "crates/codegen/axon-acp-lib" }
+axon-agent-lifecycle = { path = "crates/codegen/axon-agent-lifecycle" }
+axon-circuit-breaker = { path = "crates/common/axon-circuit-breaker" }
+axon-computer-hub-core = { path = "crates/common/axon-computer-hub-core" }
+axon-computer-hub-sdk = { path = "crates/common/axon-computer-hub-sdk" }
+axon-gix-status = { path = "crates/codegen/axon-gix-status" }
+axon-agent = { path = "crates/codegen/axon-agent" }
+axon-announcements = { path = "crates/codegen/axon-announcements" }
+axon-auth = { path = "crates/codegen/axon-auth" }
+axon-config = { path = "crates/codegen/axon-config" }
+axon-config-types = { path = "crates/codegen/axon-config-types" }
+axon-env = { path = "crates/codegen/axon-env" }
+axon-http = { path = "crates/codegen/axon-http" }
+axon-markdown = { path = "crates/codegen/axon-markdown" }
+axon-markdown-core = { path = "crates/codegen/axon-markdown-core" }
+axon-mcp = { path = "crates/codegen/axon-mcp" }
+axon-memory = { path = "crates/codegen/axon-memory" }
+axon-mermaid = { path = "crates/codegen/axon-mermaid" }
+axon-models = { path = "crates/codegen/axon-models" }
+axon-sampler = { path = "crates/codegen/axon-sampler" }
+axon-secrets = { path = "crates/codegen/axon-secrets" }
+axon-shared = { path = "crates/codegen/axon-shared" }
+axon-shell = { path = "crates/codegen/axon-shell" }
+axon-shell-base = { path = "crates/codegen/axon-shell-base" }
+axon-shell-session-support = { path = "crates/codegen/axon-shell-session-support" }
+axon-telemetry = { path = "crates/codegen/axon-telemetry" }
+axon-test-support = { path = "crates/codegen/axon-test-support" }
+axon-tools = { path = "crates/codegen/axon-tools" }
+axon-tools-api = { path = "crates/codegen/axon-tools-api" }
+axon-version = { path = "crates/codegen/axon-version" }
+axon-workspace = { path = "crates/codegen/axon-workspace" }
+axon-workspace-types = { path = "crates/codegen/axon-workspace-types" }
+axon-hooks-plugins-types = { path = "crates/codegen/axon-hooks-plugins-types" }
+axon-interjection-core = { path = "crates/common/axon-interjection-core" }
+axon-prompt-queue = { path = "crates/codegen/axon-prompt-queue" }
+axon-proto-build = { path = "crates/build/axon-proto-build" }
+axon-ratatui-inline = { path = "crates/codegen/axon-ratatui-inline" }
+axon-ratatui-textarea = { path = "crates/codegen/axon-ratatui-textarea" }
+axon-sqlite-journal = { path = "crates/codegen/axon-sqlite-journal" }
+axon-system-power = { path = "crates/codegen/axon-system-power" }
+axon-test-utils = { path = "crates/common/axon-test-utils" }
+axon-token-estimation = { path = "crates/codegen/axon-token-estimation" }
+axon-tool-protocol = { path = "crates/common/axon-tool-protocol" }
+axon-tool-runtime = { path = "crates/common/axon-tool-runtime" }
+axon-tool-types = { path = "crates/common/axon-tool-types" }
+axon-tracing = { path = "crates/common/axon-tracing" }
+axon-tty-utils = { path = "crates/codegen/axon-tty-utils" }
 zbus = { version = "5" }
 zstd = "0.13"
 

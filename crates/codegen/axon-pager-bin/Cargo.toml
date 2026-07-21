@@ -1,0 +1,96 @@
+[package]
+name = "axon-pager-bin"
+version = "0.2.105"
+edition.workspace = true
+license = "Apache-2.0"
+authors = ["xAI"]
+default-run = "axon-pager"
+
+# Composition-root binary for the Grok Build TUI. The artifact is still named
+# `axon-pager`. This package exists so the binary can link both the pager
+# library and the optional `axon-pager-minimal` render mode: `minimal`
+# depends on `axon-pager`, so the pager library cannot depend back on it
+# (cargo cycle). The binary installs the minimal-mode IoC hooks at startup.
+[[bin]]
+name = "axon-pager"
+path = "src/main.rs"
+
+[dependencies]
+# The pager library (all application logic + the public API main.rs drives).
+axon-pager = { path = "../axon-pager" }
+# Optional scrollback-native render mode, wired in via the fn-pointer seam.
+axon-pager-minimal = { path = "../axon-pager-minimal" }
+
+# Agent runtime + leader/stdio/headless entry points.
+axon-shell = { workspace = true }
+axon-update = { path = "../axon-update" }
+axon-version = { workspace = true }
+axon-telemetry = { workspace = true }
+axon-workspace = { workspace = true }
+axon-crash-handler = { path = "../axon-crash-handler" }
+axon-acp-lib = { workspace = true }
+
+# Async runtime + misc.
+tokio = { workspace = true, features = [
+    "sync",
+    "rt",
+    "macros",
+    "rt-multi-thread",
+    "signal",
+    "io-util",
+    "io-std",
+] }
+tokio-util = { workspace = true, features = ["compat"] }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_json = { workspace = true }
+dunce = { workspace = true }
+semver = { workspace = true }
+axon-tty-utils = { workspace = true }
+axon-config = { workspace = true }
+axon-sandbox = { path = "../axon-sandbox", default-features = false }
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "logging",
+    "std",
+    "tls12",
+] }
+
+# Binary hardening: compile-time string + control-flow obfuscation.
+obfstr = { workspace = true }
+cryptify = { workspace = true }
+
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+# Default allocator on Unix; gated by the `jemalloc` feature (see main.rs
+# `#[global_allocator]`, cfg(all(feature = "jemalloc", unix))).
+# `stats` is binary-scoped only (not workspace-wide) so this CLI jemalloc
+# link gets --enable-stats for stats.allocated / stats.resident mallctl.
+tikv-jemallocator = { workspace = true, optional = true, features = ["stats"] }
+# Raw mallctl for the memory-cliff arena purge hook (see
+# `purge_jemalloc_retained_pages` + the `install_release_hook` call in
+# main.rs). Same version family as the
+# allocator; adds no new build units beyond what tikv-jemallocator pulls in.
+tikv-jemalloc-sys = { workspace = true, optional = true }
+# Heap-profile / stats mallctl helpers (prof.active, prof.dump, epoch, stats.*).
+tikv-jemalloc-ctl = { workspace = true, optional = true, features = ["stats", "use_std"] }
+
+[dev-dependencies]
+serial_test = { workspace = true }
+# `PagerArgs::try_parse_from` in the CLI-parsing unit tests (needs the
+# `clap::Parser` trait in scope).
+clap = { workspace = true, features = ["derive"] }
+
+[features]
+default = [
+    "jemalloc",
+    "sandbox-enforce",
+    ]
+default-bazel = [
+    "jemalloc",
+    "sandbox-enforce",
+    ]
+jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-sys", "dep:tikv-jemalloc-ctl"]
+sandbox-enforce = ["axon-pager/sandbox-enforce"]
+release-dist = ["axon-pager/release-dist"]

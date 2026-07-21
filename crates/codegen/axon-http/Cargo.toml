@@ -1,0 +1,20 @@
+[package]
+license = "Apache-2.0"
+name = "axon-http"
+version = "0.1.0"
+edition.workspace = true
+description = "Shared reqwest HTTP clients and User-Agent construction for the grok CLI."
+
+[dependencies]
+reqwest = { workspace = true, features = ["blocking"] }
+reqwest-middleware = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+axon-auth = { workspace = true, features = ["middleware"] }
+axon-sampler = { path = "../axon-sampler" }
+axon-telemetry = { workspace = true }
+axon-version = { workspace = true }
+axon-workspace = { workspace = true }
+
+[lints]
+workspace = true

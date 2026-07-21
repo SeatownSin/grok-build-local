@@ -1,0 +1,28 @@
+[package]
+license = "Apache-2.0"
+name = "axon-workspace-client"
+version = "0.1.0"
+edition.workspace = true
+description = "Lightweight typed client for hub-proxied workspace.* RPCs (shared by axon-shell proxy mode and other consumers)"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["time"] }
+tracing = { workspace = true }
+axon-computer-hub-sdk = { workspace = true }
+axon-workspace-types = { workspace = true }
+axon-tool-protocol = { workspace = true }
+axon-tool-runtime = { workspace = true }
+
+[features]
+default = []
+default-bazel = []
+[dev-dependencies]
+schemars = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt", "test-util"] }
+axon-tool-types = { workspace = true }
+
+[lints]
+workspace = true
