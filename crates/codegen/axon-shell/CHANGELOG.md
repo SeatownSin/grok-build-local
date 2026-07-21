@@ -4,7 +4,7 @@
 
 ## Features
 
-- **/btw** now works inside `grok --minimal`, showing answers in the live area and committing them to scrollback on Esc.
+- **/btw** now works inside `axon --minimal`, showing answers in the live area and committing them to scrollback on Esc.
 - **New Appearance setting** "Snap prompt to top on send" lets you keep the viewport where it is instead of jumping to the new prompt.
 - **Default model** is now Grok 4.5 with high/medium/low reasoning effort and improved compaction settings.
 - **New `/summarize` slash command** is now available as an alias for `/recap` to request an on-demand session summary.
@@ -47,7 +47,7 @@
 - **Local sessions now inherit full rc environment, cwd, and exports** across tool calls (configurable).
 - **MCP servers** from plugins can now require setup choices such as a regional site before connecting.
 - Quitting a fullscreen session now shows the session title and last exchange above the resume command.
-- **SSH sessions** now show a one-time tip recommending `grok wrap ssh <host>` for clipboard and terminal restore.
+- **SSH sessions** now show a one-time tip recommending `axon wrap ssh <host>` for clipboard and terminal restore.
 
 ## Bug Fixes
 
@@ -55,8 +55,8 @@
 - **Fixed a race** where an early cancel could permanently wedge a session's turn slot.
 - **grok** and the agent binary now stay in sync even when no update is installed.
 - **Copying** a multiline queued prompt now copies the complete text instead of a collapsed summary.
-- **grok wrap** now restores the terminal after SSH disconnects or other abrupt child exits.
-- **Voice speech-to-text** now works with per-model API keys in config.toml without requiring `grok login`.
+- **axon wrap** now restores the terminal after SSH disconnects or other abrupt child exits.
+- **Voice speech-to-text** now works with per-model API keys in config.toml without requiring `axon login`.
 - **Copy over SSH** or in containers now shows clearer feedback when delivery cannot be confirmed.
 - **Local Bash sessions** no longer keep a persistent shell across calls, avoiding failures after directory deletion.
 
@@ -71,13 +71,13 @@
 
 - **New /jump slash command** lets you quickly jump to any previous turn in the conversation.
 - **New /timeline sidebar** shows a clickable tick rail for fast navigation between conversation turns.
-- **grok login** now requests Grok Projects scopes so workspace listing works after consent.
+- **axon login** now requests Grok Projects scopes so workspace listing works after consent.
 - **Permission mode** can now be set fleet-wide via remote config when no local setting exists.
 - **Edit tool output** has a setting to show a compact one-line summary instead of always-expanded diffs.
 - **Tab completion** in !bash mode now works like a normal terminal (prefix fill, dropdown, directory drill-down).
 - **Enterprise deployments** can now disable voice dictation via `requirements.toml` so `/voice` and Ctrl+Space are hidden for everyone.
 - **User prompts** now appear bold only in `--minimal` mode; fullscreen keeps normal weight.
-- **`grok plugin install`** now accepts a marketplace's registered name as a qualifier.
+- **`axon plugin install`** now accepts a marketplace's registered name as a qualifier.
 - Consecutive edits to the same file now collapse into a single scrollback row when collapsed edit blocks are enabled.
 - Local sessions now inherit your shell environment variables and keep the current directory across commands.
 
@@ -104,7 +104,7 @@
 - **File links** in official VS Code Remote-SSH terminals now use VS Code's native path handling.
 - **Minimal mode** now shows the folder-trust prompt after sign-in when required.
 - **Skills** whose names collide with built-in slash commands are now reachable via qualified names.
-- **Fixed background task tracking** when using grok -p --no-wait-for-background so tasks are properly reaped on exit.
+- **Fixed background task tracking** when using axon -p --no-wait-for-background so tasks are properly reaped on exit.
 - **Rate limit errors (429)** now show specific server messages (capacity, team limits, free-usage) instead of generic upgrade prompts, with correct copy based on auth type.
 - **`/copy` slash command** is now available in minimal mode.
 
@@ -116,7 +116,7 @@
 
 ## Features
 
-- **grok inspect** now shows effective compatibility settings for Cursor, Claude, and Codex sessions.
+- **axon inspect** now shows effective compatibility settings for Cursor, Claude, and Codex sessions.
 - **New setting** "Match display refresh rate" lets high-refresh displays run the TUI at native cadence.
 
 ## Bug Fixes
@@ -124,7 +124,7 @@
 - **Parked subagent status** no longer duplicates or interleaves incorrectly in scrollback.
 - **Status line** during waits now shows elapsed time before the queued-message hint.
 - **Queued messages sent with Enter** now appear immediately instead of vanishing briefly.
-- **Resume hint** after quitting minimal mode now prints the correct grok --minimal --resume command.
+- **Resume hint** after quitting minimal mode now prints the correct axon --minimal --resume command.
 - **Rate-limit messages** now correctly direct API-key users to team plans instead of personal upgrades.
 
 
@@ -167,7 +167,7 @@
 - **`env_key`** in config now accepts an array of environment variable names.
 - Linux middle-click paste from the primary selection now works; clipboard errors are handled more reliably.
 - **/terminal-setup** now shows your terminal's color support level and which themes are available.
-- **grok setup --json** prints your team's managed configuration without installing it.
+- **axon setup --json** prints your team's managed configuration without installing it.
 - Messages you type while the model waits on tasks now stay queued; pressing Enter twice sends them immediately by cancelling the current turn.
 - **How-to Guides** modal now shows a tip linking to Ask Grok above the footer shortcuts.
 - **Subagent** `task` and `spawn_subagent` tools now accept an optional `model` parameter in the CLI.
@@ -229,7 +229,7 @@
 - **Subagent rows** now fold into verb-group headers and the tasks pane shows live activity labels.
 - **Dashboard shortcuts** now advertise ? instead of Ctrl+. on terminals that cannot deliver the latter.
 - **Double-clicking** scrollback while Text selection is fold/nav now shows a tip offering Ctrl+Y to enable Word select.
-- **`grok worktree ls`** now works as a short alias for `grok worktree list`.
+- **`axon worktree ls`** now works as a short alias for `axon worktree list`.
 - **MCP tool output truncation** can now be set per-repo in `.axon/config.toml`.
 - **Auto-send of queued follow-ups** during task waits can now be enabled fleet-wide via remote settings.
 - **Welcome screen** now offers one-click resume of a recent Claude Code session via ctrl+u.
@@ -293,17 +293,17 @@
 
 - **/sessions** now opens the Agent Dashboard instead of a separate picker.
 - **New /goal <objective>** slash command** is now available when the workspace supports it.
-- **grok inspect** now lists skills from [skills].paths and correctly labels bundled vs user skills.
+- **axon inspect** now lists skills from [skills].paths and correctly labels bundled vs user skills.
 - **--minimal** and **--fullscreen** choices are now remembered for future plain grok launches.
 
 ## Bug Fixes
 
 - **Queued bash commands** promoted at turn end now render their output instead of disappearing.
-- **Xcode / Foundation ACP clients** can now drive grok agent stdio without silent parse drops on session/* calls.
+- **Xcode / Foundation ACP clients** can now drive axon agent stdio without silent parse drops on session/* calls.
 - **read_file** now returns full single-line content (minified JSON, large dumps) instead of silently clipping at 2000 characters.
 - **Background task** command preambles with newlines now render on separate lines instead of collapsing.
 - **Text selections** now highlight uniformly even over inline code, links, and syntax-colored spans.
-- **grok --minimal** now supports native drag-select on classic Windows conhost terminals.
+- **axon --minimal** now supports native drag-select on classic Windows conhost terminals.
 - Skill tokens such as /pr-workflow are now highlighted teal when used mid-sentence.
 - Fixed a crash when a filtered list shrinks while the filter is active.
 - Scroll lines and scroll speed settings now support fine unit-step adjustments.
@@ -326,7 +326,7 @@
 
 ## Bug Fixes
 
-- **grok --minimal** now aligns the prompt, status bar, and messages flush-left with the welcome card.
+- **axon --minimal** now aligns the prompt, status bar, and messages flush-left with the welcome card.
 - **/plugins** no longer lists never-installed Claude marketplace entries and now groups plugins by their real source.
 - Successful image compression no longer leaves a permanent line in the transcript.
 - **--no-ask-user** now also disables ask_user_question for subagents.
@@ -348,7 +348,7 @@
 - **Always allow** grants for MCP, web_fetch and bash now take effect immediately in auto mode without re-prompting.
 - **Cmd/Ctrl+click** on bare http(s) links now opens only once on Warp terminals.
 - **Cmd/Ctrl+click** now works on imagine media paths and URLs that wrap across multiple terminal rows.
-- **grok update** on Windows no longer fails when a previous .old executable is still running.
+- **axon update** on Windows no longer fails when a previous .old executable is still running.
 
 ## Performance
 
@@ -371,7 +371,7 @@
 - **grok models** banner now correctly reports per-model API keys and deployment keys.
 - MCP tool output size limit is now configurable via environment variable, config.toml, or remote settings (default unchanged).
 - Chat conversations listed in the unified sidebar can now be renamed or deleted from the desktop app.
-- You can now add a local directory as a plugin marketplace source with `grok plugin marketplace add`.
+- You can now add a local directory as a plugin marketplace source with `axon plugin marketplace add`.
 - **Auto permission mode** now prompts far less often on routine development commands.
 - Short media paths the model prints (images/1.jpg) are now clickable and open the file.
 - **Preview** now prefers common dev ports like 8080 when multiple HTTP servers are detected.
@@ -466,7 +466,7 @@
 
 ## Bug Fixes
 
-- **--minimal** flag now shows in `grok --help`.
+- **--minimal** flag now shows in `axon --help`.
 - **Session resume notifications** no longer appear when a workspace boots for the first time.
 - **Claude-style Bash(cmd:*)** permission rules are now correctly translated to prefix matches.
 
@@ -512,8 +512,8 @@
 - **Queue panel** now shows action buttons on hover and the status bar displays a compact done/total task count.
 - **Hook matchers** now correctly see the real MCP tool name instead of the internal dispatcher name.
 - **Copy** now succeeds when running inside containers even when the terminal brand cannot be detected.
-- **Tool result previews** no longer paint opaque panels in `grok --minimal`.
-- **grok wrap** now correctly handles quoted strings and shell aliases.
+- **Tool result previews** no longer paint opaque panels in `axon --minimal`.
+- **axon wrap** now correctly handles quoted strings and shell aliases.
 - **Text selection** settings now correctly honor explicit keep_text_selection values even when legacy keys remain.
 - **Fixed a freeze** that could occur when editing and sending the last message in the queue.
 - **Fixed a startup crash** on minimal Linux systems lacking system CA certificates.
@@ -629,14 +629,14 @@
 
 ## Performance
 
-- **`grok update`** downloads have a longer timeout.
+- **`axon update`** downloads have a longer timeout.
 
 
 # 0.2.77 — 2026-06-30
 
 ## Features
 
-- **Pasting images** from the local clipboard now works when running commands through `grok wrap`.
+- **Pasting images** from the local clipboard now works when running commands through `axon wrap`.
 - **Turn status spinner** now shows what the agent is waiting on (response, subagent, task output, etc.).
 - **Double-click word selection** is now a discoverable option in the Text selection setting and stays in sync with highlight behavior.
 
@@ -650,7 +650,7 @@
 ## Features
 
 - **Auto permission mode** is now added to the top of Shift+Tab cycles and enabled by default in settings.
-- **grok agent stdio** now checks for updates in the background like other modes.
+- **axon agent stdio** now checks for updates in the background like other modes.
 
 ## Performance
 
@@ -668,7 +668,7 @@
 ## Features
 
 - **Esc now cancels a running turn immediately**; double-Esc clears prompt or opens rewind when idle.
-- **grok wrap** now shows copy success over SSH and suggests native drag-select when paste fails.
+- **axon wrap** now shows copy success over SSH and suggests native drag-select when paste fails.
 
 ## Bug Fixes
 
@@ -698,14 +698,14 @@
 
 ## Bug Fixes
 
-- **Fixed `grok agent stdio` hangs** on Windows when used with persistent clients such as VS Code.
+- **Fixed `axon agent stdio` hangs** on Windows when used with persistent clients such as VS Code.
 
 
 # 0.2.70 — 2026-06-27
 
 ## Breaking Changes
 
-- **Added `grok wrap`** to run any command with local clipboard support.
+- **Added `axon wrap`** to run any command with local clipboard support.
 
 ## Features
 
@@ -715,7 +715,7 @@
 
 - **Session recaps** (/recap and return-from-away) now show the full summary instead of being cut off mid-sentence.
 - **Vim mode** now focuses the prompt when you press / on a brand-new empty session.
-- **Fixed `grok agent stdio` startup hangs** on Windows when used with persistent clients such as VS Code or grok-desktop.
+- **Fixed `axon agent stdio` startup hangs** on Windows when used with persistent clients such as VS Code or grok-desktop.
 - **`/mcps` list** no longer shows stale disabled entries when managed gateway tools are enabled.
 - **Mermaid diagrams opened via [Open Image]** now render at higher resolution instead of terminal size.
 - **Pressing `r` in scrollback** no longer accidentally rewinds the session.
@@ -731,7 +731,7 @@
 - The agent dashboard now shows each agent's model and mode in the peek panel, lets you cycle modes with Shift+Tab, collapses the Inactive section by default, and hides older idle agents behind a "N more" row.
 - Tool usage cards for search, directory listing, file deletion and glob now render as distinct typed cards instead of generic MCP entries.
 - The keyboard shortcuts help now shows richer descriptions and correctly scrolls wrapped text in the detail view.
-- You can now pass --json-schema to grok -p and receive a validated JSON object instead of free text.
+- You can now pass --json-schema to axon -p and receive a validated JSON object instead of free text.
 - **Ctrl+L** now interjects mid-turn in VS Code, Cursor, Windsurf, and Zed terminals.
 
 ## Bug Fixes
@@ -803,7 +803,7 @@
 
 ## Features
 
-- **grok -w --ref <branch>** now creates worktrees based on the specified ref instead of HEAD.
+- **axon -w --ref <branch>** now creates worktrees based on the specified ref instead of HEAD.
 
 ## Bug Fixes
 
@@ -875,7 +875,7 @@
 ## Bug Fixes
 
 - **Focus reports** no longer leak as literal text when split across reads over SSH.
-- **--disable-web-search** now honored in grok -p and grok agent; auxiliary model routing respects catalog overrides.
+- **--disable-web-search** now honored in axon -p and axon agent; auxiliary model routing respects catalog overrides.
 - **Focus events** now fire correctly for SSH-split focus reports.
 - **Boolean tool flags** now accept "true"/"false"/"yes"/"no"/1/0 strings and numbers in addition to native booleans.
 - **Session last-active timestamps** and message counts no longer regress under concurrent writers.
@@ -926,8 +926,8 @@
 
 - Terminal command output files are now capped at 5 GB during execution and truncated to 64 MB after the process exits.
 - Interjection messages now display the actual user text instead of a generic header.
-- The legacy `agent` command is now kept in sync with `grok` after running `grok update`.
-- Headless (`grok -p`) runs now wait for background tasks and subagents to finish before exiting.
+- The legacy `agent` command is now kept in sync with `grok` after running `axon update`.
+- Headless (`axon -p`) runs now wait for background tasks and subagents to finish before exiting.
 
 
 # 0.2.57
@@ -935,7 +935,7 @@
 ## Features
 
 - Improved resilience to network blips during long responses by resuming instead of failing the turn.
-- **`grok plugin install <name>`** now resolves plugins from registered marketplaces instead of only local paths.
+- **`axon plugin install <name>`** now resolves plugins from registered marketplaces instead of only local paths.
 
 ## Bug Fixes
 
@@ -1048,7 +1048,7 @@
 - **ptyctl resize** now correctly notifies the child process.
 - **Concurrent updates** to the same version no longer fail with permission or EEXIST errors.
 - **Mermaid diagrams** containing CJK or other non-Latin text now render correctly instead of tofu boxes.
-- **`grok dashboard`** now reliably opens the dashboard instead of silently falling through to a normal session.
+- **`axon dashboard`** now reliably opens the dashboard instead of silently falling through to a normal session.
 - **Sessions** no longer remain blocked forever after a transient model catalog outage during reconnect.
 - **Cancel** no longer leaves the interface stuck on "Cancelling…" after lost responses during reconnects.
 - **Forked sessions** now retain the parent's full pre-compaction transcripts instead of only the compacted summary.
@@ -1065,7 +1065,7 @@
 
 ## Breaking Changes
 
-- **`grok mcp add`** now accepts positional arguments (e.g. `grok mcp add filesystem -- npx ...`), supports --scope project, and adds -e/-H flags for env/headers.
+- **`axon mcp add`** now accepts positional arguments (e.g. `axon mcp add filesystem -- npx ...`), supports --scope project, and adds -e/-H flags for env/headers.
 
 ## Features
 
@@ -1078,7 +1078,7 @@
 
 - **Plan mode exit reminders** no longer appear after the model has already started implementing the plan.
 - **Expanded thinking blocks** in scrollback now remain expanded when the agent finishes them.
-- **`grok update`** no longer downloads the same binary twice when multiple updaters or leader checks run concurrently.
+- **`axon update`** no longer downloads the same binary twice when multiple updaters or leader checks run concurrently.
 - **Background task IDs** after /compact are now shown verbatim so the model can reference them correctly in later tool calls.
 - **Typing /** while scrollback is focused now focuses the prompt and opens the slash-command dropdown.
 - **Dashboard empty state** is now a single hint line; dispatch and peek placeholders appear only when unfocused.
@@ -1144,7 +1144,7 @@
 
 ## Bug Fixes
 
-- **Fixed `grok --resume`** failing on empty image-only session folders left by cross-directory pastes.
+- **Fixed `axon --resume`** failing on empty image-only session folders left by cross-directory pastes.
 - **Fixed pasted images** and relative paths using the wrong directory after cross-cwd resume.
 - **Fixed Mermaid flowcharts** that silently rendered wrong diagrams for & groups, circle/cross endings and self-loops.
 - **Fixed zsh tab-completion** for subcommands after the optional prompt argument was added.
@@ -1165,7 +1165,7 @@
 ## Bug Fixes
 
 - **Fixed** rare conversation corruption when skills changed while a tool call was still running.
-- **Fixed** `grok --resume` failing on empty image-only session folders left by cross-directory pastes.
+- **Fixed** `axon --resume` failing on empty image-only session folders left by cross-directory pastes.
 - **Fixed** pasted images and relative paths using the wrong directory after resuming a session from another folder.
 - **Welcome screen logo** no longer renders as invalid characters on legacy Windows command prompts and PowerShell.
 - **Fixed** "unknown session id" errors that occurred after the leader process crashed or was killed.
@@ -1196,7 +1196,7 @@
 
 - **ask_user_question** tool can now be enabled in allowlists without requiring plan-mode tools.
 - **Shift+Tab** mode cycling (Normal → Plan → Auto-Approve) works again in the agent view.
-- **Ctrl+C** now cancels a blocking `grok update` cleanly instead of leaving an orphaned download repainting the terminal.
+- **Ctrl+C** now cancels a blocking `axon update` cleanly instead of leaving an orphaned download repainting the terminal.
 
 
 # 0.2.42
@@ -1227,7 +1227,7 @@
 
 ## Features
 
-- **`grok --debug`** now produces per-session log files under ~/.axon/debug/ even with a leader process.
+- **`axon --debug`** now produces per-session log files under ~/.axon/debug/ even with a leader process.
 
 ## Bug Fixes
 
@@ -1268,7 +1268,7 @@
 ## Features
 
 - **MCP tool result queries** now list only command-line tools actually present on your system.
-- **`grok update`** now restarts any older running leader so all clients get the new binary.
+- **`axon update`** now restarts any older running leader so all clients get the new binary.
 - **Long-running bash commands** that hit the timeout are now moved to the background by default instead of killed.
 
 ## Bug Fixes
@@ -1295,7 +1295,7 @@
 
 ## Features
 
-- **`grok login`** now defaults to device code flow, which works reliably in SSH, WSL, VPN, and browser-restricted environments.
+- **`axon login`** now defaults to device code flow, which works reliably in SSH, WSL, VPN, and browser-restricted environments.
 
 ## Bug Fixes
 
@@ -1384,7 +1384,7 @@
 ## Bug Fixes
 
 - **Large pasted content** no longer triggers context-window errors or breaks compaction and memory flush.
-- **API-key users** can now run `grok agent --leader` without forced interactive login or timeouts.
+- **API-key users** can now run `axon agent --leader` without forced interactive login or timeouts.
 - **Compaction** no longer retries endlessly on credit, size, or auth failures; shows a clear message instead.
 - **Windows PowerShell and cmd.exe** no longer falsely reject commands containing `&`.
 - **web_fetch** no longer crashes the CLI on pages whose root element matches a cleaning selector.
@@ -1479,7 +1479,7 @@
 
 - **New segments compaction mode** writes per-segment markdown files that the model can read to recover pre-compaction detail.
 - **Claude and Cursor compatibility scanning** (skills, rules, AGENTS.md) can now be toggled individually via env vars or config.toml.
-- **grok inspect** now shows the resolved on/off state and source for every Claude/Cursor compatibility toggle.
+- **axon inspect** now shows the resolved on/off state and source for every Claude/Cursor compatibility toggle.
 - **Cursor MCP servers and hooks** are now discovered and can be disabled independently via AXON_CURSOR_MCPS_ENABLED / AXON_CURSOR_HOOKS_ENABLED.
 
 ## Bug Fixes

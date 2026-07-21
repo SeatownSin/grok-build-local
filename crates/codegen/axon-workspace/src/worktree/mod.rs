@@ -649,7 +649,7 @@ pub fn worktree_base_dir(git_root: &Path) -> std::path::PathBuf {
 /// as the main repo root (returning the worktree itself instead of the
 /// original repo).
 ///
-/// For paths outside the grok worktree directory, falls back to
+/// For paths outside the axon worktree directory, falls back to
 /// `find_main_repo_root_from_path` + `worktree_base_dir`.
 pub fn worktree_base_dir_for_source(source_path: &Path) -> Result<std::path::PathBuf> {
     let worktrees_dir = grok_home().join("worktrees");
@@ -2276,7 +2276,7 @@ pub async fn remove_jj_workspace(workspace_path: &str) -> Result<()> {
 
 /// Request to resume an existing session in a fresh worktree.
 ///
-/// ACP equivalent of `grok -w -r <session_id>` (optionally with `--ref`).
+/// ACP equivalent of `axon -w -r <session_id>` (optionally with `--ref`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResumeSessionInWorktreeRequest {

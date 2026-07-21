@@ -1,4 +1,4 @@
-//! Headless mode (`grok -p`) test runner.
+//! Headless mode (`axon -p`) test runner.
 //!
 //! Runs the grok binary as a subprocess with the mock server, captures output.
 

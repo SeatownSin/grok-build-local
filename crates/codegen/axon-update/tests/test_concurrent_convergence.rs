@@ -7,9 +7,9 @@
 //! Production has three independent downloader paths that can race around a
 //! release:
 //!
-//! 1. TUI startup: `check_update_background` spawns a detached `grok update`
+//! 1. TUI startup: `check_update_background` spawns a detached `axon update`
 //!    (the Ctrl+U path now adopts this child instead of spawning a second).
-//! 2. Explicit `grok update` (incl. the Ctrl+U fallback when there is no
+//! 2. Explicit `axon update` (incl. the Ctrl+U fallback when there is no
 //!    live child).
 //! 3. Leader mode: the hourly checker runs `ensure_latest_on_disk`
 //!    in-process.
@@ -185,7 +185,7 @@ async fn ensure_latest_downloads_once_then_converges_without_redownload() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Convergence: explicit `grok update` (the Ctrl+U fallback path) finds the
+// Convergence: explicit `axon update` (the Ctrl+U fallback path) finds the
 // binary another process already installed and skips the download — while
 // still returning the target version so stale leaders get signalled.
 // ─────────────────────────────────────────────────────────────────────────────

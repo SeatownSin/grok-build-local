@@ -35,7 +35,7 @@ pub(super) fn consume_chat_kind(app: &mut AppView) -> bool {
 /// The prompt is always pushed to the queue first. If the agent is idle
 /// (and has a session), `maybe_drain_queue` pops the front prompt and
 /// sends it in the same dispatch call — no deferred ticks.
-/// Start (if needed) and submit the initial prompt from `grok "<prompt>"`.
+/// Start (if needed) and submit the initial prompt from `axon "<prompt>"`.
 ///
 /// Shared by the TUI startup path (already authenticated) and the post-login
 /// `AuthComplete` path (deferred via `deferred_startup.prompt`). It does nothing
@@ -152,7 +152,7 @@ pub(in crate::app) fn show_small_screen_tip(app: &mut AppView) {
     }
 }
 
-/// Show the one-shot "Over SSH? Run `grok wrap ssh <host>` locally…" hint at
+/// Show the one-shot "Over SSH? Run `axon wrap ssh <host>` locally…" hint at
 /// the first stable agent-view draw of an unwrapped SSH session (environment
 /// gates live in `AppView::maybe_trigger_ssh_wrap_tip`). Gated by the per-tip
 /// `contextual_hints.ssh_wrap` gate (default ON). Seen-gated in-memory via

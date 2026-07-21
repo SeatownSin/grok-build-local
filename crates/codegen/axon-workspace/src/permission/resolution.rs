@@ -71,7 +71,7 @@ fn synthetic_rules_for_default_mode(
 }
 
 /// Parse a raw defaultMode string: unknown → [`DefaultPermissionMode::Default`]
-/// (fail-safe) with a warn + skip record for `grok inspect`.
+/// (fail-safe) with a warn + skip record for `axon inspect`.
 fn parse_default_mode_claiming_scope(
     raw: &str,
     path: &Path,
@@ -392,7 +392,7 @@ fn is_admin_source(source: &RequirementSource) -> bool {
 }
 
 /// Under the pin, drop untrusted catch-all Allow rules (they substitute for the
-/// blocked `--yolo`); keep admin-tier ones. Records each drop for `grok inspect`.
+/// blocked `--yolo`); keep admin-tier ones. Records each drop for `axon inspect`.
 fn drop_untrusted_catchall_allows(
     rules: Vec<Sourced<PermissionRule>>,
     policy_block: Option<&'static str>,
@@ -542,7 +542,7 @@ async fn resolve_permissions_with_provenance_inner(
     // `--allow '*'` is filtered at its own merge site (acp_session).
     let all_rules = drop_untrusted_catchall_allows(all_rules, policy_block, &mut skipped);
 
-    // Keep skip-only resolutions alive so the drop reaches `grok inspect`; zero
+    // Keep skip-only resolutions alive so the drop reaches `axon inspect`; zero
     // rules with Ask is a no-op for the evaluator, identical to the `None` arm.
     if all_rules.is_empty() && prompt_policy == PromptPolicy::Ask && skipped.is_empty() {
         return None;
@@ -629,7 +629,7 @@ fn resolve_claude_settings_inner(
                 warn!(path = %path.display(), "{}", w);
             }
             // Rules *or* skip-only parse failures still own provenance for
-            // `grok inspect` (all-invalid allow/deny/ask must not leave
+            // `axon inspect` (all-invalid allow/deny/ask must not leave
             // primary_source_path unset and panic below).
             if (!cfg.rules.is_empty() || !warnings.is_empty()) && primary_source_path.is_none() {
                 primary_source_path = Some(path.clone());
@@ -667,7 +667,7 @@ fn resolve_claude_settings_inner(
 
     // A blocked bypass, a claimed defaultMode (incl. typo→default), or skip
     // records still resolve (possibly zero rules) so provenance reaches
-    // `grok inspect` via the outer resolver.
+    // `axon inspect` via the outer resolver.
     if all_rules.is_empty()
         && prompt_policy == PromptPolicy::Ask
         && !bypass_blocked
@@ -3746,7 +3746,7 @@ mod tests {
             skipped
                 .iter()
                 .any(|s| s.rule.contains("dontask") || s.rule.contains("defaultMode=")),
-            "typo should be recorded for grok inspect"
+            "typo should be recorded for axon inspect"
         );
     }
 

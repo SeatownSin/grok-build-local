@@ -428,7 +428,7 @@ fn session_exists_for_cwd_in_root(session_id: &str, cwd: &str, sessions_root: &P
 ///
 /// When a remote session is restored, a new local child is created with
 /// `summary.parent_session_id == remote_session_id`.  On a second
-/// `grok -r <remote_id>` in the same cwd, this function returns the already-restored
+/// `axon -r <remote_id>` in the same cwd, this function returns the already-restored
 /// child so no duplicate restore is performed.
 ///
 /// If multiple children match (e.g., from pre-fix duplicate restores), the
@@ -538,7 +538,7 @@ fn find_local_child_for_remote_in_root(
     }
 
     // Collect all matching children.  Multiple can exist when a user ran
-    // `grok -r <remote_id>` before this fix was deployed.
+    // `axon -r <remote_id>` before this fix was deployed.
     // Tuple: (updated_at, dir_mtime_nanos, session_id) — all sorted descending.
     let mut candidates: Vec<(String, u128, String)> = Vec::new();
 
@@ -1986,7 +1986,7 @@ fn init_remote_sync(
             let auth_manager = auth_manager.ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::PermissionDenied,
-                    "Writeback storage mode requires authentication. Run 'grok login' first.",
+                    "Writeback storage mode requires authentication. Run 'axon login' first.",
                 )
             })?;
             if let Some(auth) = auth_manager.current_or_expired() {
@@ -2080,7 +2080,7 @@ pub(crate) fn io_error_to_acp(e: &io::Error) -> acp::Error {
 }
 
 /// Best-effort worktree liveness touch: stamp `last_accessed_at` on the
-/// worktree containing this session's cwd so `grok worktree gc` expires by
+/// worktree containing this session's cwd so `axon worktree gc` expires by
 /// last use, not creation time. Lives here — not in a `StorageAdapter` —
 /// so every session create/load path shares it regardless of backend.
 fn spawn_worktree_touch(info: &Info) -> tokio::task::JoinHandle<()> {
@@ -3595,7 +3595,7 @@ mod find_local_child_tests {
         assert!(found.is_none());
     }
 
-    /// Regression: a second `grok -r <remote_id>` must return the existing child
+    /// Regression: a second `axon -r <remote_id>` must return the existing child
     /// without creating a new restore, not return `None`.
     #[test]
     fn repeated_resume_returns_existing_child() {

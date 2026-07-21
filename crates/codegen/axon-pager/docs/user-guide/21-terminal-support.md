@@ -100,18 +100,18 @@ Grok writes to the clipboard through up to three routes, shown in the **Clipboar
 
 **SSH and selected text**: a remote Grok process usually cannot read the local terminal's PRIMARY or CLIPBOARD selection. Use terminal-native `Shift+Insert`, or hold `Shift` while middle-clicking when your terminal uses that gesture to bypass mouse reporting. The terminal then sends the local selection through the PTY instead of asking the remote process to access it.
 
-**Unknown terminals over SSH**: when Grok cannot identify the outer terminal, it sends the copy but reports delivery as unverified. If paste fails, reconnect with `grok wrap <ssh command>` or use `/minimal`.
+**Unknown terminals over SSH**: when Grok cannot identify the outer terminal, it sends the copy but reports delivery as unverified. If paste fails, reconnect with `axon wrap <ssh command>` or use `/minimal`.
 
 **Known limitation — Apple Terminal + SSH**:
 Apple Terminal ignores OSC 52, so copying from a Grok session over SSH can't reach your local clipboard. Use the workaround below.
 
-**Temporary workaround**: Use `grok wrap ssh` instead of plain `ssh` (for example, `grok wrap ssh user@host`). It runs the command in a local PTY that intercepts OSC 52 sequences, including tmux-wrapped ones, and writes their contents to your local clipboard. The same command wraps anything else whose clipboard can't reach you — for example `grok wrap docker exec -it <container> bash` or `grok wrap kubectl exec -it <pod> -- bash`.
+**Temporary workaround**: Use `axon wrap ssh` instead of plain `ssh` (for example, `axon wrap ssh user@host`). It runs the command in a local PTY that intercepts OSC 52 sequences, including tmux-wrapped ones, and writes their contents to your local clipboard. The same command wraps anything else whose clipboard can't reach you — for example `axon wrap docker exec -it <container> bash` or `axon wrap kubectl exec -it <pod> -- bash`.
 
-`grok wrap` also protects your local terminal from dirty disconnects: if the wrapped command dies while a remote TUI has mouse reporting, the alternate screen, or similar modes enabled (for example the SSH connection drops mid-session), wrap resets those modes on exit instead of leaving the terminal spraying mouse escape codes.
+`axon wrap` also protects your local terminal from dirty disconnects: if the wrapped command dies while a remote TUI has mouse reporting, the alternate screen, or similar modes enabled (for example the SSH connection drops mid-session), wrap resets those modes on exit instead of leaving the terminal spraying mouse escape codes.
 
-When Grok starts inside an SSH session that isn't already running under `grok wrap`, a one-time contextual tip above the prompt recommends `grok wrap ssh <host>` (it stops appearing on its own once you launch through wrap). To turn it off, set `ssh_wrap = false` under `[ui.contextual_hints]` in `~/.axon/config.toml`, or use `/settings` → **Show contextual hints** → **SSH wrap**.
+When Grok starts inside an SSH session that isn't already running under `axon wrap`, a one-time contextual tip above the prompt recommends `axon wrap ssh <host>` (it stops appearing on its own once you launch through wrap). To turn it off, set `ssh_wrap = false` under `[ui.contextual_hints]` in `~/.axon/config.toml`, or use `/settings` → **Show contextual hints** → **SSH wrap**.
 
-> **Warning**: `grok wrap` is **experimental** and may misbehave in some setups.
+> **Warning**: `axon wrap` is **experimental** and may misbehave in some setups.
 
 **iTerm2 setting**:
 iTerm2 requires explicit permission for OSC 52:

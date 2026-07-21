@@ -467,8 +467,8 @@
         ));
     }
 
-    /// Legacy WebLogin auth keeps its verbose message (with `grok logout` /
-    /// `grok login` guidance), not the generic re-auth prompt.
+    /// Legacy WebLogin auth keeps its verbose message (with `axon logout` /
+    /// `axon login` guidance), not the generic re-auth prompt.
     #[test]
     fn apply_retry_state_legacy_auth_keeps_detailed_message() {
         let mut session = make_session(Some("s1"));
@@ -477,7 +477,7 @@
             &RetryState::Failed {
                 error_type: "legacy_auth".into(),
                 message: "Unauthorized (401) ... deprecated authentication method (WebLogin) ... \
-                          run `grok logout` then `grok login`"
+                          run `axon logout` then `axon login`"
                     .into(),
             },
             &mut session,

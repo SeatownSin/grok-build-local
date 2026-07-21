@@ -43,7 +43,7 @@ grok --version
 Update to the latest version at any time:
 
 ```bash
-grok update
+axon update
 ```
 
 ---
@@ -102,7 +102,7 @@ The `@` operator opens a fuzzy file picker. By default it respects `.gitignore` 
 By default, Grok asks for permission before executing shell commands or editing files. You can approve individually or toggle always-approve mode:
 
 - Press `Ctrl+O` to toggle always-approve mode
-- Use the `--yolo` flag at launch: `grok --yolo`
+- Use the `--yolo` flag at launch: `axon --yolo`
 - Type `/always-approve` in the prompt to toggle the mode
 
 ---
@@ -115,7 +115,7 @@ Every conversation is a **session**. Sessions are automatically saved to `~/.axo
 
 - Start a new session: `Ctrl+N` or `/new`
 - Resume a previous session: `/resume` in the TUI, or `--resume <ID>` from the CLI
-- Continue the most recent session: `grok -c`
+- Continue the most recent session: `axon -c`
 
 ### Scrollback
 
@@ -168,12 +168,12 @@ See [Slash Commands](04-slash-commands.md) for the complete reference.
 grok "fix the failing auth test and run it"
 
 # Initial prompt in a new git worktree. Use --worktree=<name> (with `=`) so the
-# prompt isn't swallowed as the worktree name — `grok -w "refactor module X"`
+# prompt isn't swallowed as the worktree name — `axon -w "refactor module X"`
 # would treat "refactor module X" as the worktree label, not the prompt.
 grok --worktree=feat "refactor module X"
 
 # Base the worktree on a specific branch (e.g. main) instead of the current HEAD:
-grok -w --ref main "implement feature from main"
+axon -w --ref main "implement feature from main"
 
 
 # Start in a specific project directory
@@ -196,13 +196,13 @@ grok -c
 
 # Experimental scrollback-native render mode. Sticky: plain `grok` reopens in
 # the mode last chosen via --minimal/--fullscreen (or /minimal//fullscreen).
-grok --minimal
+axon --minimal
 
 # Back to the standard fullscreen TUI (and make it sticky again)
 grok --fullscreen
 
 # Headless mode (for scripts)
-grok -p "Explain this codebase"
+axon -p "Explain this codebase"
 ```
 
 ---
@@ -212,7 +212,7 @@ grok -p "Explain this codebase"
 Run Grok non-interactively for scripting, CI/CD, and automation:
 
 ```bash
-grok -p "Your prompt here"
+axon -p "Your prompt here"
 ```
 
 Output formats:
@@ -226,7 +226,7 @@ Output formats:
 Example CI/CD usage:
 
 ```bash
-grok -p "Review changes for bugs" --output-format json --yolo | jq -r '.text'
+axon -p "Review changes for bugs" --output-format json --yolo | jq -r '.text'
 ```
 
 ---

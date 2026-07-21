@@ -352,14 +352,14 @@ impl TrustStore {
 /// repo (trust applies to the whole repo), otherwise the canonicalized `cwd`.
 ///
 /// A grok-managed worktree first collapses onto its recorded source repo's git
-/// ROOT (via the `~/.axon/worktrees.db` registry), so every `grok -w` worktree
+/// ROOT (via the `~/.axon/worktrees.db` registry), so every `axon -w` worktree
 /// shares one trust key regardless of creation mode — including standalone clones
 /// that git can't link back to their source — and regardless of the subdir
-/// `grok -w` was launched from (the recorded source repo may be a repo subdir).
+/// `axon -w` was launched from (the recorded source repo may be a repo subdir).
 /// Non-registry git worktrees fall through to the git-topology collapse below.
 ///
 /// A linked git worktree collapses onto its MAIN checkout's root so every
-/// `grok -w` worktree of a repo shares one trust key. The collapse fires ONLY
+/// `axon -w` worktree of a repo shares one trust key. The collapse fires ONLY
 /// for the conventional `<workdir>/.git` layout — i.e. the common gitdir
 /// resolves back to `<main_workdir>/.git`. For bare or `--separate-git-dir`
 /// repos (where the common gitdir's inferred workdir would be the gitdir's
@@ -387,7 +387,7 @@ fn git_derived_workspace_key(cwd: &Path) -> PathBuf {
     // can't link) collapses onto its recorded source repo so trust is shared.
     if let Some(source_repo) = crate::worktree::source_repo_for_cwd(&cwd.to_string_lossy()) {
         // Key on the source repo's git ROOT so every worktree of one repo shares
-        // ONE key regardless of the subdir grok -w was launched from (parity with
+        // ONE key regardless of the subdir axon -w was launched from (parity with
         // the git-topology branch below). Fall back to the recorded path when the
         // source repo is gone (deleted-source standalone worktrees still work).
         let root = git2::Repository::discover(&source_repo)
@@ -1277,7 +1277,7 @@ mod tests {
 
     #[test]
     fn workspace_key_collapses_linked_worktrees_onto_main_checkout() {
-        // Every linked `grok -w` worktree of a repo must share ONE trust key:
+        // Every linked `axon -w` worktree of a repo must share ONE trust key:
         // its main checkout's root. Build a real repo + two linked worktrees and
         // assert each collapses onto the main checkout (so it is trusted once,
         // not re-prompted per worktree).
@@ -1490,7 +1490,7 @@ mod tests {
         assert_eq!(
             workspace_key(&wt),
             expected,
-            "a standalone grok worktree must collapse onto its recorded source repo"
+            "a standalone axon worktree must collapse onto its recorded source repo"
         );
         // A cwd nested below the worktree root collapses onto the same key (the
         // registry walk ascends to the registered worktree).

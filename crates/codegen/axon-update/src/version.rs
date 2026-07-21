@@ -11,7 +11,7 @@ use axon_shell::util::grok_home::grok_home;
 
 const TTL_SECONDS_BEFORE_AUTO_UPDATE: Duration = Duration::from_secs(60 * 30);
 const NPM_PACKAGE: &str = "@xai-official/grok";
-/// GitHub repo `grok update` checks and installs from. This local build
+/// GitHub repo `axon update` checks and installs from. This local build
 /// tracks the user's fork, not xAI's distribution repo.
 pub const GH_RELEASE_REPO: &str = "SeatownSin/grok-build-local";
 
@@ -423,7 +423,7 @@ pub use axon_version::installed as get_installed_grok_version;
 /// without exec'ing anything.
 ///
 /// Concurrent updaters (TUI background download, leader hourly checker,
-/// explicit `grok update`) decide staleness from this instead of their own
+/// explicit `axon update`) decide staleness from this instead of their own
 /// compiled-in version, so a binary another process already installed is
 /// never downloaded a second time.
 ///
@@ -445,7 +445,7 @@ pub fn installed_on_disk_version() -> Option<String> {
         // metadata() follows the symlink: Err means the target is gone
         // (dangling link) and the version it names is not actually on disk.
         std::fs::metadata(&app).ok()?;
-        version_from_versioned_binary_name(target.file_name()?.to_str()?, "grok")
+        version_from_versioned_binary_name(target.file_name()?.to_str()?, "axon")
     }
     #[cfg(not(unix))]
     {
@@ -460,7 +460,7 @@ pub fn installed_on_disk_version() -> Option<String> {
 /// and the npm layout without a platform suffix (`grok-0.1.150`,
 /// `grok-0.1.150-alpha.1`): everything between the `{bin_prefix}-` prefix
 /// and the first platform-OS component is the version, validated as semver
-/// so unknown layouts (`grok-latest`, `grok-pager-*` when `bin_prefix` is
+/// so unknown layouts (`axon-latest`, `axon-pager-*` when `bin_prefix` is
 /// `grok`) return `None` instead of garbage.
 ///
 /// Shared by the disk-version probe above and `cleanup_old_downloads` in
@@ -592,34 +592,34 @@ mod tests {
     #[test]
     fn test_version_from_versioned_binary_name() {
         let cases: &[(&str, Option<&str>)] = &[
-            ("grok-0.2.46-darwin-arm64", Some("0.2.46")),
-            ("grok-0.1.220-linux-x86_64", Some("0.1.220")),
-            ("grok-0.2.5-windows-x86_64.exe", Some("0.2.5")),
+            ("axon-0.2.46-darwin-arm64", Some("0.2.46")),
+            ("axon-0.1.220-linux-x86_64", Some("0.1.220")),
+            ("axon-0.2.5-windows-x86_64.exe", Some("0.2.5")),
             // Pre-releases must round-trip whole — truncating to "0.1.220"
             // would make an alpha install masquerade as the release and
             // mask alpha → stable updates.
-            ("grok-0.1.220-alpha.4-linux-x86_64", Some("0.1.220-alpha.4")),
-            ("grok-0.1.220-alpha.4", Some("0.1.220-alpha.4")), // npm layout
-            ("grok-pager-0.1.5-darwin-arm64", None),           // "pager" is not a version
-            ("grok-garbage-darwin-arm64", None),               // unparseable version
-            ("grok-0.2.46", Some("0.2.46")),                   // no platform suffix
+            ("axon-0.1.220-alpha.4-linux-x86_64", Some("0.1.220-alpha.4")),
+            ("axon-0.1.220-alpha.4", Some("0.1.220-alpha.4")), // npm layout
+            ("axon-pager-0.1.5-darwin-arm64", None),           // "pager" is not a version
+            ("axon-garbage-darwin-arm64", None),               // unparseable version
+            ("axon-0.2.46", Some("0.2.46")),                   // no platform suffix
             ("other-0.2.46-darwin-arm64", None),               // wrong prefix
-            ("grok-latest", None),                             // symlink alias, not a version
-            ("grok", None),                                    // bare name
+            ("axon-latest", None),                             // symlink alias, not a version
+            ("axon", None),                                    // bare name
             ("", None),
         ];
         for (name, expected) in cases {
             assert_eq!(
-                version_from_versioned_binary_name(name, "grok").as_deref(),
+                version_from_versioned_binary_name(name, "axon").as_deref(),
                 *expected,
                 "version_from_versioned_binary_name({name:?})"
             );
         }
 
         // bin_prefix discrimination: the pager binary parses under its own
-        // prefix but not under "grok".
+        // prefix but not under "axon".
         assert_eq!(
-            version_from_versioned_binary_name("grok-pager-0.1.5-darwin-arm64", "grok-pager")
+            version_from_versioned_binary_name("axon-pager-0.1.5-darwin-arm64", "axon-pager")
                 .as_deref(),
             Some("0.1.5")
         );

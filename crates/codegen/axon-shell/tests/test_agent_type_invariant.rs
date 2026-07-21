@@ -9,7 +9,7 @@
 //! - Same-type model switching (no rebuild)
 //! - Session resume
 //!
-//! Each test spawns a real `grok agent stdio` process, speaks the full ACP
+//! Each test spawns a real `axon agent stdio` process, speaks the full ACP
 //! protocol, and asserts on the inference request bodies (system prompt) and
 //! stderr tracing output to verify the correct harness was used.
 //!

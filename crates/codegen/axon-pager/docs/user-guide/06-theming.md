@@ -143,13 +143,13 @@ Use compact mode on small screens to maximize content area.
 
 ## Syntax Highlighting
 
-Grok bundles three `.tmTheme` files for code-block syntax highlighting and selects one based on the active theme:
+Axon bundles three `.tmTheme` files for code-block syntax highlighting and selects one based on the active theme:
 
-- `grok-night.tmTheme` -- Axon Night, RosePineMoon, and OscuraMidnight
-- `grok-day.tmTheme` -- Axon Day
+- `axon-night.tmTheme` -- Axon Night, RosePineMoon, and OscuraMidnight
+- `axon-day.tmTheme` -- Axon Day
 - `tokyo-night.tmTheme` -- TokyoNight
 
-Grok selects the matching file automatically when you switch themes. The `.tmTheme` files are built into the binary, so you cannot replace them with your own.
+Axon selects the matching file automatically when you switch themes. The `.tmTheme` files are built into the binary, so you cannot replace them with your own.
 
 ---
 

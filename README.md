@@ -13,9 +13,8 @@ network calls to xAI infrastructure by default** and runs entirely against
 It runs as a full-screen TUI that understands your codebase, edits files,
 executes shell commands, and manages long-running tasks — interactively,
 headlessly for scripting/CI, or embedded in editors via the Agent Client
-Protocol (ACP). The app presents itself as **Axon**; the build artifact and
-command still carry upstream's `axon-pager`/`grok` names (renaming those
-internal identifiers is a separate, later change).
+Protocol (ACP). The build artifact is `axon-pager` and installs as the `axon`
+command; its config lives in `~/.axon`.
 
 [What's different](#whats-different-from-upstream) ·
 [Building](#building-from-source) ·
@@ -53,8 +52,10 @@ servers, and adds first-class support for local models. The changes:
 - **Rebranded as Axon.** The welcome screen (a new mark), model picker,
   notifications, and theme names carry the Axon identity — no `grok`/`xAI`
   branding is shown in the UI. The bundled themes are **Axon Night** (a cerebral
-  cool-slate default) and **Axon Day**. Internal crate/command names are
-  unchanged for now.
+  cool-slate default) and **Axon Day**. The rename runs all the way down: the
+  `axon` command, the `axon-*` crates, `~/.axon`, `AXON_*` env vars, and the
+  theme names — with legacy `GROK_HOME` / `~/.grok` still honored and migrated
+  for pre-rename installs.
 - **First-run setup wizard.** With no model configured, launch drops into a
   short wizard that scans **`localhost` and your local network** for running
   model servers — probing the ports actually in use, so it finds servers on
@@ -65,7 +66,7 @@ servers, and adds first-class support for local models. The changes:
   the workspace builds natively on Windows — and the app runs natively there
   too (the async runtime is given a large stack, so the composed entrypoint
   doesn't overflow the small Windows main-thread stack at startup).
-- **Updates from this repo.** `grok update` pulls GitHub Releases from
+- **Updates from this repo.** `axon update` pulls GitHub Releases from
   `SeatownSin/grok-build-local`, not the x.ai CDN.
 
 The inference request path itself is unchanged and provider-neutral (OpenAI
@@ -135,11 +136,11 @@ usual. Full details:
 
 ## Updates
 
-`grok update` checks **GitHub Releases** on this repo
+`axon update` checks **GitHub Releases** on this repo
 (`SeatownSin/grok-build-local`) via the `gh` CLI. Publish releases with a
-`v<version>` tag and assets named `grok-<version>-<os>-<arch>` (a `.exe` suffix
+`v<version>` tag and assets named `axon-<version>-<os>-<arch>` (a `.exe` suffix
 is also accepted on Windows). Automatic on-launch update checks are removed;
-`grok update` is explicit only.
+`axon update` is explicit only.
 
 ## Running the tests
 

@@ -210,10 +210,10 @@ These are all optional. See the respective guides for details on each.
 
 ## Inspecting Loaded Rules
 
-Use `grok inspect` to see all loaded project instructions:
+Use `axon inspect` to see all loaded project instructions:
 
 ```bash
-grok inspect
+axon inspect
 ```
 
 This shows each project instruction file it finds, with its path and approximate token count. Use it to confirm Grok picks up your rules.

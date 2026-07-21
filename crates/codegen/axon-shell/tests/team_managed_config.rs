@@ -1570,7 +1570,7 @@ async fn lock_contention_does_not_fall_through_to_team() {
     assert_eq!(*count.lock().unwrap(), 1);
 }
 
-/// `grok setup` with config served but the lock held by another writer reports the
+/// `axon setup` with config served but the lock held by another writer reports the
 /// skip: not Installed (THIS run persisted nothing) and not NothingConfigured (the
 /// server does have config).
 #[tokio::test]

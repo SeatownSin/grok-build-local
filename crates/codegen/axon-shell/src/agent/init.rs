@@ -98,7 +98,7 @@ fn resolve_config(cfg: &AgentConfig, auth_manager: &AuthManager) -> AgentConfig 
     crate::util::config::sync_campaign_fields(&mut cfg);
     crate::agent::config::apply_remote_settings_side_effects(cfg.remote_settings.as_ref());
 
-    // env var > remote settings > Local. Skip remote settings for Generic (grok -p, subagents).
+    // env var > remote settings > Local. Skip remote settings for Generic (axon -p, subagents).
     if cfg.storage_mode == StorageMode::Local
         && cfg.mode != crate::agent::config::AgentMode::Generic
     {

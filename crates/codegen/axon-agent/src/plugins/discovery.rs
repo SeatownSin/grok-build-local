@@ -338,7 +338,7 @@ pub fn discover_plugins(
     }
 
     // 4-5. User plugins: $AXON_HOME/plugins, legacy ~/.axon/plugins, ~/.claude/plugins.
-    // Gate the grok plugins dir on user_grok_home() so a project's .axon/plugins
+    // Gate the axon plugins dir on user_grok_home() so a project's .axon/plugins
     // is never scanned as user-global when no home resolves.
     let grok = axon_config::user_grok_home();
     let plugin_dirs = user_plugin_dirs(dirs::home_dir().as_deref(), grok.as_deref());

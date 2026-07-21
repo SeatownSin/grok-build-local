@@ -39,7 +39,7 @@ rm -f "$DST"/*.ts
 for f in "${bindings[@]}"; do
   {
     echo "// generated — do NOT edit by hand."
-    echo "// Regenerate via generate.sh in the xai-grok-announcements package."
+    echo "// Regenerate via generate.sh in the axon-announcements package."
     cat "$f"
   } >"$DST/$(basename "$f")"
 done

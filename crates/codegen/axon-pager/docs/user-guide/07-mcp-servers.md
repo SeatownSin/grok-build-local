@@ -85,39 +85,39 @@ Manage MCP servers from the command line without editing config files:
 
 ```bash
 # List configured MCP servers
-grok mcp list
-grok mcp list --json          # Machine-readable output
+axon mcp list
+axon mcp list --json          # Machine-readable output
 
 # Add a stdio server. Everything after -- is the server command, so flags
 # like -y reach the server instead of being parsed by grok.
-grok mcp add filesystem -- npx -y @modelcontextprotocol/server-filesystem /path/to/dir
+axon mcp add filesystem -- npx -y @modelcontextprotocol/server-filesystem /path/to/dir
 
 # Add a stdio server with environment variables (-e is repeatable)
-grok mcp add postgres -e DATABASE_URL=postgres://localhost/mydb -- npx -y @modelcontextprotocol/server-postgres
+axon mcp add postgres -e DATABASE_URL=postgres://localhost/mydb -- npx -y @modelcontextprotocol/server-postgres
 
 # Add a remote HTTP server
-grok mcp add --transport http sentry https://mcp.sentry.dev/mcp
+axon mcp add --transport http sentry https://mcp.sentry.dev/mcp
 
 # Add a remote server with an authentication header (--header is repeatable)
-grok mcp add --transport http api https://mcp.example.com/mcp --header "Authorization: Bearer YOUR_TOKEN"
+axon mcp add --transport http api https://mcp.example.com/mcp --header "Authorization: Bearer YOUR_TOKEN"
 
 # Add a remote SSE server
-grok mcp add --transport sse linear https://mcp.linear.app/sse
+axon mcp add --transport sse linear https://mcp.linear.app/sse
 
 # Remove a server
-grok mcp remove github
+axon mcp remove github
 
 # Diagnose a server's configuration and connectivity
-grok mcp doctor               # Check every configured server
-grok mcp doctor github        # Check one server
-grok mcp doctor --json        # Machine-readable output
+axon mcp doctor               # Check every configured server
+axon mcp doctor github        # Check one server
+axon mcp doctor --json        # Machine-readable output
 ```
 
 The transport defaults to `stdio`; pass `--transport http` or `--transport sse` for remote servers.
 
-By default `grok mcp add` writes to `~/.axon/config.toml` (`--scope user`). Use `--scope project` to write to `.axon/config.toml` in the current directory instead, which can be committed and shared with your team (see [Project-Scoped MCP Servers](#project-scoped-mcp-servers)). Header and environment variable values are stored verbatim, so reference secrets as `${VAR}` instead of pasting them into a committed project config (see [Example Configurations](#example-configurations)). `grok mcp list` shows servers from both scopes, marking project-scoped ones with `(project)`.
+By default `axon mcp add` writes to `~/.axon/config.toml` (`--scope user`). Use `--scope project` to write to `.axon/config.toml` in the current directory instead, which can be committed and shared with your team (see [Project-Scoped MCP Servers](#project-scoped-mcp-servers)). Header and environment variable values are stored verbatim, so reference secrets as `${VAR}` instead of pasting them into a committed project config (see [Example Configurations](#example-configurations)). `axon mcp list` shows servers from both scopes, marking project-scoped ones with `(project)`.
 
-`grok mcp remove` searches both scopes and exits 0 after removing the server. It exits 1 when the name is not found, or when the name is defined in both user and project scope — pass `--scope` to say which one to remove.
+`axon mcp remove` searches both scopes and exits 0 after removing the server. It exits 1 when the name is not found, or when the name is defined in both user and project scope — pass `--scope` to say which one to remove.
 
 Breaking changes from earlier releases: `--env` now takes one `KEY=value` per flag (use `-e A=1 -e B=2`, not `--env A=1 B=2`), and server names may only contain letters, numbers, hyphens, and underscores.
 
@@ -209,7 +209,7 @@ Grok loads MCP server configurations from multiple sources for compatibility:
 
 All sources are merged in priority order: config.toml > Claude > Cursor > `.mcp.json`. Servers from higher-priority sources take precedence when names conflict.
 
-The Claude and Cursor MCP sources are scanned by default. To disable scanning for a specific vendor, set `[compat.<vendor>] mcps = false` in `~/.axon/config.toml` or the corresponding environment variable (`AXON_CURSOR_MCPS_ENABLED`, `AXON_CLAUDE_MCPS_ENABLED`). See [Configuration](05-configuration.md#harness-compatibility) for details. Use `grok inspect` to see which MCP servers were loaded and their vendor origin (`[cursor]`, `[claude]`).
+The Claude and Cursor MCP sources are scanned by default. To disable scanning for a specific vendor, set `[compat.<vendor>] mcps = false` in `~/.axon/config.toml` or the corresponding environment variable (`AXON_CURSOR_MCPS_ENABLED`, `AXON_CLAUDE_MCPS_ENABLED`). See [Configuration](05-configuration.md#harness-compatibility) for details. Use `axon inspect` to see which MCP servers were loaded and their vendor origin (`[cursor]`, `[claude]`).
 
 ---
 
@@ -332,11 +332,11 @@ tail -f ~/.axon/logs/mcp/filesystem.stderr.log
 
 ### Viewing Server Status
 
-Use `grok inspect` to see all loaded MCP servers and their sources:
+Use `axon inspect` to see all loaded MCP servers and their sources:
 
 ```bash
-grok inspect          # Human-readable
-grok inspect --json   # Machine-readable
+axon inspect          # Human-readable
+axon inspect --json   # Machine-readable
 ```
 
 ### Debug Logging

@@ -31,7 +31,7 @@ fn is_container_no_display() -> bool {
 
 /// Cached result of the "an upstream OSC 52 sink is capturing our output" check.
 ///
-/// `grok wrap` runs a command inside a local PTY, scans its output for OSC 52
+/// `axon wrap` runs a command inside a local PTY, scans its output for OSC 52
 /// clipboard sequences, and writes their payload to the *real* (local) system
 /// clipboard (see `axon-pager`'s `pty_wrap` module). It advertises this to
 /// the wrapped program via an environment variable so the
@@ -128,7 +128,7 @@ pub fn resolve_clipboard_route(ctx: &TerminalContext) -> ClipboardRoute {
         // Linux: always emit OSC 52 as a safety net. This matches other
         // terminal agent CLIs which emit OSC 52 on every copy.
         // macOS/Windows: only in tmux/SSH/container contexts, or when an
-        // upstream `grok wrap` sink is capturing our output and will forward
+        // upstream `axon wrap` sink is capturing our output and will forward
         // the sequence to the real clipboard.
         osc52: cfg!(target_os = "linux")
             || is_tmux
@@ -324,7 +324,7 @@ impl ClipboardFeedback {
             Self::CopiedOscContainer => "Copied via OSC 52 from the container.",
             Self::CopiedOscRemote => "Copied via OSC 52.",
             Self::UnverifiedOscRemote | Self::UnverifiedOscContainer => {
-                "Copy sent. If paste fails, use grok wrap or /minimal."
+                "Copy sent. If paste fails, use axon wrap or /minimal."
             }
             Self::VsCodeSshNonAscii => {
                 "Copied. VS Code over SSH may garble non-ASCII; use /minimal if needed."
@@ -1734,14 +1734,14 @@ mod tests {
             (
                 ClipboardFeedback::UnverifiedOscRemote,
                 ClipboardDelivery::Unverified,
-                "Copy sent. If paste fails, use grok wrap or /minimal.",
+                "Copy sent. If paste fails, use axon wrap or /minimal.",
                 "unverified_osc_remote",
                 120,
             ),
             (
                 ClipboardFeedback::UnverifiedOscContainer,
                 ClipboardDelivery::Unverified,
-                "Copy sent. If paste fails, use grok wrap or /minimal.",
+                "Copy sent. If paste fails, use axon wrap or /minimal.",
                 "unverified_osc_container",
                 120,
             ),

@@ -68,7 +68,7 @@ fn firehose_txt_files(home: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
-/// Build a headless `grok -p` command with a pinned `$AXON_HOME` so the firehose
+/// Build a headless `axon -p` command with a pinned `$AXON_HOME` so the firehose
 /// lands under `<home>/.axon/debug`. Firehose env knobs are cleared so the test
 /// is hermetic regardless of the developer's shell.
 fn debug_cmd(
@@ -131,7 +131,7 @@ async fn read_session_firehose_when_ready(path: &Path, client: &GrokStdioClient)
 /// `--debug` (headless) runs cleanly: arg-parsing + the master switch + tracing
 /// init don't crash. Per-session routing + content is proven deterministically by
 /// the live `agent` tests (incl. `debug_flag_master_switch_enables_firehose`); a
-/// headless `grok -p` client is near-silent, so its lazily-opened firehose may
+/// headless `axon -p` client is near-silent, so its lazily-opened firehose may
 /// legitimately stay empty here — file existence is intentionally not asserted.
 #[tokio::test]
 #[ignore] // requires pre-built binary; run with --ignored
@@ -235,7 +235,7 @@ async fn debug_flag_master_switch_enables_firehose() {
         let grok_home = home.path().join(".axon");
         let grok_home_str = grok_home.to_string_lossy().into_owned();
 
-        // Drive `grok --debug agent stdio`: the master switch (which runs before
+        // Drive `axon --debug agent stdio`: the master switch (which runs before
         // the agent dispatch) must be what enables the firehose — NOT a direct
         // AXON_DEBUG_LOG env. The spawn helper clears inherited firehose toggles,
         // so the `--debug` flag is the only thing that can enable logging here.

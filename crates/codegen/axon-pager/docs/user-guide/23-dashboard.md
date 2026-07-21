@@ -12,7 +12,7 @@ which already shows when work is in flight.
 
 Three entry points, all opening the same view:
 
-- **`grok dashboard`** — launches the TUI directly into the dashboard.
+- **`axon dashboard`** — launches the TUI directly into the dashboard.
 - **`/dashboard`** (aliases **`/agents-dashboard`**, **`/sessions`**) — open
   from inside an active session.
 - **Ctrl+\\** — same as the slash command, two keystrokes. Configurable
@@ -346,6 +346,6 @@ friendly toast.
 ## Phase 4 (out of scope for v1)
 
 The current dashboard lists only agents owned by **this** pager
-process. The plan's Phase 4 ("supervisor / `grok --bg`") would list
+process. The plan's Phase 4 ("supervisor / `axon --bg`") would list
 sessions that survive pager exit — that's a separate roadmap and not
 shipped yet.

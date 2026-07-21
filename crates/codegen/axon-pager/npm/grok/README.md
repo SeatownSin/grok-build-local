@@ -23,7 +23,7 @@ npm i -g @axon-official/grok
 grok
 
 # Run a single task
-grok -p "Explain this codebase"
+axon -p "Explain this codebase"
 ```
 
 On first launch, Grok opens your browser to authenticate. For CI or headless environments, use an API key from [console.x.ai](https://console.x.ai):
@@ -35,7 +35,7 @@ export XAI_API_KEY="axon-..."
 ## Update
 
 ```bash
-grok update
+axon update
 ```
 
 Or if installed via npm:

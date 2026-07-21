@@ -324,23 +324,23 @@ lambda = 0.7             # 0.0 = max diversity, 1.0 = pure relevance
 
 ## CLI Commands
 
-The `grok memory` command manages memory from the shell. It has one subcommand, `clear`:
+The `axon memory` command manages memory from the shell. It has one subcommand, `clear`:
 
 ```bash
 # Clear workspace memory (MEMORY.md, sessions/, and index.sqlite). This is the default scope.
-grok memory clear
+axon memory clear
 
 # The same scope, stated explicitly
-grok memory clear --workspace
+axon memory clear --workspace
 
 # Clear the global MEMORY.md
-grok memory clear --global
+axon memory clear --global
 
 # Clear both workspace and global memory
-grok memory clear --all
+axon memory clear --all
 
 # Skip the confirmation prompt (-y is the short form)
-grok memory clear --yes
+axon memory clear --yes
 ```
 
 To edit memory from the shell, open the files in your editor directly -- for example, `$EDITOR ~/.axon/memory/MEMORY.md`.
@@ -450,8 +450,8 @@ enabled = true    # default
 
 ### Memory Not Working
 
-1. Verify memory is enabled: check `grok inspect` output.
-2. Check the flag: `grok --experimental-memory` or `AXON_MEMORY=1`.
+1. Verify memory is enabled: check `axon inspect` output.
+2. Check the flag: `axon --experimental-memory` or `AXON_MEMORY=1`.
 3. Check for `--no-memory` or `AXON_MEMORY=0` overriding your config.
 
 ### Memory Not Appearing in Sessions

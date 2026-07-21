@@ -36,7 +36,7 @@ fn run_fg_on_row(rows: &[StyledLine], row_marker: &str, needle: &str) -> Option<
 
 /// Seed a user-invocable skill under `dir/.axon/skills`. The workspace must
 /// be a git repo: the live session advertises workspace-local skills only for
-/// git workspaces (offline `grok inspect` scans plain dirs too) — same shape
+/// git workspaces (offline `axon inspect` scans plain dirs too) — same shape
 /// as the mid_text_skill_token_echo.yaml scenario's `git_init: true`.
 fn seed_test_skill(dir: &Path) {
     let skill_dir = dir.join(".axon").join("skills").join("test-skill");

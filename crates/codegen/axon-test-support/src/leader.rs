@@ -1,4 +1,4 @@
-//! Leader-mode (`grok agent --leader stdio`) test harness.
+//! Leader-mode (`axon agent --leader stdio`) test harness.
 //!
 //! Spawns the real binary as a stdio client whose bridge elects a leader
 //! subprocess hosting the actual sessions, speaks ACP over pipes, and
@@ -102,7 +102,7 @@ impl acp::Client for LeaderAcpClient {
     }
 }
 
-/// A `grok agent --leader stdio` client subprocess speaking ACP over pipes.
+/// A `axon agent --leader stdio` client subprocess speaking ACP over pipes.
 /// The leader subprocess it elects hosts the actual sessions.
 pub struct LeaderStdioClient {
     pub conn: acp::ClientSideConnection,

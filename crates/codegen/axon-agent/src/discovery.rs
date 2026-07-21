@@ -189,7 +189,7 @@ fn merge_subagents(
 /// 4. `~/.axon/bundled/agents/` (bundled, lowest priority)
 ///
 /// Deduplicates by name — higher-priority definitions win.
-/// User-level agent directories in priority order: user grok agents, `.claude`
+/// User-level agent directories in priority order: user axon agents, `.claude`
 /// compat agents, then bundled. `.axon` dirs resolve from `grok_home`
 /// (AXON_HOME-aware) plus the legacy literal `~/.axon` when AXON_HOME points
 /// elsewhere; `.claude` resolves from `home`.

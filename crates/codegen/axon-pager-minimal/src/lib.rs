@@ -1,4 +1,4 @@
-//! Minimal (scrollback-native) render mode — `grok --minimal`.
+//! Minimal (scrollback-native) render mode — `axon --minimal`.
 //!
 //! In this mode finalized conversation blocks are printed once into the
 //! terminal's *native* scrollback (via `axon_ratatui_inline::Terminal::insert_before`,
