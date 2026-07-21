@@ -1,17 +1,23 @@
 # Custom Models
 
-Grok connects to custom model endpoints for alternative providers, self-hosted models, and overriding built-in settings. This guide explains how to select models, configure endpoints, and integrate third-party providers.
+Axon connects to custom model endpoints for alternative providers, self-hosted
+models, and overriding built-in settings. This guide explains how to select
+models, configure endpoints, and integrate third-party providers.
 
 ---
 
-## Default Models
+## Default Model
 
-By default, Grok uses models hosted by SpaceXAI, and new sessions start with `grok-build`. Default models require no configuration. Authenticate with `axon login` or an API key, then start a session.
+Axon is local-first and ships with no hosted default model. On first run the
+setup wizard detects local OpenAI-compatible servers (Ollama, LM Studio,
+llama.cpp, vLLM) and writes your choice to `~/.axon/config.toml` — a loopback
+server needs no API key and no login. You can also add hosted providers with
+your own key (BYOK). Once at least one model is configured, start a session.
 
 List all available models:
 
 ```bash
-grok models
+axon models
 ```
 
 ---
@@ -21,7 +27,7 @@ grok models
 ### CLI Flag
 
 ```bash
-axon -p "Hello" -m grok-build
+axon -p "Hello" -m local
 ```
 
 ### Slash Command
@@ -29,13 +35,13 @@ axon -p "Hello" -m grok-build
 In the TUI, switch models during a session:
 
 ```
-/model grok-build
+/model local
 ```
 
 Or use the alias:
 
 ```
-/m grok-build
+/m local
 ```
 
 ### Model Picker (Ctrl+M)
@@ -48,14 +54,14 @@ Set a persistent default in `~/.axon/config.toml`:
 
 ```toml
 [models]
-default = "grok-build"
+default = "local"
 ```
 
 ---
 
 ## Supported API Backends
 
-Grok supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
+Axon supports three API backends. Set `api_backend` in your `[model.*]` config to choose which protocol the model uses:
 
 | Value | API | Default |
 |-------|-----|---------|
@@ -63,9 +69,9 @@ Grok supports three API backends. Set `api_backend` in your `[model.*]` config t
 | `"responses"` | OpenAI Responses (`/v1/responses`) | |
 | `"messages"` | Anthropic Messages (`/v1/messages`) | |
 
-When you omit `api_backend`, Grok uses `chat_completions`.
+When you omit `api_backend`, Axon uses `chat_completions`.
 
-To send provider-specific authentication or version headers -- for example, Anthropic's `x-api-key` -- use the `extra_headers` field described below. Grok sends those headers verbatim with every request to the endpoint.
+To send provider-specific authentication or version headers -- for example, Anthropic's `x-api-key` -- use the `extra_headers` field described below. Axon sends those headers verbatim with every request to the endpoint.
 
 ---
 
@@ -74,13 +80,13 @@ To send provider-specific authentication or version headers -- for example, Anth
 Add custom model endpoints in `~/.axon/config.toml` under `[model.<name>]` sections:
 
 ```toml
-[model.my-model]
+[model.your-model-id]
 model = "model-id"                        # Model identifier sent to the API
 base_url = "https://api.example.com/v1"   # OpenAI-compatible endpoint
 name = "Display Name"                     # Shown in the model picker
 description = "Model description"          # Optional description
 api_key = "sk-..."                        # API key for this provider (optional)
-env_key = "XAI_API_KEY"                   # Env var holding the API key (optional; string or array)
+env_key = "OPENAI_API_KEY"                # Env var holding the API key (optional; string or array)
 api_backend = "chat_completions"          # "chat_completions", "responses", or "messages"
 temperature = 0.7                         # Sampling temperature
 top_p = 0.95                              # Nucleus sampling parameter
@@ -91,22 +97,22 @@ extra_headers = { "x-api-key" = "sk-..." } # Extra request headers, sent verbati
 
 ### Credential Resolution
 
-Grok resolves the API key in this order:
+Axon resolves the API key in this order:
 
 1. The `api_key` field in the model config
 2. The environment variable(s) named by `env_key` — a single string or an array of names. The first set, non-empty value wins (for example `env_key = ["ANTHROPIC_AUTH_TOKEN", "LC_ANTHROPIC_AUTH_TOKEN"]` for SSH `LC_*` forwarding)
-3. Your signed-in session token (from `axon login`), for a model with no `api_key`/`env_key` of its own
-4. The `XAI_API_KEY` environment variable (global fallback; Grok also accepts `AXON_CODE_XAI_API_KEY` for backward compatibility)
+3. An active session token (from an external auth provider or enterprise OIDC), for a model with no `api_key`/`env_key` of its own
+4. The `AXON_API_KEY` environment variable (global fallback)
 
 **Exception — no-auth endpoints:** a model with `no_auth = true`, or any
 model whose `base_url` is a loopback address, skips this chain entirely
 (unless it sets its own `api_key`/`env_key`): requests are sent with no
-`Authorization` header, and your session token is never forwarded to the
-local server.
+`Authorization` header, and no credential is ever forwarded to the local
+server.
 
 ### Context Window
 
-The `context_window` value tells Grok when to trigger auto-compaction. When you override a known model, Grok inherits that model's context window. When you define a new model and omit `context_window`, Grok defaults to 200,000 tokens, so set it explicitly to match your provider.
+The `context_window` value tells Axon when to trigger auto-compaction. When you override a known model, Axon inherits that model's context window. When you define a new model and omit `context_window`, Axon defaults to 200,000 tokens, so set it explicitly to match your provider.
 
 ### Global Default Headers
 
@@ -139,22 +145,25 @@ This is a small, fixed set of environment-wide knobs. Settings that identify a s
 
 ---
 
-## Overriding Built-in Models
+## Overriding Model Fields
 
-You can override specific fields of built-in models without redefining everything. Only specify the fields you want to change:
+You can override specific fields of a model already in the catalog (one you
+defined, or one prefetched from a `/v1/models` endpoint) without redefining
+everything. Use the model's id as the section key and specify only the fields
+you want to change:
 
 ```toml
-# Override only the API key for a default model
-[model.axon-build]
+# Override only the API key for a model
+[model.local]
 api_key = "my-api-key"
 
 # Override temperature and add a custom API key
-[model.axon-build]
+[model.local]
 temperature = 0.5
 api_key = "sk-custom"
 ```
 
-When you override a built-in model, Grok starts with the default configuration (including the correct `base_url`), then applies only the fields you specify. Unspecified fields inherit from the default.
+When you override an existing model, Axon starts with that model's configuration (including its `base_url`), then applies only the fields you specify. Unspecified fields are inherited.
 
 ### Priority Order
 
@@ -180,7 +189,7 @@ context_window = 200000
 extra_headers = { "x-api-key" = "sk-ant-...", "anthropic-version" = "2023-06-01" }
 ```
 
-The `messages` backend uses the Anthropic Messages protocol. Anthropic authenticates with an `x-api-key` header rather than `Authorization: Bearer`, so pass your key through `extra_headers`, which Grok sends verbatim.
+The `messages` backend uses the Anthropic Messages protocol. Anthropic authenticates with an `x-api-key` header rather than `Authorization: Bearer`, so pass your key through `extra_headers`, which Axon sends verbatim.
 
 ### OpenAI (Chat Completions)
 
@@ -222,7 +231,7 @@ Make sure Ollama is running (`ollama serve`) and the model is pulled (`ollama pu
 
 Loopback endpoints (`localhost`, `127.0.0.1`, `[::1]`) are automatically
 treated as **no-auth**: no API key is required, no login is needed at
-startup, and your session token is never sent to the local server. This
+startup, and no credential is sent to the local server. This
 works out of the box for Ollama, llama.cpp, LM Studio, and vLLM. For a
 non-loopback endpoint that also needs no authentication (for example a
 model server on your LAN), set `no_auth = true` explicitly:
@@ -275,45 +284,43 @@ default = "local-llama"
 
 ### Fully Offline
 
-With no Grok login and only local models configured, the CLI makes no
-network requests at startup. If you *are* signed in but want to suppress
-the remaining startup fetch of the hosted model catalog, disable remote
-fetches in `~/.axon/config.toml` (deliberately config-only — no env var
-can re-arm it):
+With only local models configured, the CLI makes no network requests at
+startup. To also suppress the optional startup fetch of a remote model
+catalog, disable remote fetches in `~/.axon/config.toml` (deliberately
+config-only — no env var can re-arm it):
 
 ```toml
 [features]
 remote_fetch = false
 ```
 
-### Caveat: Development Proxies on Localhost
+### Caveat: Local Proxies on Localhost
 
-Because loopback endpoints are treated as no-auth, a cli-chat-proxy
-development instance running on `localhost` no longer receives your
-session token automatically. If you proxy Grok traffic through a local
-gateway that requires auth, set an explicit `api_key` on that model
-entry.
+Because loopback endpoints are treated as no-auth, a local proxy running on
+`localhost` no longer receives a session token automatically. If you route
+Axon traffic through a local gateway that requires auth, set an explicit
+`api_key` on that model entry.
 
 ---
 
 ## Custom Models Endpoint
 
-Point Grok at a custom OpenAI-compatible `/v1/models` endpoint instead of the default. Use this when your models sit behind a corporate gateway or a self-hosted inference service.
+Point Axon at a custom OpenAI-compatible `/v1/models` endpoint instead of the default. Use this when your models sit behind a corporate gateway or a self-hosted inference service.
 
 ### Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `AXON_MODELS_BASE_URL` | Yes | Base URL for inference. Grok fetches the model list from `{base_url}/models`. |
-| `XAI_API_KEY` | No for loopback URLs | API key sent as `Authorization: Bearer`. Grok also accepts `AXON_CODE_XAI_API_KEY`. Loopback endpoints (e.g. `http://localhost:11434/v1`) are queried without auth when no key is set. |
+| `AXON_MODELS_BASE_URL` | Yes | Base URL for inference. Axon fetches the model list from `{base_url}/models`. |
+| `AXON_API_KEY` | No for loopback URLs | API key sent as `Authorization: Bearer`. Loopback endpoints (e.g. `http://localhost:11434/v1`) are queried without auth when no key is set. |
 | `AXON_MODELS_LIST_URL` | No | Override the model-list URL when it differs from `{base_url}/models`. |
 
 ### Setup
 
 ```bash
 export AXON_MODELS_BASE_URL="https://api.acme.com/v1"
-export XAI_API_KEY="axon-..."
-grok
+export AXON_API_KEY="sk-..."
+axon
 ```
 
 ### Config File Alternative
@@ -323,15 +330,15 @@ grok
 models_base_url = "https://api.acme.com/v1"
 
 # Override only the API key for a specific model
-[model.axon-build]
+[model.local]
 api_key = "my-api-key"
 ```
 
-When you use `[endpoints]` with partial model overrides, Grok inherits the `base_url` from the endpoints config, so you do not need to specify it in each `[model.*]` section.
+When you use `[endpoints]` with partial model overrides, Axon inherits the `base_url` from the endpoints config, so you do not need to specify it in each `[model.*]` section.
 
 ### Auth Behavior
 
-When you set `models_base_url`, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. You do not need `axon login` -- the API key is enough.
+When you set `models_base_url`, Axon uses API key auth (`Authorization: Bearer`) instead of session auth. No login is required -- the API key is enough.
 
 ---
 
@@ -341,16 +348,16 @@ The `web_search` tool uses a separate model. Configure it with:
 
 ```toml
 [models]
-web_search = "grok-4.20-multi-agent"
+web_search = "my-search-model"
 ```
 
 Or via environment variable:
 
 ```bash
-export AXON_WEB_SEARCH_MODEL="grok-4.20-multi-agent"
+export AXON_WEB_SEARCH_MODEL="my-search-model"
 ```
 
-If you point web search at a custom model, you also need a `[model.*]` entry so Grok can reach it. Server-side ("backend") web search runs only when the model sets `supports_backend_search = true` (and the build enables backend search); it does not depend on `api_backend`:
+If you point web search at a custom model, you also need a `[model.*]` entry so Axon can reach it. Server-side ("backend") web search runs only when the model sets `supports_backend_search = true` (and the build enables backend search); it does not depend on `api_backend`:
 
 ```toml
 [models]
@@ -367,7 +374,7 @@ supports_backend_search = true
 
 ```bash
 # List available models (including custom)
-grok models
+axon models
 
 # Use in the TUI via slash command
 /model my-model
@@ -384,7 +391,8 @@ default = "my-model"
 
 ## Enterprise Deployment
 
-A complete config for an enterprise deployment with custom models:
+A complete config for an enterprise deployment with custom models routed
+through your own proxy:
 
 ```toml
 [cli]
@@ -396,16 +404,13 @@ auth_provider_label = "Acme Corp"
 auth_token_ttl = 3600
 
 [models]
-default = "company-grok"
+default = "company-llm"
 
-[model.company-grok]
-model = "grok-build"
-base_url = "https://grok-proxy.acme.com/"
-name = "Grok Build Latest (Proxy)"
+[model.company-llm]
+model = "your-model-id"
+base_url = "https://llm-proxy.acme.com/"
+name = "Company LLM (Proxy)"
 context_window = 128000
-
-[features]
-telemetry = false
 ```
 
 ---
@@ -416,7 +421,7 @@ telemetry = false
 
 ```bash
 # List available models
-grok models
+axon models
 
 # Check config.toml for typos in [model.*] sections
 ```
@@ -427,14 +432,14 @@ Verify the endpoint is reachable:
 
 ```bash
 curl -s https://api.example.com/v1/models \
-  -H "Authorization: Bearer $XAI_API_KEY"
+  -H "Authorization: Bearer $AXON_API_KEY"
 ```
 
 ### Debug Logging
 
 ```bash
-RUST_LOG=debug AXON_LOG_FILE=/tmp/grok.log grok
-tail -f /tmp/grok.log
+RUST_LOG=debug AXON_LOG_FILE=/tmp/axon.log axon
+tail -f /tmp/axon.log
 ```
 
 Look for log entries containing `model` or `sampling` to trace model selection and API calls.

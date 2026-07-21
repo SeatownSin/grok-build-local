@@ -16,8 +16,8 @@ Agent definitions are **Markdown files with YAML frontmatter**, stored
 in `.axon/agents/` (project-level) or `~/.axon/agents/` (user-level).
 
 ```rust
-use xai_grok_agent::{AgentDefinition, AgentBuilder};
-use xai_grok_tools::notification::ToolNotificationHandle;
+use axon_agent::{AgentDefinition, AgentBuilder};
+use axon_tools::notification::ToolNotificationHandle;
 
 // 1. Parse the definition file
 let def = AgentDefinition::from_file(".axon/agents/code-reviewer.md")?;
@@ -48,7 +48,7 @@ let agent = AgentBuilder::new(cwd, None, ToolNotificationHandle::noop())
 ### Discover all definitions
 
 ```rust
-use xai_grok_agent::discovery;
+use axon_agent::discovery;
 
 // Find all .md files in .axon/agents/ directories
 let definitions = discovery::discover(&cwd);
@@ -234,7 +234,7 @@ Agent definitions are discovered from multiple locations with priority:
 2. **User-level**: `~/.axon/agents/*.md`
 3. **Compat paths** (lowest priority): additional vendor agent
    directories under the user home (when enabled)
-4. **Built-in**: `default_grok_build()`, `browser_use()`
+4. **Built-in**: `default_axon_build()`, `browser_use()`
 
 Name-based dedup ensures the highest-priority definition wins. For
 example, a project `.axon/agents/code-reviewer.md` shadows a
@@ -275,7 +275,7 @@ user-level definition with the same name.
 
 | Name | Prompt Mode | Description |
 |---|---|---|
-| `grok-build` | extend | Default agent for software engineering tasks |
+| `axon-build` | extend | Default agent for software engineering tasks |
 | `browser-use` | full | Web browsing and interaction agent |
 
 ## Error Handling

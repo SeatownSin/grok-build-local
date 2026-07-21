@@ -2,15 +2,15 @@
 // Assemble the six per-platform npm packages prior to `npm publish`.
 //
 // For each supported (platform, arch) target this:
-//   1. Brotli-compresses the built binary into `../grok-<platform>/bin/<bin>.br`
+//   1. Brotli-compresses the built binary into `../axon-<platform>/bin/<bin>.br`
 //   2. Stamps the sub-package's version to match the meta package
 //
 // Each per-platform package is its own npm publish target. The meta package
-// (`@xai-official/grok`) lists all six as `optionalDependencies` pinned to
+// (`@axon-official/axon`) lists all six as `optionalDependencies` pinned to
 // the same version; npm installs only the one matching the host's
 // `os` + `cpu` filters.
 //
-// Why brotli? npm's tarball ceiling is ~200 MB and the raw grok binary is
+// Why brotli? npm's tarball ceiling is ~200 MB and the raw axon binary is
 // 100–150 MB per platform. Brotli at max quality cuts that to 30–40 MB,
 // leaves plenty of headroom for binary growth, and is decoded by Node's
 // built-in zlib.brotliDecompressSync (no native deps required).
@@ -24,11 +24,11 @@ const zlib = require('zlib');
 
 const brotliCompress = promisify(zlib.brotliCompress);
 
-const xaiRoot = process.env.XAI_ROOT || path.resolve(__dirname, '..', '..', '..', '..', '..');
+const repoRoot = process.env.AXON_ROOT || path.resolve(__dirname, '..', '..', '..', '..', '..');
 const npmRoot = path.resolve(__dirname, '..', '..');
 
 const NOTICES_SOURCE = path.resolve(
-    npmRoot, '..', '..', 'xai-grok-tools', 'THIRD_PARTY_NOTICES.md');
+    npmRoot, '..', '..', 'axon-tools', 'THIRD_PARTY_NOTICES.md');
 const NOTICES_NAME = 'THIRD_PARTY_NOTICES.md';
 
 const META_PKG_JSON = path.resolve(__dirname, '..', 'package.json');
@@ -38,7 +38,7 @@ const VERSION = meta.version;
 function ensureDir(p) { fs.mkdirSync(path.dirname(p), { recursive: true }); }
 
 async function packPlatform({ platform, arch, envVar, defaultSource, binName }) {
-    const pkgDir = path.join(npmRoot, `grok-${platform}-${arch}`);
+    const pkgDir = path.join(npmRoot, `axon-${platform}-${arch}`);
     const pkgJsonPath = path.join(pkgDir, 'package.json');
 
     if (!fs.existsSync(pkgJsonPath)) {
@@ -73,7 +73,7 @@ async function packPlatform({ platform, arch, envVar, defaultSource, binName }) 
     });
     fs.writeFileSync(outBr, compressed);
     console.log(
-        `[assemble] grok-${platform}-${arch}@${VERSION}: ` +
+        `[assemble] axon-${platform}-${arch}@${VERSION}: ` +
         `${(raw.length / 1048576).toFixed(1)} MB -> ${(compressed.length / 1048576).toFixed(1)} MB ` +
         `(${path.relative(npmRoot, outBr)})`
     );
@@ -83,38 +83,38 @@ async function packPlatform({ platform, arch, envVar, defaultSource, binName }) 
 async function main() {
     const targets = [
         {
-            platform: 'darwin', arch: 'arm64', binName: 'grok',
-            envVar: 'GROK_DARWIN_ARM64',
-            defaultSource: path.join(xaiRoot, 'target', 'release', 'xai-grok-pager'),
+            platform: 'darwin', arch: 'arm64', binName: 'axon',
+            envVar: 'AXON_DARWIN_ARM64',
+            defaultSource: path.join(repoRoot, 'target', 'release', 'axon-pager'),
         },
         {
-            platform: 'darwin', arch: 'x64', binName: 'grok',
-            envVar: 'GROK_DARWIN_X64',
-            defaultSource: path.join(xaiRoot, 'target', 'x86_64-apple-darwin', 'release', 'xai-grok-pager'),
+            platform: 'darwin', arch: 'x64', binName: 'axon',
+            envVar: 'AXON_DARWIN_X64',
+            defaultSource: path.join(repoRoot, 'target', 'x86_64-apple-darwin', 'release', 'axon-pager'),
         },
         {
-            platform: 'linux', arch: 'x64', binName: 'grok',
-            envVar: 'GROK_LINUX_X64',
-            defaultSource: path.join(xaiRoot, 'target',
+            platform: 'linux', arch: 'x64', binName: 'axon',
+            envVar: 'AXON_LINUX_X64',
+            defaultSource: path.join(repoRoot, 'target',
                 'explorer_cross_x86_64-unknown-linux-gnu',
-                'x86_64-unknown-linux-gnu', 'release', 'xai-grok-pager'),
+                'x86_64-unknown-linux-gnu', 'release', 'axon-pager'),
         },
         {
-            platform: 'linux', arch: 'arm64', binName: 'grok',
-            envVar: 'GROK_LINUX_ARM64',
-            defaultSource: path.join(xaiRoot, 'target',
+            platform: 'linux', arch: 'arm64', binName: 'axon',
+            envVar: 'AXON_LINUX_ARM64',
+            defaultSource: path.join(repoRoot, 'target',
                 'explorer_cross_aarch64-unknown-linux-gnu',
-                'aarch64-unknown-linux-gnu', 'release', 'xai-grok-pager'),
+                'aarch64-unknown-linux-gnu', 'release', 'axon-pager'),
         },
         {
-            platform: 'win32', arch: 'x64', binName: 'grok.exe',
-            envVar: 'GROK_WIN32_X64',
-            defaultSource: path.join(xaiRoot, 'target', 'x86_64-pc-windows-msvc', 'release', 'xai-grok-pager.exe'),
+            platform: 'win32', arch: 'x64', binName: 'axon.exe',
+            envVar: 'AXON_WIN32_X64',
+            defaultSource: path.join(repoRoot, 'target', 'x86_64-pc-windows-msvc', 'release', 'axon-pager.exe'),
         },
         {
-            platform: 'win32', arch: 'arm64', binName: 'grok.exe',
-            envVar: 'GROK_WIN32_ARM64',
-            defaultSource: path.join(xaiRoot, 'target', 'aarch64-pc-windows-msvc', 'release', 'xai-grok-pager.exe'),
+            platform: 'win32', arch: 'arm64', binName: 'axon.exe',
+            envVar: 'AXON_WIN32_ARM64',
+            defaultSource: path.join(repoRoot, 'target', 'aarch64-pc-windows-msvc', 'release', 'axon-pager.exe'),
         },
     ];
 

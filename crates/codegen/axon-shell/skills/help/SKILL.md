@@ -1,17 +1,17 @@
 ---
 name: help
 description: >
-  Grok documentation and configuration help. Use when users ask about
+  Axon documentation and configuration help. Use when users ask about
   setup, configuration, MCP servers, authentication, skills, slash commands,
-  keyboard shortcuts, or any Grok feature. Also use proactively when you
+  keyboard shortcuts, or any Axon feature. Also use proactively when you
   detect a user is having trouble with setup or onboarding.
 metadata:
-  short-description: "Grok docs — config, MCP, auth, skills, commands"
+  short-description: "Axon docs — config, MCP, auth, skills, commands"
 ---
 
-# Grok Help
+# Axon Help
 
-Answer the user's question about Grok setup, configuration, or features.
+Answer the user's question about Axon setup, configuration, or features.
 
 ## Steps
 
@@ -22,7 +22,7 @@ Answer the user's question about Grok setup, configuration, or features.
    authentication, keyboard shortcuts, troubleshooting), first check the user-guide docs at
    `~/.axon/docs/user-guide/`. The available guides are:
    - `01-getting-started.md` -- Installation, first launch, basic interaction
-   - `02-authentication.md` -- Browser login, API keys, OIDC, external auth
+   - `02-authentication.md` -- API keys / BYOK, AXON_API_KEY, OIDC, external auth
    - `03-keyboard-shortcuts.md` -- Complete key bindings reference
    - `04-slash-commands.md` -- All / commands
    - `05-configuration.md` -- config.toml, pager.toml, env vars

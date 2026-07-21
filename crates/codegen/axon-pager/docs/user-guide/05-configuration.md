@@ -1,6 +1,6 @@
 # Configuration
 
-Grok reads configuration from local config files, environment variables, and
+Axon reads configuration from local config files, environment variables, and
 CLI flags. This document covers the common options.
 
 ---
@@ -10,7 +10,7 @@ CLI flags. This document covers the common options.
 Configuration is resolved in this order (highest priority first):
 
 1. **CLI flags** (e.g., `--yolo`, `--model`, `--sandbox`)
-2. **Environment variables** (e.g., `XAI_API_KEY`, `AXON_MEMORY`)
+2. **Environment variables** (e.g., `AXON_API_KEY`, `AXON_MEMORY`)
 3. **config.toml** (`~/.axon/config.toml`)
 4. **Managed / requirements config** (local files your org may deploy, e.g.
    `managed_config.toml` / `requirements.toml`)
@@ -22,7 +22,7 @@ Configuration is resolved in this order (highest priority first):
 
 Location: `~/.axon/config.toml`
 
-If the file does not exist, Grok uses built-in defaults. Specify only the values you want to override.
+If the file does not exist, Axon uses built-in defaults. Specify only the values you want to override.
 
 ### General Settings
 
@@ -31,8 +31,8 @@ If the file does not exist, Grok uses built-in defaults. Specify only the values
 auto_update = true                     # check for updates on launch
 
 [models]
-default = "grok-build"           # model used for new sessions
-web_search = "grok-4.20-multi-agent"   # model used by the web_search tool
+default = "local"                      # model used for new sessions
+web_search = "my-search-model"         # model used by the web_search tool
 
 # Defaults applied to every model; a per-model [model.<id>] value always wins.
 # See "Custom Models" for the per-model overrides and full details.
@@ -65,8 +65,6 @@ screen_mode = "fullscreen"             # default render mode: "fullscreen" | "mi
                                        # (unset → fullscreen); set via /settings → Default screen mode
 
 [features]
-telemetry = false                      # anonymous usage telemetry
-feedback = true                        # feedback system (default: true)
 lsp_tools = false                      # expose the lsp tool
 codebase_indexing = true               # code graph indexing
 two_pass_compaction = false            # prefire two-pass compaction (default: false, opt-in)
@@ -101,7 +99,7 @@ simple_mode = false
 ```
 
 You can also toggle this setting from the settings pane (`/settings` →
-**Disable vim input mode**); Grok writes your choice to `[ui] simple_mode` in
+**Disable vim input mode**); Axon writes your choice to `[ui] simple_mode` in
 `config.toml`.
 
 `simple_mode` and `vim_mode` are independent: `simple_mode` changes the prompt
@@ -158,7 +156,7 @@ active in the **scrollback** pane. It does not affect the input prompt.
 | `true` | All vim-style scrollback bindings are active, exactly as listed in [Keyboard Shortcuts](03-keyboard-shortcuts.md). |
 
 Toggle `vim_mode` at runtime with `/vim-mode`, or from the settings pane
-(`/settings` → **Vim scrollback navigation**). Grok writes the change to
+(`/settings` → **Vim scrollback navigation**). Axon writes the change to
 `[ui] vim_mode` in `~/.axon/config.toml` immediately and applies it to every
 future pager session — including new agents and subagents started in the same
 process. There is no separate per-session override; whatever is in
@@ -170,7 +168,7 @@ navigation, while `simple_mode` controls editing in the prompt.
 #### Screen Mode
 
 The `screen_mode` setting under `[ui]` is the **default render mode** for plain
-`grok` launches. Configure it from `/settings` → **Default screen mode**
+`axon` launches. Configure it from `/settings` → **Default screen mode**
 (restart required), or edit `config.toml` by hand. Both choices write
 `config.toml`. CLI flags (`--minimal` / `--fullscreen`) and slash commands
 (`/minimal` / `/fullscreen`) are session-scoped and do **not** write this key —
@@ -236,7 +234,7 @@ timeout_secs = 1800                    # seconds to wait when enabled (default: 
 
 [toolset.web_fetch]
 proxy_endpoint = "https://proxy.example.com"   # egress proxy URL
-allowed_domains = ["docs.rs", "x.ai"]           # override the built-in allowlist
+allowed_domains = ["docs.rs", "github.com"]     # override the built-in allowlist
 allow_local = false                              # true = allow localhost / 127.0.0.0/8 / ::1 only
 ```
 
@@ -265,7 +263,7 @@ auth_provider_command = "/usr/local/bin/my-auth-provider"
 auth_provider_label = "Acme Corp"
 auth_token_ttl = 3600
 
-[grok_com_config.oidc]
+[axon_com_config.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
 # scopes = ["openid", "profile", "email", "offline_access", "api:access"]
@@ -283,19 +281,19 @@ base_url = "https://api.example.com/v1"  # OpenAI-compatible endpoint
 name = "Display Name"                 # shown in model picker
 description = "Model description"     # optional
 api_key = "sk-..."                    # API key for this provider
-env_key = "XAI_API_KEY"               # env var(s) holding the API key; string or array (first set, non-empty wins)
+env_key = "OPENAI_API_KEY"            # env var(s) holding the API key; string or array (first set, non-empty wins)
 temperature = 0.7                     # sampling temperature (0.0-2.0)
 top_p = 0.95                          # nucleus sampling parameter
 max_completion_tokens = 8192          # max tokens per response
 context_window = 128000               # context window size (for auto-compact)
 ```
 
-Credential resolution: `api_key` > `env_key` > signed-in session token > `XAI_API_KEY`.
+Credential resolution: `api_key` > `env_key` > active session token > `AXON_API_KEY`.
 
-Override built-in models by using their name as the section key:
+Override an existing model by using its id as the section key:
 
 ```toml
-[model.axon-build]
+[model.local]
 api_key = "my-api-key"               # only override the fields you need
 ```
 
@@ -364,7 +362,7 @@ explore = true                        # enable/disable specific types
 plan = false
 
 [subagents.models]
-explore = "grok-build"               # route to different models
+explore = "local"                    # route to different models
 ```
 
 To pin the model a subagent uses, set its entry under `[subagents.models]`.
@@ -429,7 +427,7 @@ disabled = ["user/a1b2c3d4/noisy-plugin"]
 
 ### Hints
 
-The `[hints]` table holds small persisted UI preferences — mostly "stop asking me" opt-outs. Grok writes these for you when you pick a "don't ask again" / "reset in config.toml" option in the TUI, but you can edit or remove them by hand. Deleting a key restores the default behavior.
+The `[hints]` table holds small persisted UI preferences — mostly "stop asking me" opt-outs. Axon writes these for you when you pick a "don't ask again" / "reset in config.toml" option in the TUI, but you can edit or remove them by hand. Deleting a key restores the default behavior.
 
 `[hints]` is read from the **effective config merge** (same precedence as other settings): system managed → user `managed_config.toml` → user `config.toml` → user `requirements.toml` → system `requirements.toml`. Higher-priority layers override lower ones. The TUI only **writes** opt-outs to user `~/.axon/config.toml`.
 
@@ -443,7 +441,7 @@ fork_worktree_mode = "ask"             # /fork worktree prompt: "ask" | "always"
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `project_picker_disabled` | bool | `false` | When `true`, skips the picker that asks you to choose a project directory on the first prompt when Grok is launched from a non-project directory (home, Desktop, Downloads, `/tmp`). Set automatically when you choose **"Don't ask me again"** in that picker. Teams can pin this in `managed_config.toml` or `requirements.toml` via `[hints] project_picker_disabled = true`. |
+| `project_picker_disabled` | bool | `false` | When `true`, skips the picker that asks you to choose a project directory on the first prompt when Axon is launched from a non-project directory (home, Desktop, Downloads, `/tmp`). Set automatically when you choose **"Don't ask me again"** in that picker. Teams can pin this in `managed_config.toml` or `requirements.toml` via `[hints] project_picker_disabled = true`. |
 | `memory_modal_fullscreen` | bool | `false` | Remembers whether the memory modal was last opened fullscreen. |
 | `new_session_worktree_mode` | string | `"never"` | Worktree prompt for `/new`: `ask` shows the popup, `always` creates a worktree, `never` skips it. |
 | `fork_worktree_mode` | string | `"ask"` | Worktree prompt for `/fork`: `ask`, `always`, or `never`. |
@@ -466,7 +464,7 @@ progress_bar = true       # show tab progress bar (OSC 9;4)
 
 [ui.notifications.title]
 enabled = true
-items = ["action-required", "spinner", "activity", "session-name", "grok"]
+items = ["action-required", "spinner", "activity", "session-name", "axon"]
 ```
 
 | Option | Type | Default | Description |
@@ -478,7 +476,7 @@ items = ["action-required", "spinner", "activity", "session-name", "grok"]
 | `sleep_prevention` | bool | `true` | Keep the display awake while the agent is working (macOS/Linux). |
 | `progress_bar` | bool | `true` | Show a progress indicator in the terminal tab (OSC 9;4). |
 | `title.enabled` | bool | `true` | Set the terminal title to reflect agent state. |
-| `title.items` | array | (see above) | Items shown in the title bar. Options: `action-required`, `spinner`, `activity`, `session-name`, `cwd`, `model`, `turn-timer`, `grok`. |
+| `title.items` | array | (see above) | Items shown in the title bar. Options: `action-required`, `spinner`, `activity`, `session-name`, `cwd`, `model`, `turn-timer`, `axon`. |
 
 #### Terminal Support Matrix
 
@@ -493,10 +491,10 @@ items = ["action-required", "spinner", "activity", "session-name", "grok"]
 | VS Code | BEL | Yes | No |
 | Apple Terminal | BEL | No | No |
 | VTE (GNOME Terminal) | OSC 777 | Yes | No |
-| Grok Desktop | None (native) | N/A | N/A |
+| Axon Desktop | None (native) | N/A | N/A |
 | Unknown | BEL | No | No |
 
-When `method = "auto"`, Grok detects the terminal brand and selects the best
+When `method = "auto"`, Axon detects the terminal brand and selects the best
 protocol automatically. Set `method` explicitly to override auto-detection.
 
 #### Notification Hooks
@@ -507,14 +505,14 @@ Run custom commands when events occur. Hooks receive environment variables
 ```toml
 # macOS native notification
 [[ui.notifications.hooks]]
-command = "terminal-notifier -title 'Grok' -message '$AXON_MESSAGE'"
+command = "terminal-notifier -title 'Axon' -message '$AXON_MESSAGE'"
 events = ["turn_complete", "approval_required"]
 only_unfocused = true
 timeout_secs = 10
 
 # Push to ntfy server
 [[ui.notifications.hooks]]
-command = "curl -s -d '$AXON_MESSAGE' ntfy.sh/my-grok-alerts"
+command = "curl -s -d '$AXON_MESSAGE' ntfy.sh/my-axon-alerts"
 events = ["turn_complete"]
 only_unfocused = true
 timeout_secs = 10
@@ -549,7 +547,7 @@ Then restart tmux. If passthrough is not available (tmux < 3.3), set
 
 **Focus tracking not working:**
 Some terminals do not report focus events. If `condition = "unfocused"` never
-fires, try `condition = "always"` as a fallback. Grok supports focus tracking
+fires, try `condition = "always"` as a fallback. Axon supports focus tracking
 in every detected terminal except Apple Terminal and unrecognized terminals.
 
 **Sleep prevention not taking effect:**
@@ -565,42 +563,14 @@ See [Keyboard Shortcuts](03-keyboard-shortcuts.md) for the complete reference.
 
 ### Telemetry
 
-Independent knobs (see [Monitoring Usage](24-monitoring-usage.md#related-settings)):
-
-- **`[features] telemetry`** / `AXON_TELEMETRY_ENABLED`: product analytics master switch. `/privacy` does not change it.
-- **`/privacy`** / Settings: coding data sharing (separate from telemetry).
-- **`[telemetry] trace_upload`** / `AXON_TELEMETRY_TRACE_UPLOAD`: session traces; follows telemetry when unset.
-- **`[telemetry] otel_*`** / `AXON_EXTERNAL_OTEL`: external OTEL to your collector (below).
-
-When telemetry is enabled, enterprises that run their own collector can redirect
-it or selectively disable parts of it under `[telemetry]`:
-
-```toml
-[telemetry]
-events_url = "https://telemetry.your-company.com/events"  # send events to your own collector
-events_api_key = "your-collector-token"                   # auth for your collector, if required
-mixpanel_enabled = false                                  # disable Mixpanel product analytics
-trace_upload = false                                      # disable session/trace uploads (inherits the telemetry toggle when unset)
-```
-
-Set these only to point telemetry at your own infrastructure or to turn parts of it off. The built-in endpoint and credentials are managed by Grok; leave them unset to use the defaults.
-
-The same `[telemetry]` table also configures the **external OpenTelemetry stream**, an independent opt-in (it does not require the telemetry toggle above) that ships a curated, content-free usage schema to your *own* OTLP collector. Collector auth is supplied via `OTEL_EXPORTER_OTLP_HEADERS` and is never stored on disk. See [Monitoring & Usage](24-monitoring-usage.md) for the full schema, env vars, and privacy model.
-
-```toml
-[telemetry]
-otel_enabled = true                                       # external OTEL master switch (= AXON_EXTERNAL_OTEL)
-otel_metrics_exporter = "otlp"                            # otlp | console | none
-otel_logs_exporter = "otlp"                               # otlp | console | none
-otel_endpoint = "https://collector.corp.example:4318"     # OTLP base endpoint
-otel_protocol = "http/protobuf"                           # http/protobuf | grpc
-otel_log_user_prompts = false                             # content gate (admins can pin via requirements)
-otel_log_tool_details = false                             # content gate (admins can pin via requirements)
-```
+Telemetry is **removed** in this fork. There is no product-analytics, trace/session
+upload, feedback, or OpenTelemetry export pipeline, and no `[telemetry]` config
+block that sends data anywhere. Axon makes no network calls to xAI or any
+analytics backend. See [Monitoring Usage](24-monitoring-usage.md) for details.
 
 ### Enterprise Deployment
 
-A complete config for enterprise use:
+A complete config for enterprise use, routing inference through your own proxy:
 
 ```toml
 [cli]
@@ -612,16 +582,13 @@ auth_provider_label = "Acme Corp"
 auth_token_ttl = 3600
 
 [models]
-default = "company-grok"
+default = "company-llm"
 
-[model.company-grok]
-model = "grok-build"
-base_url = "https://grok-proxy.acme.com/"
-name = "Grok Build Latest (Proxy)"
+[model.company-llm]
+model = "your-model-id"
+base_url = "https://llm-proxy.acme.com/"
+name = "Company LLM (Proxy)"
 context_window = 128000
-
-[features]
-telemetry = false
 ```
 
 ---
@@ -757,7 +724,7 @@ Key environment variables. See the README for the complete list.
 
 | Variable | Description |
 |----------|-------------|
-| `XAI_API_KEY` | API key from console.x.ai |
+| `AXON_API_KEY` | Global fallback API key (used when a model sets no `api_key`/`env_key`) |
 | `AXON_AUTH_PROVIDER_COMMAND` | External auth binary path |
 | `AXON_AUTH_PROVIDER_LABEL` | Display name on TUI login screen |
 | `AXON_AUTH_TOKEN_TTL` | Token lifetime in seconds |
@@ -798,14 +765,9 @@ Key environment variables. See the README for the complete list.
 
 ### Telemetry
 
-| Variable | Description |
-|----------|-------------|
-| `AXON_TELEMETRY_ENABLED` | Enable/disable telemetry |
-| `AXON_TELEMETRY_TRACE_UPLOAD` | Enable/disable session trace upload |
-| `AXON_TELEMETRY_MIXPANEL_ENABLED` | Enable/disable Mixpanel specifically |
-| `AXON_EXTERNAL_OTEL` | External OTEL to your collector (see [24-monitoring-usage.md](24-monitoring-usage.md)) |
-| `AXON_FEEDBACK_ENABLED` | Enable/disable feedback system |
-| `AXON_DEPLOYMENT_KEY` | Management API key for enterprise |
+Telemetry is removed in this fork; there are no telemetry, feedback, or
+OpenTelemetry-export environment variables. See
+[Monitoring Usage](24-monitoring-usage.md).
 
 ---
 

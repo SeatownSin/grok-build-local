@@ -1,115 +1,82 @@
 # Authentication
 
-Grok supports several authentication methods, including interactive browser login, enterprise single sign-on (SSO), and headless CI/CD runners.
+Axon is local-first: there is **no hosted sign-in**, no browser login, and no
+account. On first run Axon auto-detects local model servers that need no
+credentials at all. When you point Axon at a hosted provider (OpenAI,
+Anthropic, or any OpenAI-compatible endpoint), you supply your own key.
+
+Axon resolves credentials from, in order of preference:
+
+- **Local no-auth auto-detect** — loopback model servers need no key or login.
+- **Per-model API keys (BYOK)** — an `api_key` or `env_key` under `[model.<name>]`.
+- **`AXON_API_KEY`** — a global environment-variable fallback.
+- **External auth provider** — delegate to your own binary or script.
+- **Enterprise OIDC** — sign in through *your own* Identity Provider.
+
+> Axon is an independent fork of xAI's Apache-2.0-licensed Grok Build; it is not
+> affiliated with xAI and makes no network calls to any xAI service.
 
 ---
 
-## Browser Login (Default)
+## Local Models (No Authentication)
 
-On first launch, Grok opens your browser to authenticate with grok.com:
+On first launch with no model configured, Axon runs a **first-run setup
+wizard**. Instead of signing in anywhere, the wizard scans `localhost` and your
+local network for OpenAI-compatible model servers — Ollama, LM Studio,
+llama.cpp, and vLLM — and writes your choice to `~/.axon/config.toml`.
 
-```bash
-grok
-```
-
-Grok stores credentials in `~/.axon/auth.json` and reuses them across sessions. Grok refreshes access tokens automatically in the background. When a token can't be refreshed, Grok prompts you to sign in again. Credentials without a server-provided expiry fall back to a 30-day lifetime.
-
-### Credential storage
-
-Tokens in `~/.axon/auth.json` (and MCP OAuth tokens in `~/.axon/mcp_credentials.json`) are written with owner-only permissions (`0600` on Unix). Anyone with filesystem access to those paths can use the credentials, so:
-
-- Prefer full-disk encryption (FileVault, BitLocker, LUKS, or equivalent).
-- Do not copy `auth.json` or `mcp_credentials.json` into shared directories, tickets, or chat.
-- On multi-user hosts, keep `$HOME` / `$AXON_HOME` private to your account.
-
-### Re-authenticate
-
-To switch accounts or resolve an authentication problem, run:
-
-```bash
-axon login
-```
-
-Running `axon login` starts the sign-in flow again, replacing your cached session. By default, it opens your browser and signs in through SpaceXAI OAuth at `auth.x.ai`. Pass a flag to select a different flow:
-
-| Flag | Description |
-|------|-------------|
-| `--oauth` | Sign in through SpaceXAI OAuth at `auth.x.ai`. This is the default, so the flag is optional. |
-| `--device-auth` (alias `--device-code`) | Sign in with the device-code flow for headless or remote environments. |
-
-To sign out, run `axon logout`. It takes no flags and clears your cached credentials.
+Loopback endpoints (`localhost`, `127.0.0.1`, `[::1]`) are treated as
+**no-auth**: no API key is required, no login happens at startup, and no
+credential is ever sent to the local server. This works out of the box for the
+common local runtimes. For a non-loopback server on your LAN that also needs no
+authentication, set `no_auth = true` on that model (see
+[Custom Models](11-custom-models.md)).
 
 ---
 
-## API Key
+## API Keys (Bring Your Own Key)
 
-For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
-
-```bash
-export XAI_API_KEY="axon-..."
-grok
-```
-
-Grok uses the API key as a fallback when no session token is active. If you have already signed in interactively, the stored session token takes precedence. To fall back to the API key, run `axon logout` or delete `~/.axon/auth.json`.
-
----
-
-## OIDC (Customer SSO)
-
-Authenticate developers through your own Identity Provider (IdP) -- such as Okta, Azure AD, or Auth0 -- instead of grok.com.
-
-### 1. Register a public client in your IdP
-
-- Grant type: Authorization Code with PKCE (Proof Key for Code Exchange)
-- Redirect URI: `http://127.0.0.1/callback` -- a loopback address. Grok binds a random port at sign-in time, and most IdPs treat the loopback redirect as port-agnostic per [RFC 8252](https://tools.ietf.org/html/rfc8252).
-- No client secret. PKCE replaces it.
-
-### 2. Configure the CLI
-
-Via config file:
+For hosted providers, set the key per model with `api_key` or `env_key`:
 
 ```toml
 # ~/.axon/config.toml
-[grok_com_config.oidc]
-issuer = "https://acme.okta.com"
-client_id = "0oa1b2c3d4e5f6g7h8i9"
+[model.gpt-4o]
+model = "gpt-4o"
+base_url = "https://api.openai.com/v1"
+env_key = "OPENAI_API_KEY"   # env var holding the key (string or array)
+# api_key = "sk-..."         # or inline the key directly
 ```
 
-Or via environment variables:
+`env_key` accepts a single variable name or an array of names; the first set,
+non-empty value wins. See [Custom Models](11-custom-models.md) for per-provider
+examples (OpenAI, Anthropic, Together, and self-hosted servers).
+
+### `AXON_API_KEY` fallback
+
+When a model defines no `api_key`/`env_key` of its own, Axon falls back to the
+`AXON_API_KEY` environment variable. This is handy for CI/CD and automation:
 
 ```bash
-export AXON_OIDC_ISSUER="https://acme.okta.com"
-export AXON_OIDC_CLIENT_ID="0oa1b2c3d4e5f6g7h8i9"
+export AXON_API_KEY="sk-..."
+axon
 ```
 
-You can also override the API endpoint to point at your own proxy:
-
-```bash
-export AXON_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
-```
-
-### 3. Run `grok`
-
-The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.axon/auth.json`. Tokens auto-refresh silently via the stored `refresh_token`.
-
-### Optional fields
-
-| Field | Default | Notes |
-|-------|---------|-------|
-| `scopes` | `["openid", "profile", "email", "offline_access", "api:access"]` | `offline_access` enables silent token refresh |
-| `audience` | None | Required by some IdPs (e.g., Auth0) |
+Per-model credentials always take precedence over `AXON_API_KEY`.
 
 ---
 
 ## External Auth Provider
 
-When browser-based login isn't possible -- for example, on sandboxed VMs, CI runners, or air-gapped networks -- delegate authentication to an external binary or script.
+When you want Axon to obtain a token from your own infrastructure — for example,
+on sandboxed VMs, CI runners, or air-gapped networks — delegate authentication
+to an external binary or script. The provider runs **your** command; Axon never
+contacts a third party on your behalf.
 
 ### How It Works
 
 ```
 +--------------+     sh -c     +------------------------+
-|     Grok     |-------------->|  your auth binary      |
+|     Axon     |-------------->|  your auth binary      |
 |              |               |                        |
 |  reads       |<-- stdout ----|  prints token          |
 |  auth.json   |               |                        |
@@ -117,20 +84,20 @@ When browser-based login isn't possible -- for example, on sandboxed VMs, CI run
 +--------------+               +------------------------+
 ```
 
-1. Grok runs your command via `sh -c "<command>"`
+1. Axon runs your command via `sh -c "<command>"`
 2. Your binary runs whatever auth flow it needs (SSO, device code, certificate exchange)
-3. **stderr** carries human-readable output, such as login URLs and status messages. Grok reads stderr and surfaces it to the user; in the TUI, it turns the first `https://` URL into a clickable sign-in link.
-4. **stdout** is captured by Grok and saved as the access token
-5. Exit 0 = success; exit non-zero = Grok falls back to interactive login
+3. **stderr** carries human-readable output, such as login URLs and status messages. Axon reads stderr and surfaces it to the user; in the TUI, it turns the first `https://` URL into a clickable sign-in link.
+4. **stdout** is captured by Axon and saved as the access token
+5. Exit 0 = success; exit non-zero = the login fails and Axon reports the error
 
 ### The stdout / stderr Contract
 
 | Stream | What to print | Who sees it |
 |--------|---------------|-------------|
-| **stdout** | The token -- nothing else | Grok (parsed and stored in auth.json) |
-| **stderr** | Login URLs, status messages, errors | The user (Grok reads stderr and shows the sign-in URL as a clickable link in the TUI) |
+| **stdout** | The token -- nothing else | Axon (parsed and stored in auth.json) |
+| **stderr** | Login URLs, status messages, errors | The user (Axon reads stderr and shows the sign-in URL as a clickable link in the TUI) |
 
-**Do not print anything to stdout except the token.** No progress messages, no debug output. Grok reads stdout, trims surrounding whitespace, and parses the result as a token.
+**Do not print anything to stdout except the token.** No progress messages, no debug output. Axon reads stdout, trims surrounding whitespace, and parses the result as a token.
 
 ### stdout Token Format
 
@@ -146,14 +113,14 @@ eyJhbGciOiJSUzI1NiIs...
 {"access_token": "eyJhbGciOi...", "refresh_token": "ref-tok", "expires_in": 3600, "issuer": "https://idp.example.com"}
 ```
 
-Use JSON if your tokens expire and you want Grok to automatically re-run the binary before expiry.
+Use JSON if your tokens expire and you want Axon to automatically re-run the binary before expiry.
 
 JSON fields:
 
 | Field | Required | Meaning |
 |-------|----------|---------|
-| `access_token` | yes | Bearer token Grok sends to the xAI API |
-| `refresh_token` | no | Stored for reference. Grok refreshes by re-running your binary, not with an OAuth refresh grant |
+| `access_token` | yes | Bearer token Axon sends to the model endpoint |
+| `refresh_token` | no | Stored for reference. Axon refreshes by re-running your binary, not with an OAuth refresh grant |
 | `expires_in` | no | Token lifetime in seconds; enables proactive refresh before expiry |
 | `issuer` | no | Identifies the token's issuer |
 
@@ -179,7 +146,7 @@ export AXON_AUTH_TOKEN_TTL=3600
 
 ### Token Refresh
 
-When Grok needs to refresh an expired token, it re-runs your binary with `AXON_AUTH_EXPIRED=1` set in the environment. Each run fully replaces the stored credential, so emit the same JSON fields (such as `issuer`) on every invocation, including refreshes. Your binary can use this to take a faster silent-refresh path:
+When Axon needs to refresh an expired token, it re-runs your binary with `AXON_AUTH_EXPIRED=1` set in the environment. Each run fully replaces the stored credential, so emit the same JSON fields (such as `issuer`) on every invocation, including refreshes. Your binary can use this to take a faster silent-refresh path:
 
 ```bash
 #!/bin/sh
@@ -199,6 +166,9 @@ fi
 echo "{\"access_token\": \"$TOKEN\", \"expires_in\": 3600}"
 ```
 
+A device-code flow can be implemented entirely inside an external auth provider,
+giving you full control over headless and remote sign-in.
+
 ### Environment Variables
 
 | Variable | Description |
@@ -206,32 +176,81 @@ echo "{\"access_token\": \"$TOKEN\", \"expires_in\": 3600}"
 | `AXON_AUTH_PROVIDER_COMMAND` | Path to your auth binary |
 | `AXON_AUTH_PROVIDER_LABEL` | Display name on the TUI login screen (e.g., "Acme Corp") |
 | `AXON_AUTH_TOKEN_TTL` | Token lifetime in seconds (for bare-string tokens without `expires_in`) |
-| `AXON_AUTH_EXPIRED` | Set to `1` by Grok when re-running the binary for token refresh |
+| `AXON_AUTH_EXPIRED` | Set to `1` by Axon when re-running the binary for token refresh |
 | `AXON_AUTH_EARLY_INVALIDATION_SECS` | Seconds before expiry to proactively refresh (default: 300) |
 
 ---
 
-## Device Code Flow
+## Enterprise OIDC (Your Own IdP)
 
-For headless environments (SSH sessions, Docker containers, remote VMs) where no browser is available locally:
+Authenticate developers through **your own** Identity Provider (IdP) -- such as
+Okta, Azure AD, or Auth0 -- and route inference through **your own**
+OpenAI-compatible proxy. Every endpoint below is one you operate; Axon contacts
+no external auth service.
 
-```bash
-axon login --device-auth    # or: axon login --device-code
+### 1. Register a public client in your IdP
+
+- Grant type: Authorization Code with PKCE (Proof Key for Code Exchange)
+- Redirect URI: `http://127.0.0.1/callback` -- a loopback address. Axon binds a random port at sign-in time, and most IdPs treat the loopback redirect as port-agnostic per [RFC 8252](https://tools.ietf.org/html/rfc8252).
+- No client secret. PKCE replaces it.
+
+### 2. Configure the CLI
+
+Via config file:
+
+```toml
+# ~/.axon/config.toml
+[axon_com_config.oidc]
+issuer = "https://acme.okta.com"
+client_id = "0oa1b2c3d4e5f6g7h8i9"
 ```
 
-This prints a URL and code to the terminal. Open the URL on any device, enter the code, and complete authentication. Grok polls until the login is confirmed.
+Or via environment variables:
 
-You can also implement the device-code flow through an [External Auth Provider](#external-auth-provider) for full control.
+```bash
+export AXON_OIDC_ISSUER="https://acme.okta.com"
+export AXON_OIDC_CLIENT_ID="0oa1b2c3d4e5f6g7h8i9"
+```
+
+Point the API endpoint at your own proxy:
+
+```bash
+export AXON_CLI_CHAT_PROXY_BASE_URL="https://llm-proxy.acme.com/v1"
+```
+
+### 3. Sign in
+
+Run `axon login` to start the flow. The CLI discovers endpoints via
+`{issuer}/.well-known/openid-configuration`, opens your IdP login page, and
+stores tokens in `~/.axon/auth.json`. Tokens auto-refresh silently via the
+stored `refresh_token`. Run `axon logout` to clear cached credentials.
+
+### Optional fields
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `scopes` | `["openid", "profile", "email", "offline_access", "api:access"]` | `offline_access` enables silent token refresh |
+| `audience` | None | Required by some IdPs (e.g., Auth0) |
+
+---
+
+## Credential Storage
+
+Tokens in `~/.axon/auth.json` (and MCP OAuth tokens in `~/.axon/mcp_credentials.json`) are written with owner-only permissions (`0600` on Unix). Anyone with filesystem access to those paths can use the credentials, so:
+
+- Prefer full-disk encryption (FileVault, BitLocker, LUKS, or equivalent).
+- Do not copy `auth.json` or `mcp_credentials.json` into shared directories, tickets, or chat.
+- On multi-user hosts, keep `$HOME` / `$AXON_HOME` private to your account.
 
 ---
 
 ## Automatic Credential Refresh
 
-Grok automatically refreshes expired credentials:
+Axon automatically refreshes expired credentials:
 
-- **Before expiry:** If your auth provider returned `expires_in` (JSON output) or you set `auth_token_ttl`, Grok re-runs the auth binary ~5 minutes before expiry.
-- **On auth error:** If the server returns 401 Unauthorized, Grok refreshes the credentials and retries the request.
-- **OIDC:** If a `refresh_token` is available, Grok silently refreshes via your IdP without re-opening the browser.
+- **Before expiry:** If your auth provider returned `expires_in` (JSON output) or you set `auth_token_ttl`, Axon re-runs the auth binary ~5 minutes before expiry.
+- **On auth error:** If the server returns 401 Unauthorized, Axon refreshes the credentials and retries the request.
+- **OIDC:** If a `refresh_token` is available, Axon silently refreshes via your IdP without re-opening the browser.
 
 Tune the refresh buffer:
 
@@ -247,44 +266,29 @@ export AXON_AUTH_EARLY_INVALIDATION_SECS=0
 
 ## Hot Reload
 
-Grok picks up changes to `~/.axon/auth.json` automatically. If you update credentials externally (for example, with a script that writes new tokens), Grok uses the new credentials on the next API call without a restart.
+Axon picks up changes to `~/.axon/auth.json` automatically. If you update credentials externally (for example, with a script that writes new tokens), Axon uses the new credentials on the next API call without a restart.
 
 ---
 
 ## Auth Precedence
 
-Grok resolves credentials for each request in this order, highest to lowest:
+Axon resolves credentials for each request in this order, highest to lowest:
 
 1. **Per-model `api_key` or `env_key`** -- set under `[model.<name>]` in `config.toml`. Wins whenever present.
-2. **Active session token** -- obtained through browser, OIDC/OAuth2, or external-provider login and stored in `~/.axon/auth.json`.
-3. **`XAI_API_KEY`** -- fallback when no session token is active.
+2. **Active session token** -- obtained through OIDC/OAuth2 against your own IdP or through an external-provider login, and stored in `~/.axon/auth.json`.
+3. **`AXON_API_KEY`** -- fallback when no per-model key and no session token is active.
 
-When more than one login flow is configured, Grok populates the session token from the first available source, highest to lowest:
+A model on a loopback `base_url` (or one with `no_auth = true`) skips this chain
+entirely: requests are sent with no `Authorization` header, and no stored
+credential is forwarded to the local server.
+
+When more than one login flow is configured, Axon populates the session token
+from the first available source, highest to lowest:
 
 1. **External auth provider** (`auth_provider_command`)
-2. **Enterprise OIDC** -- when OIDC is configured, through `[grok_com_config.oidc]` in `config.toml` or the `AXON_OIDC_ISSUER` and `AXON_OIDC_CLIENT_ID` environment variables
-3. **SpaceXAI OAuth2 browser login** -- the default
+2. **Enterprise OIDC** -- through `[axon_com_config.oidc]` in `config.toml` or the `AXON_OIDC_ISSUER` and `AXON_OIDC_CLIENT_ID` environment variables
 
 During a session, the active method handles all mid-session refreshes.
-
----
-
-## Related settings
-
-`/privacy` does not change these config knobs:
-
-| Setting | How to set it |
-|---------|---------------|
-| `[features] telemetry` | `config.toml` or `AXON_TELEMETRY_ENABLED` |
-| `[telemetry] trace_upload` | `config.toml` or `AXON_TELEMETRY_TRACE_UPLOAD` |
-| External OpenTelemetry | `AXON_EXTERNAL_OTEL` / `[telemetry] otel_*`. See [Monitoring Usage](24-monitoring-usage.md). |
-
-On team accounts, only a team admin can toggle privacy with `/privacy`.
-Team admins can also enable or disable Zero Data Retention (ZDR) for their team.
-See [How to enable ZDR](https://docs.x.ai/developers/faq/security#how-to-enable-zdr).
-When ZDR is on, `/privacy` cannot change coding-data sharing.
-
-See [Monitoring Usage](24-monitoring-usage.md#related-settings) and [Configuration](05-configuration.md#telemetry).
 
 ---
 
@@ -297,8 +301,8 @@ Set `RUST_LOG` to control the verbosity of the file log and headless stderr outp
 In the TUI, set `AXON_LOG_FILE` to an absolute path to write logs to that file:
 
 ```bash
-AXON_LOG_FILE=/tmp/grok.log RUST_LOG=debug grok
-tail -f /tmp/grok.log
+AXON_LOG_FILE=/tmp/axon.log RUST_LOG=debug axon
+tail -f /tmp/axon.log
 ```
 
 `AXON_LOG_FILE` is treated as a literal file path. A relative value such as `1` writes a file named `1` in the current directory.
@@ -306,22 +310,23 @@ tail -f /tmp/grok.log
 In headless mode, logs go to stderr. Redirect them to a file:
 
 ```bash
-RUST_LOG=debug axon -p "hello" 2> /tmp/grok.log
+RUST_LOG=debug axon -p "hello" 2> /tmp/axon.log
 ```
 
 ### Common log messages
 
 | Log message | What it means |
 |-------------|---------------|
-| `auth: running external auth provider` | Grok is running your binary |
-| `auth: external auth provider returned fresh token` | Grok parsed and stored the token |
+| `auth: running external auth provider` | Axon is running your binary |
+| `auth: external auth provider returned fresh token` | Axon parsed and stored the token |
 | `auth: external auth provider failed` | Binary exited non-zero or stdout was empty |
 | `auth: external auth provider timed out (likely needs interactive auth), killing` | Binary did not exit before the timeout and was killed |
 | `auth: failed to start external auth provider` | Command could not be spawned (binary not found) |
 
 ### Common fixes
 
-- **"Authentication failed"** -- Run `axon logout` to clear cached credentials, then `axon login` to sign in again.
+- **"Authentication failed"** -- Run `axon logout` to clear cached credentials, then sign in again (`axon login` for OIDC, or re-run your external auth provider).
 - **Token expires too quickly** -- Set `auth_token_ttl` or return `expires_in` in your auth provider's JSON output.
 - **OIDC redirect fails** -- Ensure your IdP allows loopback redirect URIs (`http://127.0.0.1/callback`).
 - **External auth provider not found** -- Check that the `auth_provider_command` path is correct and the binary is executable.
+- **Local model unreachable** -- Loopback servers need no key; confirm the server is running and its `base_url` is correct. See [Custom Models](11-custom-models.md).

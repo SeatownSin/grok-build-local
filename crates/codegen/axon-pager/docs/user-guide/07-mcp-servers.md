@@ -1,12 +1,12 @@
 # MCP Servers
 
-MCP (Model Context Protocol) servers extend Grok with external tool integrations. They let Grok interact with any service that implements the MCP standard.
+MCP (Model Context Protocol) servers extend Axon with external tool integrations. They let Axon interact with any service that implements the MCP standard.
 
 ---
 
 ## What Are MCP Servers?
 
-An MCP server is a process that exposes tools to Grok over a standardized protocol. When you configure an MCP server, its tools become available to the model alongside Grok's built-in tools. The model can discover and call these tools during a session.
+An MCP server is a process that exposes tools to Axon over a standardized protocol. When you configure an MCP server, its tools become available to the model alongside Axon's built-in tools. The model can discover and call these tools during a session.
 
 For example, a GitHub MCP server might expose tools like `create_issue`, `list_pull_requests`, and `search_code`. A database server might expose `query`, `list_tables`, and `describe_schema`.
 
@@ -20,7 +20,7 @@ MCP servers are configured in `~/.axon/config.toml` under `[mcp_servers.<name>]`
 
 ### stdio Transport (Local Process)
 
-Grok spawns a local process and communicates over stdin/stdout:
+Axon spawns a local process and communicates over stdin/stdout:
 
 ```toml
 [mcp_servers.my-server]
@@ -44,7 +44,7 @@ tool_timeouts = { slow_op = 120 }     # Per-tool timeout overrides, seconds
 > inline (full payload spilled under the session `mcp/` folder). Default is
 > **20_000 bytes**. Override via:
 >
-> - env `AXON_MAX_MCP_OUTPUT_BYTES` or `MAX_MCP_OUTPUT_BYTES` (bytes; Grok-native
+> - env `AXON_MAX_MCP_OUTPUT_BYTES` or `MAX_MCP_OUTPUT_BYTES` (bytes; Axon-native
 >   wins if both set; Claude-style name, but we bound by **bytes** not tokens)
 > - `config.toml` — user-level (`~/.axon/config.toml`) **or repo-level**
 >   (`.axon/config.toml` anywhere on the cwd → git-root chain; the deepest
@@ -89,7 +89,7 @@ axon mcp list
 axon mcp list --json          # Machine-readable output
 
 # Add a stdio server. Everything after -- is the server command, so flags
-# like -y reach the server instead of being parsed by grok.
+# like -y reach the server instead of being parsed by axon.
 axon mcp add filesystem -- npx -y @modelcontextprotocol/server-filesystem /path/to/dir
 
 # Add a stdio server with environment variables (-e is repeatable)
@@ -142,9 +142,9 @@ url = "https://mcp.linear.app/mcp"
 enabled = true
 ```
 
-When a server exposes a native HTTP/SSE endpoint, prefer the `url` form over wrapping it in a stdio proxy such as `npx mcp-remote <url>`. Grok handles HTTP/SSE and OAuth directly, so the native form avoids an extra subprocess per session. It also registers Grok's own OAuth client with the provider.
+When a server exposes a native HTTP/SSE endpoint, prefer the `url` form over wrapping it in a stdio proxy such as `npx mcp-remote <url>`. Axon handles HTTP/SSE and OAuth directly, so the native form avoids an extra subprocess per session. It also registers Axon's own OAuth client with the provider.
 
-Grok walks from the current directory up to the git repo root, loading `.axon/config.toml` at each level:
+Axon walks from the current directory up to the git repo root, loading `.axon/config.toml` at each level:
 
 | Location | Scope | Priority |
 |----------|-------|----------|
@@ -154,7 +154,7 @@ Grok walks from the current directory up to the git repo root, loading `.axon/co
 
 If a project defines a server with the same name as a global one, the project version replaces it entirely (fields are not merged).
 
-Project-scoped files contribute `[mcp_servers]`, `[plugins]`, and `[permission]` entries. Grok reads most other config sections only from `~/.axon/config.toml`.
+Project-scoped files contribute `[mcp_servers]`, `[plugins]`, and `[permission]` entries. Axon reads most other config sections only from `~/.axon/config.toml`.
 
 ---
 
@@ -169,7 +169,7 @@ MCP tools are namespaced with the server name to avoid collisions:
 
 ## Toggle Servers at Runtime
 
-You can enable or disable MCP servers during a session without restarting Grok.
+You can enable or disable MCP servers during a session without restarting Axon.
 
 ### The /mcps Modal
 
@@ -198,11 +198,11 @@ The model has access to two built-in tools for working with MCP servers:
 
 ## Compatibility
 
-Grok loads MCP server configurations from multiple sources for compatibility:
+Axon loads MCP server configurations from multiple sources for compatibility:
 
 | Source | Format | Location | Configurable |
 |--------|--------|----------|-------------|
-| `config.toml` | Native Grok config | `~/.axon/config.toml`, `.axon/config.toml` | Always on |
+| `config.toml` | Native Axon config | `~/.axon/config.toml`, `.axon/config.toml` | Always on |
 | `.claude.json` | Claude Code format | `~/.claude.json` | `[compat.claude] mcps` |
 | `.cursor/mcp.json` | Cursor format | `~/.cursor/mcp.json`, `<project>/.cursor/mcp.json` | `[compat.cursor] mcps` |
 | `.mcp.json` | MCP standard format | Project root (cwd to git root) | Loaded unless you have imported or dismissed the Claude import prompt (the import marker is set) |
@@ -215,7 +215,7 @@ The Claude and Cursor MCP sources are scanned by default. To disable scanning fo
 
 ## MCP OAuth
 
-For MCP servers that require OAuth authentication, Grok handles the credential flow automatically. When an MCP server requests OAuth credentials, Grok opens a browser-based authorization flow and stores the resulting tokens for future use.
+For MCP servers that require OAuth authentication, Axon handles the credential flow automatically. When an MCP server requests OAuth credentials, Axon opens a browser-based authorization flow and stores the resulting tokens for future use.
 
 ---
 
@@ -225,7 +225,7 @@ Use the `url` form for hosted MCP servers and the `command` / `args` form for lo
 
 ### Native HTTP (hosted services)
 
-You must authenticate OAuth-based MCP servers before you can use them. Grok stores the resulting tokens under `~/.axon/mcp_credentials.json` as local plaintext with owner-only file permissions (`0600` on Unix). Prefer full-disk encryption on the host. After you edit `config.toml`, press `r` in the `/mcps` modal to refresh the server list.
+You must authenticate OAuth-based MCP servers before you can use them. Axon stores the resulting tokens under `~/.axon/mcp_credentials.json` as local plaintext with owner-only file permissions (`0600` on Unix). Prefer full-disk encryption on the host. After you edit `config.toml`, press `r` in the `/mcps` modal to refresh the server list.
 
 ```toml
 [mcp_servers.linear]
@@ -252,7 +252,7 @@ enabled = true
 Authorization = "Bearer <token>"
 ```
 
-To avoid putting secrets in the config file, reference an environment variable with `${VAR}` (or `${VAR:-default}`). Grok expands string fields in `[mcp_servers.*]` — `url`, `command`, `args`, and the values in `env` and `headers` — at load time:
+To avoid putting secrets in the config file, reference an environment variable with `${VAR}` (or `${VAR:-default}`). Axon expands string fields in `[mcp_servers.*]` — `url`, `command`, `args`, and the values in `env` and `headers` — at load time:
 
 ```toml
 [mcp_servers.internal-tools]
@@ -285,7 +285,7 @@ tool_timeout_sec = 120
 tool_timeouts = { slow_analysis = 300, quick_lookup = 10 }
 ```
 
-On Windows, npm installs launchers like `npx`, `npm`, `pnpm`, and `yarn` as `.cmd` batch shims (there is no `npx.exe`). Grok resolves a bare `command` such as `npx` to its real launcher path on `PATH` (honoring `PATHEXT`) before spawning, so these work without manually wrapping them in `cmd /c`. A `command` given as an absolute path or one containing a path separator is used as-is.
+On Windows, npm installs launchers like `npx`, `npm`, `pnpm`, and `yarn` as `.cmd` batch shims (there is no `npx.exe`). Axon resolves a bare `command` such as `npx` to its real launcher path on `PATH` (honoring `PATHEXT`) before spawning, so these work without manually wrapping them in `cmd /c`. A `command` given as an absolute path or one containing a path separator is used as-is.
 
 ---
 
@@ -324,7 +324,7 @@ npx -y @modelcontextprotocol/server-filesystem /path
 startup_timeout_sec = 30
 ```
 
-For stdio servers, Grok captures the process's standard error to `~/.axon/logs/mcp/<server>.stderr.log`, truncated on each launch. Check this file when a server starts but fails to handshake:
+For stdio servers, Axon captures the process's standard error to `~/.axon/logs/mcp/<server>.stderr.log`, truncated on each launch. Check this file when a server starts but fails to handshake:
 
 ```bash
 tail -f ~/.axon/logs/mcp/filesystem.stderr.log
@@ -342,8 +342,8 @@ axon inspect --json   # Machine-readable
 ### Debug Logging
 
 ```bash
-RUST_LOG=debug AXON_LOG_FILE=/tmp/grok.log grok
-tail -f /tmp/grok.log
+RUST_LOG=debug AXON_LOG_FILE=/tmp/axon.log axon
+tail -f /tmp/axon.log
 ```
 
 Look for log entries containing `mcp` to trace server startup, tool discovery, and tool call execution.

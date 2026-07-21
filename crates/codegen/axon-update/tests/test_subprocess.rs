@@ -23,7 +23,7 @@ use serial_test::serial;
 use common::FakeBinGuard;
 use axon_update::auto_update::install_npm_for_test;
 use axon_update::version::{
-    fetch_gh_release_version, fetch_npm_tag_for_test, fetch_npm_version_for_test,
+    GH_RELEASE_REPO, fetch_gh_release_version, fetch_npm_tag_for_test, fetch_npm_version_for_test,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -411,11 +411,7 @@ async fn fetch_gh_release_passes_repo_flag() {
     let _ = fetch_gh_release_version("stable").await.unwrap();
     let log = g.args_log();
     assert!(log[0].contains("--repo"), "args: {}", log[0]);
-    assert!(
-        log[0].contains("xai-org-shared/axon-build"),
-        "args: {}",
-        log[0]
-    );
+    assert!(log[0].contains(GH_RELEASE_REPO), "args: {}", log[0]);
 }
 
 #[tokio::test]

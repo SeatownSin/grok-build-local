@@ -1,6 +1,6 @@
 # Headless Mode and Scripting
 
-Headless mode runs Grok non-interactively from the command line. It accepts a single prompt, executes it with full tool access, and returns the result. Use it to automate tasks, script workflows, build integrations, and parse output programmatically.
+Headless mode runs Axon non-interactively from the command line. It accepts a single prompt, executes it with full tool access, and returns the result. Use it to automate tasks, script workflows, build integrations, and parse output programmatically.
 
 ---
 
@@ -12,7 +12,7 @@ Passing a prompt non-interactively triggers headless mode. The most common way i
 axon -p "Your prompt here"
 ```
 
-Grok processes the prompt, runs any necessary tools, and prints the result to stdout. The process exits when the response is complete.
+Axon processes the prompt, runs any necessary tools, and prints the result to stdout. The process exits when the response is complete.
 
 ---
 
@@ -21,7 +21,7 @@ Grok processes the prompt, runs any necessary tools, and prints the result to st
 | Flag                    | Description                                           |
 | ----------------------- | ----------------------------------------------------- |
 | `-p, --single <PROMPT>` | The prompt to send (or use `--prompt-json` / `--prompt-file`) |
-| `-m, --model <MODEL>`   | Model to use (e.g., `grok-build`)              |
+| `-m, --model <MODEL>`   | Model to use (e.g., `local`)                   |
 | `-s, --session-id <ID>` | Create a **new** session with this **UUID** (errors if invalid UUID or already in use under the target session directory; does not resume — use `-r`/`-c`) |
 | `--fork-session`        | With `-r`/`-c`, fork into a new session ID instead of appending to the original |
 | `-r, --resume <ID>`     | Resume an existing session (errors if not found)      |
@@ -147,7 +147,7 @@ When the prompt reached the model, the same object also carries spend fields
     "total_tokens": 50103
   },
   "modelUsage": {
-    "grok-build": {
+    "local": {
       "inputTokens": 7210,
       "outputTokens": 1893,
       "cacheReadInputTokens": 41000,
@@ -199,7 +199,7 @@ Usage notes:
 
 The `sessionId` field is useful for resuming the conversation later.
 
-On failure, Grok emits an error object (process exit non-zero). Prompt-level
+On failure, Axon emits an error object (process exit non-zero). Prompt-level
 failures may also include frozen spend fields when usage was recorded:
 
 ```json
@@ -229,7 +229,7 @@ Event types:
 `end` is always the last event. Spend fields on `end` match the json object
 shape (snake_case uncached `input_tokens`, safe cost floats).
 
-Grok may also emit `max_turns_reached` and `auto_compact_*` events; treat the list as non-exhaustive and switch on `type`.
+Axon may also emit `max_turns_reached` and `auto_compact_*` events; treat the list as non-exhaustive and switch on `type`.
 
 ---
 
@@ -310,7 +310,7 @@ axon -p "Write a concise commit message for these changes:
 $(git diff --staged)"
 
 # Or read the prompt from a file
-grok --prompt-file ./prompt.txt
+axon --prompt-file ./prompt.txt
 ```
 
 ---
@@ -345,14 +345,14 @@ done
 
 ### Python Wrapper
 
-Grok's headless mode can be wrapped as an OpenAI-compatible chat completion API:
+Axon's headless mode can be wrapped as an OpenAI-compatible chat completion API:
 
 ```python
 import asyncio
 import json
 import os
 
-class GrokChat:
+class AxonChat:
     """Simple OpenAI-compatible wrapper using headless mode."""
 
     def __init__(self, cwd="."):
@@ -360,11 +360,11 @@ class GrokChat:
         self.env = {**os.environ}
 
     def _build_cmd(self, prompt, model, stream):
-        return ["grok", "-p", prompt, "-m", model, "--cwd", self.cwd,
+        return ["axon", "-p", prompt, "-m", model, "--cwd", self.cwd,
                 "--output-format", "streaming-json" if stream else "json",
                 "--yolo"]
 
-    async def create(self, messages, model="grok-build", stream=False):
+    async def create(self, messages, model="local", stream=False):
         prompt = messages[-1]["content"] if len(messages) == 1 else "\n".join(
             f"{m['role']}: {m['content']}" for m in messages
         )
@@ -400,7 +400,7 @@ class GrokChat:
 
 
 async def main():
-    client = GrokChat(cwd=".")
+    client = AxonChat(cwd=".")
     response = await client.create(
         [{"role": "user", "content": "What files are here?"}]
     )
@@ -453,15 +453,15 @@ Key environment variables that affect headless mode:
 
 | Variable                        | Description                                                   |
 | ------------------------------- | ------------------------------------------------------------- |
-| `XAI_API_KEY`        | API key for authentication (required when no browser login)   |
+| `AXON_API_KEY`       | Fallback API key for BYOK providers when a model defines no `api_key`/`env_key` |
 | `AXON_HOME`                    | Override config directory (default: `~/.axon`)                |
 | `AXON_LOG_FILE`                | Path to a log file (used verbatim as the path; works in headless and TUI, honors `RUST_LOG`) |
 | `RUST_LOG`                     | Log level filter (e.g. `debug`). Headless logs to stderr.     |
 
-For CI environments without browser access, set `XAI_API_KEY` with an API key from [console.x.ai](https://console.x.ai):
+For CI environments, set `AXON_API_KEY` with your provider API key (used as a fallback when a model has no `api_key`/`env_key` of its own). Local, loopback model servers need no key at all:
 
 ```bash
-export XAI_API_KEY="axon-..."
+export AXON_API_KEY="sk-..."
 axon -p "Run the test suite" --yolo
 ```
 
@@ -480,14 +480,14 @@ axon -p "Run the test suite" --yolo
 
 ## Authentication for Headless Environments
 
-For headless use, authenticate with one of:
+Axon has no sign-in flow. For headless use, provide credentials with one of:
 
-- **`XAI_API_KEY`** — simplest for CI. See [Environment Variables](#environment-variables-for-headless) above.
-- **`axon login --device-auth`** (or `--device-code`) — no browser needed on the target machine.
-  See [Authentication > Device Code Flow](02-authentication.md#device-code-flow).
-- **`axon login`** — browser-based OAuth2 on machines with a GUI.
+- **Per-model `api_key` / `env_key`** in `config.toml` — BYOK for OpenAI, Anthropic, and other OpenAI-compatible providers.
+- **`AXON_API_KEY`** — a fallback API key used when a model defines no `api_key`/`env_key`. Simplest for CI. See [Environment Variables](#environment-variables-for-headless) above.
+- **An external `auth_provider_command`** — Axon runs your own binary to mint a token.
+- **Local model servers** — OpenAI-compatible servers on `localhost` need no key or login at all.
 
-If you've previously logged in, cached credentials are used automatically.
+Cached credentials in `~/.axon/auth.json` (for example, an OIDC token against your own IdP) are reused automatically when present.
 
 ---
 
@@ -502,11 +502,11 @@ If you've previously logged in, cached credentials are used automatically.
 
 ## Project Root Discovery
 
-When Grok starts, it discovers the project root by walking upward from `--cwd`
+When Axon starts, it discovers the project root by walking upward from `--cwd`
 (or the current directory) until it finds a `.git` directory.
 
 Note: If `--cwd` is nested inside a large repository (such as a monorepo),
-Grok discovers that repository as the project root and scopes its discovery (AGENTS.md, skills, git history) to it, which can make
+Axon discovers that repository as the project root and scopes its discovery (AGENTS.md, skills, git history) to it, which can make
 startup slow. Point `--cwd` at the specific subproject you want to work in to keep
 the scope small.
 
@@ -514,12 +514,12 @@ the scope small.
 
 ## File Locations
 
-Grok stores data in `~/.axon` (override with `AXON_HOME`; see [Environment Variables for Headless](#environment-variables-for-headless)):
+Axon stores data in `~/.axon` (override with `AXON_HOME`; see [Environment Variables for Headless](#environment-variables-for-headless)):
 
 | Path                     | Contents                              |
 | ------------------------ | ------------------------------------- |
 | `config.toml`            | User configuration                    |
-| `auth.json`              | Cached OAuth2/API credentials         |
+| `auth.json`              | Cached API credentials                |
 | `version.json`           | Version cache for update checks       |
 | `sessions/`              | Session transcripts (SQLite)          |
 | `memory/`                | Cross-session memory store            |
@@ -535,12 +535,12 @@ Grok stores data in `~/.axon` (override with `AXON_HOME`; see [Environment Varia
 
 For containers or CI, mount `~/.axon` read-only:
 
-- Pre-populate `auth.json` or use `XAI_API_KEY`
+- Pre-populate `auth.json` or use `AXON_API_KEY`
 - Session persistence fails silently (ephemeral)
 - Update checks log a warning and skip
 
 ```bash
-export XAI_API_KEY="axon-..."
+export AXON_API_KEY="sk-..."
 export AXON_DISABLE_AUTOUPDATER=1
 axon -p "..." --no-auto-update
 ```
@@ -560,7 +560,7 @@ axon -p "..." --no-auto-update
 case) counts as not set. The agent SDKs
 inject `AXON_DISABLE_AUTOUPDATER=1` for the non-leader agents they spawn (a falsy value in
 the SDK's isolation env keeps updates on), and the stdio agent skips its background update
-unless it runs from the managed install (`$AXON_HOME/bin/grok`).
+unless it runs from the managed install (`$AXON_HOME/bin/axon`).
 
 Update messages go to **stderr**. Stdout stays clean for `--output-format json`. See also [Environment Variables for Headless](#environment-variables-for-headless).
 

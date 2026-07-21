@@ -1,6 +1,6 @@
 # Session Management
 
-Grok saves every conversation to disk automatically. Whether you work in the TUI, in headless mode, or over agent stdio, Grok records the exchange as a session. You can resume, rewind, or compact it. This document describes how to manage sessions.
+Axon saves every conversation to disk automatically. Whether you work in the TUI, in headless mode, or over agent stdio, Axon records the exchange as a session. You can resume, rewind, or compact it. This document describes how to manage sessions.
 
 ---
 
@@ -15,13 +15,13 @@ A session is a persistent conversation with full history. It includes:
 - Token usage and turn counts
 - Subagent sessions (when enabled)
 
-Sessions are identified by a unique session ID (a UUIDv7 when Grok generates it; a client may supply its own ID with `-s`) and stored on disk under `~/.axon/sessions/`. Set `AXON_HOME` to override the base directory; when it is unset, Grok uses `~/.axon`.
+Sessions are identified by a unique session ID (a UUIDv7 when Axon generates it; a client may supply its own ID with `-s`) and stored on disk under `~/.axon/sessions/`. Set `AXON_HOME` to override the base directory; when it is unset, Axon uses `~/.axon`.
 
 ---
 
 ## Storage Layout
 
-Grok stores each session in its own directory, grouped by working directory. It URL-encodes the working directory to name the group. When the encoded name exceeds 255 bytes, it instead uses a slug plus a hash and records the original path in a `.cwd` file inside the group.
+Axon stores each session in its own directory, grouped by working directory. It URL-encodes the working directory to name the group. When the encoded name exceeds 255 bytes, it instead uses a slug plus a hash and records the original path in a `.cwd` file inside the group.
 
 ```
 ~/.axon/sessions/<encoded-cwd>/<session-id>/
@@ -54,13 +54,13 @@ This clears the current context and begins a new conversation. Alias: `/clear`.
 
 ### Exit
 
-End the session and quit Grok:
+End the session and quit Axon:
 
 ```
 /quit
 ```
 
-Alias: `/exit`. To leave the current session but stay in Grok, use `/home` to return to the welcome screen.
+Alias: `/exit`. To leave the current session but stay in Axon, use `/home` to return to the welcome screen.
 
 ---
 
@@ -85,14 +85,14 @@ To switch between, rename, or close the sessions that are currently active (the 
 Resume a specific session by ID:
 
 ```bash
-grok --resume <session-id>
+axon --resume <session-id>
 ```
 
 Run `axon --resume` without an ID to resume the most recent session for the current directory.
 
 ### From the Welcome Screen
 
-When you launch `grok`, the welcome screen lists recent sessions for the current directory. Select one to resume it.
+When you launch `axon`, the welcome screen lists recent sessions for the current directory. Select one to resume it.
 
 ---
 
@@ -128,7 +128,7 @@ Alias: `/title`.
 /rewind
 ```
 
-When you run `/rewind` (or press **Esc Esc** within 800ms while idle with an empty prompt and conversation messages), Grok:
+When you run `/rewind` (or press **Esc Esc** within 800ms while idle with an empty prompt and conversation messages), Axon:
 
 1. Shows a list of rewind points (one per user prompt)
 2. Lets you select which point to rewind to
@@ -154,7 +154,7 @@ The optional `context` argument lets you provide additional instructions about w
 
 ### Auto-Compact
 
-Grok automatically compacts the conversation when the context window approaches its limit. You will see a notification when auto-compact triggers. The `context_window` setting on your model configuration controls when this threshold is reached.
+Axon automatically compacts the conversation when the context window approaches its limit. You will see a notification when auto-compact triggers. The `context_window` setting on your model configuration controls when this threshold is reached.
 
 ---
 
@@ -228,19 +228,19 @@ The agent persists all session updates automatically. Clients can reconnect and 
 
 ---
 
-## The grok sessions Subcommand
+## The axon sessions Subcommand
 
 List or search sessions from the command line. `axon sessions` requires a subcommand:
 
 ```bash
 # List recent sessions for the current directory
-grok sessions list
+axon sessions list
 
 # Limit the number of results (default 20)
-grok sessions list --limit 50
+axon sessions list --limit 50
 
 # Search sessions by keyword (matches titles and prompts)
-grok sessions search "rate limit"
+axon sessions search "rate limit"
 ```
 
 `axon sessions list` shows sessions for the current working directory, grouped by worktree label. Each row lists the session ID, the creation and update dates, the source status, and the summary. `axon sessions search` combines a local SQLite index with remote results.
@@ -249,9 +249,9 @@ grok sessions search "rate limit"
 
 ## Worktree Sessions
 
-When working with subagents or session forks, Grok can create isolated git worktrees per session. Each worktree gets its own copy of the working directory, so file changes in one session do not affect another.
+When working with subagents or session forks, Axon can create isolated git worktrees per session. Each worktree gets its own copy of the working directory, so file changes in one session do not affect another.
 
-Worktree sessions are managed internally through the `x.ai/git/worktree/*` extension methods. Key operations:
+Worktree sessions are managed internally through the `axon/git/worktree/*` extension methods. Key operations:
 
 - **Create**: Create a new worktree for an isolated session
 - **Apply**: Merge worktree changes back into the main working directory
@@ -265,7 +265,7 @@ Resume a session in a fresh worktree with `axon -w -r <session-id>`.
 
 ### Persistence Format
 
-Grok stores the conversation as newline-delimited JSON (JSONL). Each line in `updates.jsonl` is a self-contained ACP session update event. This format supports:
+Axon stores the conversation as newline-delimited JSON (JSONL). Each line in `updates.jsonl` is a self-contained ACP session update event. This format supports:
 
 - Incremental writes (append-only during a session)
 - Efficient streaming reads (for session restore)

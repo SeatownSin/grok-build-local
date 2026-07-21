@@ -1,17 +1,22 @@
-# Grok
+# Axon
 
-A terminal-based AI coding assistant and agentic harness.
+A local-first, privacy-focused terminal-based AI coding assistant and agentic harness.
 
 Use it interactively as a TUI, or integrate it into your own apps via headless mode and the Agent Client Protocol (ACP).
+
+Axon is an independent fork of xAI's Apache-2.0-licensed Grok Build; it is not affiliated with xAI. Telemetry and remote-login flows have been removed — Axon runs against your own local or BYOK (bring-your-own-key) models.
 
 ## Quick Start
 
 ```bash
-# Install
-curl -fsSL https://x.ai/cli/install.sh | bash
+# Build and run from a clone of the repo
+cargo run -p axon-pager-bin
+
+# Or install the published CLI
+npm i -g @axon-official/axon
 
 # Interactive TUI
-grok
+axon
 
 # Headless (for scripts/automation)
 axon -p "Explain this codebase"
@@ -23,14 +28,14 @@ axon agent stdio
 ## Contents
 
 - [Installation](#installation)
-- [Authentication](#authentication) — browser login, API key, OIDC, external auth providers
-- **Using Grok**
+- [Model Setup & Authentication](#model-setup--authentication) — first-run wizard, BYOK API keys, external auth providers
+- **Using Axon**
   - [Interactive TUI](#interactive-tui) — shortcuts, slash commands, file references
   - [Headless Mode](#headless-mode) — scripting, CI/CD, output formats
   - [Agent Mode](#agent-mode) — stdio, ACP integration
-  - [SSH Passthrough](#ssh-passthrough-grok-ssh) — Apple Terminal clipboard support
+  - [SSH Passthrough](#ssh-passthrough-axon-ssh) — Apple Terminal clipboard support
 - **Configuration**
-  - [Config File](#configuration) — general settings, telemetry, LSP, enterprise deployment
+  - [Config File](#configuration) — general settings, LSP, enterprise deployment
   - [Custom Models](#custom-models) — BYOK, Ollama, OpenAI, custom endpoints
   - [MCP Servers](#mcp-servers) — external tool integrations
 - **Customization**
@@ -51,27 +56,40 @@ axon agent stdio
   - [File Locations](#file-locations)
   - [Environment Variables](#environment-variables)
   - [Troubleshooting](#troubleshooting)
-- [Building with Grok](#building-with-grok) — headless API, ACP SDK integration
+- [Building with Axon](#building-with-axon) — headless API, ACP SDK integration
 
 ---
 
 ## Installation
 
-```bash
-# Install latest stable
-curl -fsSL https://x.ai/cli/install.sh | bash
+**Build from source** (requires a Rust toolchain). Clone the repository and run the binary crate:
 
-# Install a specific version
-curl -fsSL https://x.ai/cli/install.sh | bash -s 0.1.42
+```bash
+git clone https://github.com/SeatownSin/grok-build-local
+cd grok-build-local
+cargo run -p axon-pager-bin
+```
+
+To install it onto your `PATH`:
+
+```bash
+cargo install --path crates/codegen/axon-pager-bin
+```
+
+**Or install the published CLI** via npm:
+
+```bash
+npm i -g @axon-official/axon
 ```
 
 Verify installation:
 
 ```bash
-grok --version
+axon --version
 ```
 
-Update to the latest version:
+Update to the latest version. `axon update` pulls the newest binary from the
+project's GitHub Releases (`SeatownSin/grok-build-local`):
 
 ```bash
 axon update
@@ -79,40 +97,81 @@ axon update
 
 ---
 
-## Authentication
+## Model Setup & Authentication
 
-### Browser Login (Default)
+Axon has **no hosted login of any kind** — there is no account to create and no
+vendor to sign in to. You point it at a model you control (a local server or any
+OpenAI-compatible endpoint you have a key for), and that's it.
 
-On first launch, Grok opens your browser to authenticate with grok.com:
+### First-Run Setup Wizard
 
-```bash
-grok
-```
-
-Credentials are stored in `~/.axon/auth.json` and persist across sessions. Tokens expire after 7 days; Grok will prompt you to re-authenticate when needed.
-
-### Re-authenticate
-
-To switch accounts or fix authentication issues:
+On first launch with no model configured, Axon runs a small plain-terminal
+wizard **before** the TUI starts. It scans `localhost` **and your local network**
+for running OpenAI-compatible model servers — Ollama, LM Studio, llama.cpp, vLLM,
+and similar — and offers to write the result to `~/.axon/config.toml`:
 
 ```bash
-axon login
+axon
+#   Scanning localhost and your local network for model servers…
+#   Detected models:
+#     [1] Ollama            localhost:11434
+#     [2] LM Studio         192.168.1.42:1234
+#     [r] rescan   [m] enter an endpoint manually   [q] quit
 ```
 
-### API Key
+Pick a detected server, or choose `m` to type an OpenAI-compatible base URL
+(e.g. `http://localhost:8080/v1`) yourself. The wizard writes a `[model.local]`
+entry and sets it as the default. Loopback servers are treated as **no-auth**
+automatically (see below); a LAN server can be given a key if it needs one.
 
-For CI/CD, automation, or environments without browser access, use an API key from [console.x.ai](https://console.x.ai):
+If nothing is found, start a server — `ollama serve`, LM Studio, llama.cpp, or
+vLLM — then rescan or enter its endpoint manually.
+
+### Loopback No-Auth Auto-Detect
+
+Local model servers reachable on loopback (`localhost` / `127.0.0.1`) require **no
+API key and no login**. Axon detects the loopback address and sends requests
+without an `Authorization` header, so a freshly started Ollama or llama.cpp
+server just works out of the box.
+
+### BYOK: API Keys for Remote Providers
+
+To use a hosted OpenAI-compatible provider (OpenAI, Anthropic, OpenRouter,
+Together, Groq, a LAN server that requires auth, etc.), supply your own key. You
+have three options, resolved in this order:
+
+1. **Per-model `api_key`** — set the key inline on a `[model.*]` entry.
+2. **Per-model `env_key`** — name the environment variable that holds the key.
+3. **`AXON_API_KEY`** — a global fallback used when a model defines neither of
+   the above.
+
+```toml
+# ~/.axon/config.toml
+[model.openai-gpt]
+model = "gpt-4o"
+base_url = "https://api.openai.com/v1"
+env_key = "OPENAI_API_KEY"        # read from this env var
+
+[model.my-lan-server]
+model = "your-model-id"
+base_url = "http://192.168.1.42:8000/v1"
+api_key = "sk-..."                # or set inline
+```
 
 ```bash
-export XAI_API_KEY="axon-..."
-grok
+# Global fallback for any model without its own key
+export AXON_API_KEY="sk-..."
+axon
 ```
 
-The API key takes precedence over browser credentials.
+See [Custom Models](#custom-models) for the full model-configuration reference.
 
-### OIDC (Customer SSO)
+### OIDC (Enterprise SSO Against Your Own IdP)
 
-Authenticate developers via your own Identity Provider (Okta, Azure AD, Auth0) instead of `accounts.x.ai`.
+For enterprise deployments, Axon can authenticate against **your own** OpenID
+Connect Identity Provider (Okta, Azure AD, Auth0, Keycloak, …) and send the
+resulting token to **your own** OpenAI-compatible proxy. No Axon-hosted service
+is involved — every endpoint below is one you operate.
 
 **1. Register a public client in your IdP:**
 - Grant type: Authorization Code with PKCE
@@ -123,7 +182,7 @@ Authenticate developers via your own Identity Provider (Okta, Azure AD, Auth0) i
 
 ```toml
 # ~/.axon/config.toml
-[grok_com_config.oidc]
+[axon_com_config.oidc]
 issuer = "https://acme.okta.com"
 client_id = "0oa1b2c3d4e5f6g7h8i9"
 ```
@@ -134,12 +193,12 @@ export AXON_OIDC_ISSUER="https://acme.okta.com"
 export AXON_OIDC_CLIENT_ID="0oa1b2c3d4e5f6g7h8i9"
 ```
 
-Customers typically also override the API endpoint to point at their own proxy:
+Point inference at your own proxy so the OIDC token has somewhere to go:
 ```bash
-export AXON_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
+export AXON_CLI_CHAT_PROXY_BASE_URL="https://llm-proxy.acme.com/v1"
 ```
 
-**3. Run `grok`.** The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens the IdP login page, and stores tokens in `~/.axon/auth.json`. The OIDC token is sent as `Authorization: Bearer` to the configured proxy. Tokens auto-refresh silently via the stored `refresh_token`.
+**3. Run `axon`.** The CLI discovers endpoints via `{issuer}/.well-known/openid-configuration`, opens your IdP login page, and stores tokens in `~/.axon/auth.json`. The OIDC token is sent as `Authorization: Bearer` to the proxy you configured. Tokens auto-refresh silently via the stored `refresh_token`.
 
 **Optional fields:**
 
@@ -152,13 +211,13 @@ export AXON_CLI_CHAT_PROXY_BASE_URL="https://grok-proxy.acme.com/v1"
 
 For environments where browser-based login isn't possible (sandboxed VMs, CI runners, air-gapped networks), delegate authentication to an external binary or script. This is the recommended approach for enterprise deployments where your company runs its own auth infrastructure (SSO, device code flows, certificate auth, etc.).
 
-Grok is provider-agnostic — it doesn't know or care how your binary authenticates. It just runs the command, reads a token from stdout, and stores it. Your binary is a black box that handles the entire auth flow.
+Axon is provider-agnostic — it doesn't know or care how your binary authenticates. It just runs the command, reads a token from stdout, and stores it. Your binary is a black box that handles the entire auth flow.
 
 #### How It Works
 
 ```
 ┌──────────────┐     sh -c     ┌────────────────────────┐
-│     Grok     │──────────────▶│  your auth binary      │
+│     Axon     │──────────────▶│  your auth binary      │
 │              │               │                        │
 │  reads       │◀── stdout ────│  prints token          │
 │  auth.json   │               │                        │
@@ -166,11 +225,11 @@ Grok is provider-agnostic — it doesn't know or care how your binary authentica
 └──────────────┘               └────────────────────────┘
 ```
 
-1. Grok runs your command via `sh -c "<command>"`
+1. Axon runs your command via `sh -c "<command>"`
 2. Your binary does whatever auth flow it needs (SSO login, device code, cert exchange, etc.)
 3. **stderr** → displayed directly to the user (use for login URLs, status messages, progress)
-4. **stdout** → captured by Grok and saved to `~/.axon/auth.json` as the access token
-5. exit 0 → success; exit non-zero → Grok falls through to interactive login
+4. **stdout** → captured by Axon and saved to `~/.axon/auth.json` as the access token
+5. exit 0 → success; exit non-zero → Axon falls through to interactive login
 
 #### The stdout / stderr Contract
 
@@ -178,10 +237,10 @@ This is the most important thing to get right:
 
 | Stream | What to print | Who sees it |
 |--------|---------------|-------------|
-| **stdout** | The token — nothing else | Grok (parsed and stored in `auth.json`) |
+| **stdout** | The token — nothing else | Axon (parsed and stored in `auth.json`) |
 | **stderr** | Login URLs, status messages, errors, progress | The user (displayed in their terminal) |
 
-**Do not print anything to stdout except the token.** No progress messages, no debug output, no "Login successful!" text. Grok reads stdout verbatim and tries to parse it as a token. Any extra text will break parsing.
+**Do not print anything to stdout except the token.** No progress messages, no debug output, no "Login successful!" text. Axon reads stdout verbatim and tries to parse it as a token. Any extra text will break parsing.
 
 #### stdout Token Format
 
@@ -197,7 +256,7 @@ eyJhbGciOiJSUzI1NiIs...
 {"access_token": "eyJhbGciOi...", "refresh_token": "ref-tok", "expires_in": 3600}
 ```
 
-Use JSON if your tokens expire and you want Grok to automatically re-run the binary before expiry. The `expires_in` field (seconds until expiry) tells Grok when to proactively refresh. Without it, Grok assumes tokens last 30 days.
+Use JSON if your tokens expire and you want Axon to automatically re-run the binary before expiry. The `expires_in` field (seconds until expiry) tells Axon when to proactively refresh. Without it, Axon assumes tokens last 30 days.
 
 #### Minimal Example
 
@@ -209,7 +268,7 @@ echo "Visit: https://sso.acme.com/device-login?code=ABCD-1234" >&2
 
 # ... do the auth flow, get a token ...
 
-# Print ONLY the token to stdout (Grok captures this)
+# Print ONLY the token to stdout (Axon captures this)
 echo "eyJhbGciOiJSUzI1NiIs..."
 ```
 
@@ -230,11 +289,11 @@ export AXON_AUTH_PROVIDER_LABEL="Acme Corp"   # optional
 export AXON_AUTH_TOKEN_TTL=3600               # optional
 ```
 
-If your binary outputs a bare token string (not JSON with `expires_in`), set `auth_token_ttl` to the token's expected lifetime in seconds. Without it, Grok cannot detect expiry proactively and will only refresh after a 401.
+If your binary outputs a bare token string (not JSON with `expires_in`), set `auth_token_ttl` to the token's expected lifetime in seconds. Without it, Axon cannot detect expiry proactively and will only refresh after a 401.
 
 The command is run via `sh -c`, so it can be a binary path, a shell script, or a pipeline.
 
-When `auth_provider_label` is set, the TUI welcome screen shows **"Login with Acme Corp"** instead of "Login with grok.com". In headless mode (`axon -p`), the label has no effect — stderr from your binary is printed directly to the terminal.
+When `auth_provider_label` is set, the TUI welcome screen shows **"Login with Acme Corp"** on the login button. In headless mode (`axon -p`), the label has no effect — stderr from your binary is printed directly to the terminal.
 
 > **Enterprise setup:** For a complete enterprise `config.toml` combining external auth, corporate proxy, and telemetry settings, see [Enterprise Deployment](#enterprise-deployment) in the Configuration section.
 
@@ -243,7 +302,7 @@ When `auth_provider_label` is set, the TUI welcome screen shows **"Login with Ac
 ```bash
 #!/bin/sh
 # 1. Request device code from your IdP
-RESP=$(curl -s -X POST https://auth.acme.com/device/code -d "client_id=grok-cli")
+RESP=$(curl -s -X POST https://auth.acme.com/device/code -d "client_id=axon-cli")
 CODE=$(echo "$RESP" | jq -r '.user_code')
 URL=$(echo "$RESP" | jq -r '.verification_uri')
 DEVICE_CODE=$(echo "$RESP" | jq -r '.device_code')
@@ -266,7 +325,7 @@ echo "{\"access_token\": \"$TOKEN\", \"expires_in\": 3600}"
 
 #### Example: Auth Binary with Refresh Support
 
-When Grok needs to refresh an expired token, it re-runs your binary with `AXON_AUTH_EXPIRED=1` set in the environment. Your binary can use this to take a faster silent-refresh path:
+When Axon needs to refresh an expired token, it re-runs your binary with `AXON_AUTH_EXPIRED=1` set in the environment. Your binary can use this to take a faster silent-refresh path:
 
 ```bash
 #!/bin/sh
@@ -288,31 +347,31 @@ fi
 echo "{\"access_token\": \"$TOKEN\", \"expires_in\": 3600}"
 ```
 
-`AXON_AUTH_EXPIRED` is optional — if your binary ignores it, Grok still works. It just runs the same flow for both login and refresh.
+`AXON_AUTH_EXPIRED` is optional — if your binary ignores it, Axon still works. It just runs the same flow for both login and refresh.
 
 ### Automatic Credential Refresh
 
-Grok supports automatic credential refresh for external auth providers and OIDC. When Grok detects that your token is expired (either locally based on `expires_in`, or when the server returns a 401), it automatically re-runs your `auth_provider_command` to obtain new credentials before retrying the request.
+Axon supports automatic credential refresh for external auth providers and OIDC. When Axon detects that your token is expired (either locally based on `expires_in`, or when the server returns a 401), it automatically re-runs your `auth_provider_command` to obtain new credentials before retrying the request.
 
-This is transparent — you don't need to do anything. Grok handles it in the background during your session.
+This is transparent — you don't need to do anything. Axon handles it in the background during your session.
 
 **When does refresh happen?**
 
-- **Before expiry:** If your binary returned `expires_in` in its JSON output, or you set `auth_token_ttl` in config, Grok re-runs the binary ~5 minutes before the token expires, so you never see an auth error.
-- **On auth error:** If the server rejects a request with 401/403 (e.g. token was revoked or expired), Grok re-runs the binary and retries the request once.
-- **OIDC:** If you're using OIDC and have a `refresh_token`, Grok silently refreshes via your IdP without re-opening the browser.
+- **Before expiry:** If your binary returned `expires_in` in its JSON output, or you set `auth_token_ttl` in config, Axon re-runs the binary ~5 minutes before the token expires, so you never see an auth error.
+- **On auth error:** If the server rejects a request with 401/403 (e.g. token was revoked or expired), Axon re-runs the binary and retries the request once.
+- **OIDC:** If you're using OIDC and have a `refresh_token`, Axon silently refreshes via your IdP without re-opening the browser.
 
 **Tuning the refresh buffer:**
 
 ```bash
-# Grok refreshes tokens 5 minutes before expiry by default.
+# Axon refreshes tokens 5 minutes before expiry by default.
 # Set to 0 to only refresh on 401. Set higher for very short-lived tokens.
 export AXON_AUTH_EARLY_INVALIDATION_SECS=300
 ```
 
 **Keep in mind:**
-- When using `auth_provider_command`, you don't need to run `axon login` before starting — Grok runs your binary automatically on first launch. You _can_ run `axon login` to explicitly hydrate `auth.json` ahead of time if you prefer.
-- If both OIDC and `auth_provider_command` are configured: at **login** time, Grok tries OIDC silent refresh first (if a `refresh_token` exists), then the external binary, then browser-based login. During a **session**, whichever method is configured is used exclusively — if `auth_provider_command` is set it handles all mid-session refreshes; otherwise OIDC silent refresh is used.
+- When using `auth_provider_command`, you don't need to run `axon login` before starting — Axon runs your binary automatically on first launch. You _can_ run `axon login` to explicitly hydrate `auth.json` ahead of time if you prefer.
+- If both OIDC and `auth_provider_command` are configured: at **login** time, Axon tries OIDC silent refresh first (if a `refresh_token` exists), then the external binary. During a **session**, whichever method is configured is used exclusively — if `auth_provider_command` is set it handles all mid-session refreshes; otherwise OIDC silent refresh is used.
 - Your binary's stderr output is displayed to the user but interactive stdin is not supported. This works well for browser-based SSO flows where the binary displays a URL and you complete authentication in the browser.
 
 #### Troubleshooting Auth
@@ -320,8 +379,8 @@ export AXON_AUTH_EARLY_INVALIDATION_SECS=300
 Enable debug logging to trace the auth flow:
 
 ```bash
-grok --debug-file /tmp/grok-auth.log -p "hello"
-tail -f /tmp/grok-auth.log
+axon --debug-file /tmp/axon-auth.log -p "hello"
+tail -f /tmp/axon-auth.log
 ```
 
 Common log messages:
@@ -334,41 +393,6 @@ Common log messages:
 | `auth: external auth provider timed out (likely needs interactive auth), killing` | Binary didn't exit before the timeout (60s initial, 5s mid-session refresh) and was killed |
 | `auth: failed to start external auth provider` | The command couldn't be spawned (e.g. binary not found) |
 
-### Using auth.json for API Access
-
-If you've authenticated with `axon login`, you can use the stored credentials to call the CLI chat proxy directly via curl. The proxy requires specific headers that mirror what the grok CLI sends internally:
-
-```bash
-curl -s -N -X POST "https://cli-chat-proxy.grok.com/v1/chat/completions" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(jq -r '."https://accounts.x.ai/sign-in".key' ~/.axon/auth.json)" \
-  -H "X-XAI-Token-Auth: axon-cli" \
-  -H "x-grok-model-override: grok-build" \
-  -d '{
-    "model": "grok-build",
-    "messages": [{"role": "user", "content": "Hello!"}],
-    "stream": true
-  }'
-```
-
-**Required headers:**
-
-| Header                           | Required | Purpose                                                                                                                                                                                   |
-| -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authorization: Bearer <token>`  | Yes      | Session token from `~/.axon/auth.json` (set by `axon login`)                                                                                                                              |
-| `X-XAI-Token-Auth: axon-cli` | Yes      | Tells the auth middleware to validate as a CLI session token                                                                                                                              |
-| `x-grok-model-override: <model>` | Yes\*    | The proxy uses this header (not the JSON body) to route to the correct backend. \*Can be omitted for `grok-build` which is on the default route, but always safe to include. |
-
-**Streaming vs non-streaming:**
-
-Most models behind the proxy only support streaming. Always use `"stream": true` unless you know the model supports non-streaming.
-
-| Model                 | Non-streaming  | Streaming    |
-| --------------------- | -------------- | ------------ |
-| `grok-build`    | ✅ Supported   | ✅ Supported |
-
-> **Note:** `auth.json` tokens expire after 7 days. Run `axon login` to refresh.
-
 ---
 
 ## Interactive TUI
@@ -378,7 +402,7 @@ The TUI (Terminal User Interface) provides a full interactive coding environment
 ### Launch
 
 ```bash
-grok [OPTIONS]
+axon [OPTIONS]
 ```
 
 ### Options
@@ -404,16 +428,16 @@ grok [OPTIONS]
 
 ```bash
 # Start in a specific project
-grok --cwd ~/projects/my-app
+axon --cwd ~/projects/my-app
 
 # Start with an initial task
-grok --prompt "Review this codebase and suggest improvements"
+axon --prompt "Review this codebase and suggest improvements"
 
 # Add project-specific rules
-grok --rules "Always use TypeScript. Prefer functional components."
+axon --rules "Always use TypeScript. Prefer functional components."
 
 # Auto-approve mode for trusted tasks
-grok --always-approve --prompt "Format all files"
+axon --always-approve --prompt "Format all files"
 ```
 
 ### Keyboard Shortcuts
@@ -453,15 +477,13 @@ Type `/` in the input to access commands:
 | `/hooks-list`                      |           | Show hooks loaded in this session                        |
 | `/hooks-trust`                     |           | Trust this folder for hooks (writes folder trust)        |
 | `/hooks-add <path>`                |           | Add a custom hook file or directory                      |
-| `/feedback [message]`              |           | Report an issue or send feedback                         |
 | `/exit`                            | `/quit`   | Exit the TUI                                             |
 
 ```bash
 # Example usage in TUI:
-/model grok-build
+/model local
 /new
 /rewind
-/feedback Something isn't working
 ```
 
 ### Features
@@ -499,7 +521,7 @@ The `!` modifier allows you to attach any file in the project regardless of igno
 
 ## Headless Mode
 
-Run Grok non-interactively from the command line. Use headless mode when you need to:
+Run Axon non-interactively from the command line. Use headless mode when you need to:
 
 - **Automate tasks** — CI/CD pipelines, pre-commit hooks, cron jobs
 - **Script workflows** — Batch process files, chain with other tools
@@ -519,7 +541,7 @@ axon -p "Your prompt here"
 | Flag                    | Description                                           |
 | ----------------------- | ----------------------------------------------------- |
 | `-p, --single <PROMPT>` | The prompt to send (required)                         |
-| `-m, --model <MODEL>`   | Model to use (e.g., `grok-build`)               |
+| `-m, --model <MODEL>`   | Model to use (e.g., `local`)                    |
 | `-s, --session-id <ID>` | Create or resume a headless session with this ID      |
 | `-r, --resume <ID>`     | Resume an existing session (errors if not found)      |
 | `-c, --continue`        | Continue the most recent session in current directory |
@@ -616,7 +638,7 @@ axon -p "Refactor the code" --deny "Edit(/etc/**)"
 axon -p "Build the project" --allow "Bash"
 
 # Combine: allow fetching docs sites, deny other URLs
-grok --allow "WebFetch(domain:docs.rs)" --deny "WebFetch(*)"
+axon --allow "WebFetch(domain:docs.rs)" --deny "WebFetch(*)"
 ```
 
 `--allow` and `--deny` can be repeated to add multiple rules. Deny rules take precedence over allow rules. These flags work in both TUI and headless mode.
@@ -628,7 +650,7 @@ grok --allow "WebFetch(domain:docs.rs)" --deny "WebFetch(*)"
 axon -p "What does this project do?"
 
 # Use a specific model
-axon -p "Optimize this function" -m grok-build
+axon -p "Optimize this function" -m local
 
 # Get JSON output for parsing
 axon -p "List all TODO comments in the codebase" --output-format json
@@ -725,7 +747,7 @@ axon -p "Review staged changes for obvious bugs. Reply OK if fine, or list issue
 
 ## Agent Mode
 
-Run Grok as an ACP (Agent Client Protocol) agent for integration with IDEs, editors, and custom tooling.
+Run Axon as an ACP (Agent Client Protocol) agent for integration with IDEs, editors, and custom tooling.
 
 ### stdio Transport
 
@@ -745,7 +767,7 @@ Communication happens via JSON-RPC over stdin/stdout. This mode is used by:
 
 | Flag                  | Description                                                                         |
 | --------------------- | ----------------------------------------------------------------------------------- |
-| `-m, --model <MODEL>` | Override the default model ID (e.g., `grok-build`)                           |
+| `-m, --model <MODEL>` | Override the default model ID (e.g., `local`)                                |
 | `--always-approve`    | Start in always-approve mode (auto-approve all tool executions without confirmation) |
 | `--reauth`            | Force re-authentication flow                                                        |
 
@@ -755,7 +777,7 @@ Communication happens via JSON-RPC over stdin/stdout. This mode is used by:
 To expose the agent over the internet (instead of local network), run a WebSocket relay server and have the agent connect to it:
 
 ```bash
-axon agent headless --grok-ws-url wss://your-relay.example.com/ws
+axon agent headless --axon-ws-url wss://your-relay.example.com/ws
 ```
 
 The agent connects OUT to your relay, and your web clients connect to the same relay. Useful for building web UIs where browsers can't spawn local processes.
@@ -786,9 +808,9 @@ This runs entirely locally.
 
 ---
 
-## Building with Grok
+## Building with Axon
 
-Grok can be used as an OpenAI-compatible chat completion backend. Choose between two integration modes:
+Axon can be used as an OpenAI-compatible chat completion backend. Choose between two integration modes:
 
 | Mode         | Use Case                                                           |
 | ------------ | ------------------------------------------------------------------ |
@@ -808,7 +830,7 @@ import asyncio
 import json
 import os
 
-class GrokChat:
+class AxonChat:
     """Simple OpenAI-compatible wrapper using headless mode."""
 
     def __init__(self, cwd="."):
@@ -816,10 +838,10 @@ class GrokChat:
         self.env = {**os.environ}
 
     def _build_cmd(self, prompt, model, stream):
-        return ["grok", "-p", prompt, "-m", model, "--cwd", self.cwd,
+        return ["axon", "-p", prompt, "-m", model, "--cwd", self.cwd,
                 "--output-format", "streaming-json" if stream else "json", "--always-approve"]
 
-    async def create(self, messages, model="grok-build", stream=False):
+    async def create(self, messages, model="local", stream=False):
         prompt = messages[-1]["content"] if len(messages) == 1 else "\n".join(
             f"{m['role']}: {m['content']}" for m in messages
         )
@@ -856,7 +878,7 @@ class GrokChat:
 
 # Usage
 async def main():
-    client = GrokChat(cwd=".")
+    client = AxonChat(cwd=".")
 
     # Non-streaming
     response = await client.create([{"role": "user", "content": "What files are here?"}])
@@ -876,7 +898,7 @@ asyncio.run(main())
 ```typescript
 import { execa } from "execa";
 
-class GrokChat {
+class AxonChat {
   constructor(private cwd = ".") {}
 
   private buildArgs(prompt: string, model: string, stream: boolean) {
@@ -895,7 +917,7 @@ class GrokChat {
 
   async create(
     messages: { role: string; content: string }[],
-    { model = "grok-build", stream = false } = {},
+    { model = "local", stream = false } = {},
   ) {
     const prompt =
       messages.length === 1
@@ -905,7 +927,7 @@ class GrokChat {
     if (stream) return this.streamResponse(prompt, model);
 
     const { stdout } = await execa(
-      "grok",
+      "axon",
       this.buildArgs(prompt, model, false),
     );
     const data = JSON.parse(stdout || '{"text":""}');
@@ -920,7 +942,7 @@ class GrokChat {
   }
 
   async *streamResponse(prompt: string, model: string) {
-    const proc = execa("grok", this.buildArgs(prompt, model, true));
+    const proc = execa("axon", this.buildArgs(prompt, model, true));
     for await (const chunk of proc.stdout!) {
       for (const line of chunk.toString().split("\n").filter(Boolean)) {
         const event = JSON.parse(line);
@@ -935,7 +957,7 @@ class GrokChat {
 }
 
 // Usage
-const client = new GrokChat(".");
+const client = new AxonChat(".");
 
 // Non-streaming
 const response = await client.create([
@@ -964,7 +986,7 @@ Use the Agent Client Protocol for full access to tool calls, thoughts, plans, an
 import asyncio
 import json
 
-class GrokACPChat:
+class AxonACPChat:
     """Rich OpenAI-compatible wrapper using ACP protocol."""
 
     def __init__(self, cwd="."):
@@ -974,7 +996,7 @@ class GrokACPChat:
 
     async def init(self):
         self.proc = await asyncio.create_subprocess_exec(
-            "grok", "agent", "stdio",
+            "axon", "agent", "stdio",
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE
         )
@@ -1004,7 +1026,7 @@ class GrokACPChat:
         line = await self.proc.stdout.readline()
         return json.loads(line).get("result", {})
 
-    async def create(self, messages, model="grok-build", stream=False):
+    async def create(self, messages, model="local", stream=False):
         prompt = [{"type": "text", "text": m["content"]} for m in messages]
 
         # For streaming, yield chunks as they arrive
@@ -1065,7 +1087,7 @@ class GrokACPChat:
 
 # Usage
 async def main():
-    client = await GrokACPChat(cwd=".").init()
+    client = await AxonACPChat(cwd=".").init()
 
     # Streaming with rich updates
     async for chunk in await client.create(
@@ -1091,7 +1113,7 @@ asyncio.run(main())
 import { spawn, ChildProcess } from "child_process";
 import * as readline from "readline";
 
-class GrokACPChat {
+class AxonACPChat {
   private proc!: ChildProcess;
   private sessionId!: string;
   private rl!: readline.Interface;
@@ -1099,7 +1121,7 @@ class GrokACPChat {
   constructor(private cwd = ".") {}
 
   async init() {
-    this.proc = spawn("grok", ["agent", "stdio"]);
+    this.proc = spawn("axon", ["agent", "stdio"]);
     this.rl = readline.createInterface({ input: this.proc.stdout! });
 
     // Initialize
@@ -1133,7 +1155,7 @@ class GrokACPChat {
 
   async create(
     messages: { role: string; content: string }[],
-    { model = "grok-build", stream = false } = {},
+    { model = "local", stream = false } = {},
   ) {
     const prompt = messages.map((m) => ({ type: "text", text: m.content }));
 
@@ -1203,7 +1225,7 @@ class GrokACPChat {
 }
 
 // Usage
-const client = await new GrokACPChat(".").init();
+const client = await new AxonACPChat(".").init();
 
 // Streaming with rich updates
 for await (const chunk of await client.create(
@@ -1223,7 +1245,7 @@ for await (const chunk of await client.create(
 
 ### ACP Protocol Reference
 
-Grok implements the [Agent Client Protocol (ACP)](https://agentclientprotocol.com), a standard for AI agent communication.
+Axon implements the [Agent Client Protocol (ACP)](https://agentclientprotocol.com), a standard for AI agent communication.
 
 #### Architecture
 
@@ -1272,7 +1294,7 @@ Grok implements the [Agent Client Protocol (ACP)](https://agentclientprotocol.co
 
 ## Configuration
 
-Grok reads configuration from `~/.axon/config.toml`. If the file doesn't exist, Grok uses sensible defaults. You only need to specify values you want to override.
+Axon reads configuration from `~/.axon/config.toml`. If the file doesn't exist, Axon uses sensible defaults. You only need to specify values you want to override.
 
 Each feature section below documents its own config. This section covers the general-purpose settings that don't have their own top-level section.
 
@@ -1283,16 +1305,14 @@ Each feature section below documents its own config. This section covers the gen
 auto_update = true                     # check for updates on launch
 
 [models]
-default = "grok-build"           # model used for new sessions
-web_search = "grok-4.20-multi-agent"   # model used by the web_search tool
+default = "local"                      # model used for new sessions
+web_search = "your-web-search-model"   # model used by the web_search tool (must support the Responses API)
 
 [ui]
 max_thoughts_width = 120               # max column width for reasoning display
 
 [features]
 support_permission = false             # prompt before tool execution
-telemetry = false                      # anonymous usage telemetry (env: AXON_TELEMETRY_ENABLED)
-feedback = false                       # feedback system (env: AXON_FEEDBACK_ENABLED)
 lsp_tools = false                      # expose the lsp tool (see LSP Servers below)
 codebase_indexing = true               # code graph indexing (true, false, or glob patterns)
 
@@ -1309,7 +1329,7 @@ output_byte_limit = 65536              # max output size (64KB)
 
 [toolset.web_fetch]
 proxy_endpoint = "https://proxy.example.com"   # egress proxy URL (all requests routed through it)
-allowed_domains = ["docs.rs", "x.ai"]           # override the built-in ~84-domain allowlist
+allowed_domains = ["docs.rs", "github.com"]     # override the built-in ~84-domain allowlist
 
 [shortcuts]
 send = ["Enter"]
@@ -1320,33 +1340,25 @@ confirm_quit = true
 
 ### Telemetry
 
-Configure telemetry destinations and credentials. Empty values disable the corresponding sink. Env vars take precedence over config values. Builds from the public source tree carry no telemetry defaults: `events_url`, `events_api_key`, and `mixpanel_token` are unset and `mixpanel_enabled` is `false`, so nothing is sent unless you supply values here or via env.
-
-```toml
-[telemetry]
-events_url = "https://example.com/events"  # env: AXON_TELEMETRY_EVENTS_URL
-events_api_key = "..."                      # env: AXON_TELEMETRY_EVENTS_API_KEY
-mixpanel_token = "..."                      # env: AXON_TELEMETRY_MIXPANEL_TOKEN
-mixpanel_enabled = true                     # env: AXON_TELEMETRY_MIXPANEL_ENABLED
-trace_upload = true                         # env: AXON_TELEMETRY_TRACE_UPLOAD
-```
-
-When building from source, defaults can also be baked into the binary at compile time by setting `AXON_TELEMETRY_BUILD_EVENTS_URL`, `AXON_TELEMETRY_BUILD_EVENTS_API_KEY`, and `AXON_TELEMETRY_BUILD_MIXPANEL_TOKEN` in the build environment (providing a Mixpanel token this way also enables Mixpanel by default). Config-file and runtime env values override build-time defaults.
+Telemetry has been removed from this fork. There is no product analytics,
+trace export, crash reporting, feedback API, or remote settings prefetch — the
+phone-home code paths are deleted, and there is no `[telemetry]` config sink to
+enable. Axon sends nothing about your usage anywhere.
 
 ### LSP Servers
 
-Grok can connect to Language Server Protocol (LSP) servers configured in JSON files. LSP integration gives Grok language-aware code intelligence while it works in your repository.
+Axon can connect to Language Server Protocol (LSP) servers configured in JSON files. LSP integration gives Axon language-aware code intelligence while it works in your repository.
 
 LSP support is used in two ways:
 
-- **Passive diagnostics** — after edits, Grok can surface language-server diagnostics such as errors and warnings.
-- **The `lsp` tool** — Grok can actively query the language server for `goToDefinition`, `findReferences`, `hover`, `goToImplementation`, `documentSymbol`, and `workspaceSymbol`.
+- **Passive diagnostics** — after edits, Axon can surface language-server diagnostics such as errors and warnings.
+- **The `lsp` tool** — Axon can actively query the language server for `goToDefinition`, `findReferences`, `hover`, `goToImplementation`, `documentSymbol`, and `workspaceSymbol`.
 
 Reference: [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
 
 #### Config locations
 
-Grok looks for server definitions in:
+Axon looks for server definitions in:
 
 - project config: `<repo>/.axon/lsp.json`
 - user config: `~/.axon/lsp.json`
@@ -1363,7 +1375,7 @@ Having an `lsp.json` file is enough for passive diagnostics. The model-visible `
 Enable the tool for one run:
 
 ```bash
-AXON_LSP_TOOLS=1 grok
+AXON_LSP_TOOLS=1 axon
 ```
 
 Or enable it in config:
@@ -1373,7 +1385,7 @@ Or enable it in config:
 lsp_tools = true
 ```
 
-If LSP tools are enabled but no usable server config is found, Grok emits a non-fatal warning in logs and continues without the `lsp` tool. If config exists but every server fails to start, the tool may still be present and will fail on first use with a startup error.
+If LSP tools are enabled but no usable server config is found, Axon emits a non-fatal warning in logs and continues without the `lsp` tool. If config exists but every server fails to start, the tool may still be present and will fail on first use with a startup error.
 
 #### Example `lsp.json`
 
@@ -1415,7 +1427,7 @@ If LSP tools are enabled but no usable server config is found, Grok emits a non-
 
 #### Installing language servers
 
-Grok does not bundle language server binaries. You must install the server yourself and make sure the configured `command` is runnable on your machine.
+Axon does not bundle language server binaries. You must install the server yourself and make sure the configured `command` is runnable on your machine.
 
 Examples:
 
@@ -1447,37 +1459,36 @@ auth_provider_label = "Acme Corp"
 auth_token_ttl = 3600               # if your provider outputs bare tokens
 
 [models]
-default = "company-grok"
+default = "company-model"
 
-[model.company-grok]
-model = "grok-build"
-base_url = "https://grok-proxy.acme.com/"
-name = "Grok Build Latest (Proxy)"
+[model.company-model]
+model = "your-model-id"
+base_url = "https://llm-proxy.acme.com/"
+name = "Company Model (Proxy)"
 context_window = 256000
 
 [features]
 support_permission = false
-telemetry = false
 
 [toolset.bash]
 timeout_secs = 120.0
 ```
 
-With this config, `grok` runs your auth binary, stores the token, and routes inference through your corporate proxy. See [Authentication](#authentication) for full auth setup details.
+With this config, `axon` runs your auth binary, stores the token, and routes inference through your corporate proxy. See [Model Setup & Authentication](#model-setup--authentication) for full auth setup details.
 
 ---
 
 ## AGENTS.md
 
-Add project-specific instructions by creating an agent rules file (e.g., `AGENTS.md`). Grok reads these files and appends their contents to the system prompt.
+Add project-specific instructions by creating an agent rules file (e.g., `AGENTS.md`). Axon reads these files and appends their contents to the system prompt.
 
-Grok scans for agent rules in this order:
+Axon scans for agent rules in this order:
 
 1. `~/.axon/` (global rules)
 2. If inside a git repo: every directory from the repo root → current working directory (inclusive)
 3. If **not** inside a git repo: only the current working directory
 
-Within each directory, Grok checks for these filenames:
+Within each directory, Axon checks for these filenames:
 
 - `Agents.md`, `Claude.md`, `AGENT.md`, `AGENTS.md`
 
@@ -1489,11 +1500,11 @@ Ordering matters: files found later (deeper directories) come last, so they effe
 
 ## Skills
 
-Skills are reusable prompt packages that extend Grok with specialized workflows, domain knowledge, and tool integrations. Use them to encode repeatable procedures that would otherwise require re-explaining each session.
+Skills are reusable prompt packages that extend Axon with specialized workflows, domain knowledge, and tool integrations. Use them to encode repeatable procedures that would otherwise require re-explaining each session.
 
 ### Skill Locations
 
-Grok discovers skills from these directories (in priority order):
+Axon discovers skills from these directories (in priority order):
 
 | Location                    | Scope | Priority |
 | --------------------------- | ----- | -------- |
@@ -1551,7 +1562,7 @@ Review staged changes and create a commit with a clear, conventional message.
 | Field         | Description                                                                  |
 | ------------- | ---------------------------------------------------------------------------- |
 | `name`        | Skill identifier (lowercase, hyphens, max 64 chars)                          |
-| `description` | What the skill does and when to use it—this is how Grok decides to invoke it |
+| `description` | What the skill does and when to use it—this is how Axon decides to invoke it |
 
 ### Using Skills
 
@@ -1566,9 +1577,9 @@ Review staged changes and create a commit with a clear, conventional message.
 
 **Slash command shorthand:**
 
-Users can reference skills as `/skill-name` (e.g., `/commit`). When you see this pattern, Grok invokes the corresponding skill.
+Users can reference skills as `/skill-name` (e.g., `/commit`). When you see this pattern, Axon invokes the corresponding skill.
 
-> **Tip:** The `description` field is critical — it determines when Grok automatically invokes the skill. Be specific about trigger phrases and use cases.
+> **Tip:** The `description` field is critical — it determines when Axon automatically invokes the skill. Be specific about trigger phrases and use cases.
 
 ---
 
@@ -1576,12 +1587,12 @@ Users can reference skills as `/skill-name` (e.g., `/commit`). When you see this
 
 Agent profiles control the system prompt, toolset, and behavior of a session. A profile is a `.md` file with YAML frontmatter, or a named agent discovered from disk.
 
-Grok discovers agent definitions from `.axon/agents/` (project), `~/.axon/agents/` (user), and built-in agents. Priority (highest wins):
+Axon discovers agent definitions from `.axon/agents/` (project), `~/.axon/agents/` (user), and built-in agents. Priority (highest wins):
 
 1. `--agent-profile <PATH>` CLI flag
 2. `[agent]` section in `config.toml`
 3. `AXON_AGENT` env var
-4. Default `grok-build` agent
+4. Default built-in agent
 
 ```toml
 # ~/.axon/config.toml
@@ -1591,7 +1602,7 @@ name = "my-custom-agent"             # Discovered by name
 ```
 
 ```bash
-grok --agent-profile ./my-agent.md
+axon --agent-profile ./my-agent.md
 # or
 export AXON_AGENT="my-custom-agent"
 ```
@@ -1624,7 +1635,7 @@ explore = true                       # default — omitted agents are enabled
 plan = false                         # disable plan subagent
 
 [subagents.models]
-explore = "grok-build"              # route explore to a lighter model
+explore = "local"                   # route explore to a lighter model
 ```
 
 By default a subagent inherits the parent session's model. Only an explicit
@@ -1640,7 +1651,7 @@ Roles define reusable capability/model defaults. Personas layer tone and behavio
 [subagents.roles.researcher]
 description = "Deep research agent"
 default_capability_mode = "read-only"
-model = "grok-build"
+model = "local"
 prompt_file = ".axon/prompts/researcher.md"
 
 [subagents.personas.concise]
@@ -1654,7 +1665,7 @@ Both are also discovered from `.axon/roles/*.toml` and `.axon/personas/*.toml` f
 
 ## Plugins
 
-Plugins extend Grok with additional tools, skills, and MCP servers from external packages.
+Plugins extend Axon with additional tools, skills, and MCP servers from external packages.
 
 ### Plugin Locations
 
@@ -1681,7 +1692,7 @@ Manage plugins at runtime with `/plugins list`, `/plugins reload`, or `/plugins 
 
 Hooks run project scripts on tool and session lifecycle events (pre/post-tool-use, session start/end). Projects must be explicitly trusted before their hooks execute.
 
-Grok discovers hooks from `.axon/hooks/` in the project directory. Manage them with:
+Axon discovers hooks from `.axon/hooks/` in the project directory. Manage them with:
 
 ```
 /hooks-list              # show hooks loaded in this session
@@ -1713,9 +1724,9 @@ max_completion_tokens = 8192          # Max tokens per response
 context_window = 256000               # Total context window in tokens (for auto-compact)
 ```
 
-**Credential resolution order:** `api_key` → `env_key` → `XAI_API_KEY`. If neither `api_key` nor `env_key` is set, Grok falls back to the global `XAI_API_KEY` environment variable.
+**Credential resolution order:** `api_key` → `env_key` → `AXON_API_KEY`. If neither `api_key` nor `env_key` is set, Axon falls back to the global `AXON_API_KEY` environment variable. (Loopback endpoints need no key at all — see [Loopback No-Auth Auto-Detect](#loopback-no-auth-auto-detect).)
 
-The `context_window` parameter is used to calculate when auto-compact should trigger. If not specified, Grok falls back to built-in defaults for known models.
+The `context_window` parameter is used to calculate when auto-compact should trigger. If not specified, Axon falls back to built-in defaults for known models.
 
 ### Overriding Built-in Models
 
@@ -1732,7 +1743,7 @@ temperature = 0.5
 api_key = "sk-custom"
 ```
 
-**How it works:** When you override a built-in model, Grok starts with the default configuration (including the correct `base_url` from your `[endpoints]` setting), then applies only the fields you specify. Unspecified fields inherit from the default.
+**How it works:** When you override a built-in model, Axon starts with the default configuration (including the correct `base_url` from your `[endpoints]` setting), then applies only the fields you specify. Unspecified fields inherit from the default.
 
 **Priority order:**
 1. Your config (`[model.*]`) — highest priority
@@ -1743,14 +1754,14 @@ api_key = "sk-custom"
 
 > **Overriding with a custom model:** Setting `[models] web_search` alone is not
 > enough if the model isn't already in the catalog (built-in defaults or
-> `axon models` output). You also need a `[model.*]` entry so Grok knows
+> `axon models` output). You also need a `[model.*]` entry so Axon knows
 > how to reach it. Without both, web search is silently disabled.
 >
 > ```toml
 > [models]
 > web_search = "my-custom-model"       # 1. tell web search which model to use
 >
-> [model.my-custom-model]              # 2. tell Grok how to reach it
+> [model.my-custom-model]              # 2. tell Axon how to reach it
 > model = "my-custom-model"
 > api_backend = "responses"            # required — web search uses the Responses API
 > # base_url, api_key, env_key optional — defaults to cli-chat-proxy
@@ -1801,7 +1812,7 @@ env_key = "OPENAI_API_KEY"
 
 ```bash
 # List available models (including custom)
-grok models
+axon models
 
 # Use in TUI via slash command
 /model my-model
@@ -1817,25 +1828,25 @@ default = "my-model"
 
 ### Custom Models Endpoint
 
-Point Grok at a custom OpenAI-compatible `/v1/models` endpoint instead of the default cli-chat-proxy. Useful when models are served behind a corporate gateway or self-hosted inference stack.
+Point Axon at a custom OpenAI-compatible `/v1/models` endpoint. Useful when models are served behind a corporate gateway or self-hosted inference stack.
 
 **Environment variables:**
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `AXON_MODELS_BASE_URL` | Yes | Base URL for inference / chat completions (e.g. `https://api.acme.com/v1`). The model list is fetched from `{base_url}/models` automatically |
-| `XAI_API_KEY` | Yes | API key sent as `Authorization: Bearer` to the custom endpoint |
+| `AXON_API_KEY` | Yes | API key sent as `Authorization: Bearer` to the custom endpoint |
 | `AXON_MODELS_LIST_URL` | No | Override the model list URL if it differs from `{base_url}/models` |
 
 **Setup:**
 
 ```bash
 export AXON_MODELS_BASE_URL="https://api.acme.com/v1"
-export XAI_API_KEY="axon-..."
-grok
+export AXON_API_KEY="sk-..."
+axon
 ```
 
-Grok fetches the model list from `{AXON_MODELS_BASE_URL}/models` on startup and sends inference requests to `AXON_MODELS_BASE_URL`. This follows the standard OpenAI-compatible convention used by OpenAI, Anthropic, OpenRouter, Groq, Together.ai, and others.
+Axon fetches the model list from `{AXON_MODELS_BASE_URL}/models` on startup and sends inference requests to `AXON_MODELS_BASE_URL`. This follows the standard OpenAI-compatible convention used by OpenAI, Anthropic, OpenRouter, Groq, Together.ai, and others.
 
 If your model list endpoint differs from `{base_url}/models`, set `AXON_MODELS_LIST_URL` explicitly.
 
@@ -1852,13 +1863,13 @@ api_key = "my-api-key"
 
 When using `[endpoints]` with partial model overrides, the `base_url` is inherited from the endpoints config — you don't need to specify it in each `[model.*]` section.
 
-**Auth behavior:** When `models_base_url` is set, Grok uses API key auth (`Authorization: Bearer`) instead of session auth. `axon login` is not required — only the API key.
+**Auth behavior:** When `models_base_url` is set, Axon uses API key auth (`Authorization: Bearer`) instead of session auth. `axon login` is not required — only the API key.
 
 ---
 
 ## MCP Servers
 
-Extend Grok's capabilities with [Model Context Protocol](https://modelcontextprotocol.io) servers.
+Extend Axon's capabilities with [Model Context Protocol](https://modelcontextprotocol.io) servers.
 
 ### Configuration
 
@@ -1878,7 +1889,7 @@ tool_timeouts = { create_issue = 120, search = 30 }  # Per-tool timeout override
 
 ### Project-Scoped MCP Servers
 
-MCP servers can also be configured per-project in `.axon/config.toml`. Grok walks from the current directory up to the git repo root, loading `.axon/config.toml` at each level:
+MCP servers can also be configured per-project in `.axon/config.toml`. Axon walks from the current directory up to the git repo root, loading `.axon/config.toml` at each level:
 
 | Location                        | Scope             | Priority |
 | ------------------------------- | ----------------- | -------- |
@@ -1977,7 +1988,7 @@ See the [MCP Server Registry](https://github.com/modelcontextprotocol/servers) f
 
 > **Experimental:** requires `--experimental-memory` (or `AXON_MEMORY=1` / `[memory] enabled = true` in config).
 
-Cross-session memory lets Grok remember facts, decisions, code patterns, and debugging workflows across separate sessions in the same project.
+Cross-session memory lets Axon remember facts, decisions, code patterns, and debugging workflows across separate sessions in the same project.
 
 ### How it works
 
@@ -1994,11 +2005,11 @@ An SQLite index enables fast hybrid search (FTS5 keyword + optional vector KNN) 
 
 ```bash
 # Per-session flag
-grok --experimental-memory
+axon --experimental-memory
 
 # Environment variable (persists for the shell session)
 export AXON_MEMORY=1
-grok
+axon
 
 # Config file (persists permanently)
 # ~/.axon/config.toml
@@ -2008,7 +2019,7 @@ enabled = true
 
 ### What gets saved automatically
 
-At the end of each session, Grok saves a **structured metadata summary** to the daily session log:
+At the end of each session, Axon saves a **structured metadata summary** to the daily session log:
 - Message counts (user / assistant / tool)
 - Topics — the first few real user prompts from the session
 - Tool-usage breakdown (e.g., `read_file: 4, search_replace: 3`)
@@ -2046,7 +2057,7 @@ Omit `workspace` or `global` and it defaults to workspace scope.
 
 ### Searching memory
 
-Grok searches memory automatically on the first turn of each session and after compaction. The first-turn injection can be disabled or given its own score threshold under `[memory.initial_injection]`. You can also invoke `memory_search` and `memory_get` directly via the model prompt:
+Axon searches memory automatically on the first turn of each session and after compaction. The first-turn injection can be disabled or given its own score threshold under `[memory.initial_injection]`. You can also invoke `memory_search` and `memory_get` directly via the model prompt:
 
 ```
 Search memory for "auth middleware patterns"
@@ -2082,19 +2093,11 @@ Key options under `[memory]` in `~/.axon/config.toml`:
 | `embedding.model` | *(unset)* | Embedding model for vector search; unset disables embeddings |
 | `embedding.dimensions` | `1024` | Embedding vector dimensions |
 
-### Observability
-
-When first-turn memory injection runs, Grok emits the `grok-shell-memory_injection`
-telemetry event. It includes:
-- whether the greeting fallback query path was used
-- result counts and top score
-- the configured first-turn threshold via `configured_min_score`
-
 ---
 
 ## Sandbox
 
-Grok can restrict what the agent process and its spawned commands can access on
+Axon can restrict what the agent process and its spawned commands can access on
 your filesystem and network using OS-level kernel primitives (Landlock on Linux,
 Seatbelt on macOS). This is off by default.
 
@@ -2102,13 +2105,13 @@ Seatbelt on macOS). This is off by default.
 
 ```bash
 # Run with workspace sandbox (read everywhere, write only to CWD + /tmp)
-grok --sandbox workspace
+axon --sandbox workspace
 
 # Read-only mode (agent can read but not write anything)
-grok --sandbox read-only
+axon --sandbox read-only
 
 # Maximum isolation (read/write CWD only, no child network)
-grok --sandbox strict
+axon --sandbox strict
 ```
 
 ### Built-in Profiles
@@ -2146,12 +2149,12 @@ deny = ["/data/shared-secrets"]
 Use it:
 
 ```bash
-grok --sandbox devbox
+axon --sandbox devbox
 ```
 
 ### How It Works
 
-The sandbox is applied to the **entire grok process** at startup using kernel
+The sandbox is applied to the **entire axon process** at startup using kernel
 primitives — not per-command wrapping. This means all tool operations are
 covered:
 
@@ -2166,7 +2169,7 @@ model cannot convince the agent to relax restrictions at runtime.
 
 - **Platform support**: Sandbox enforcement uses Landlock on Linux (kernel ≥ 5.13)
   and Seatbelt on macOS. If the sandbox cannot be applied (e.g., unsupported
-  kernel, missing entitlements), Grok logs a warning and continues without
+  kernel, missing entitlements), Axon logs a warning and continues without
   enforcement.
 
 - **Network restrictions are partial**: Profiles with `restrict_network` block
@@ -2178,13 +2181,13 @@ model cannot convince the agent to relax restrictions at runtime.
 ### Event Logging
 
 Sandbox events (profile applied, violations) are logged to `~/.axon/sandbox-events.jsonl`
-for telemetry and debugging.
+for local auditing and debugging.
 
 ---
 
 ## Introspection
 
-Use `axon inspect` to see everything Grok discovers in the current directory:
+Use `axon inspect` to see everything Axon discovers in the current directory:
 
 ```bash
 axon inspect          # human-readable output
@@ -2208,11 +2211,11 @@ Plugin-provided components appear in their respective sections with a `[plugin: 
 
 ## Claude Code Compatibility
 
-Grok automatically discovers configuration from Claude Code directories alongside native `.axon/` paths. No extra setup is needed.
+Axon automatically discovers configuration from Claude Code directories alongside native `.axon/` paths. No extra setup is needed.
 
 ### What is picked up
 
-| Component         | Claude Code location                                 | How Grok uses it                 |
+| Component         | Claude Code location                                 | How Axon uses it                 |
 | ----------------- | ---------------------------------------------------- | -------------------------------- |
 | **Skills**        | `.claude/skills/`, `~/.claude/skills/`               | Loaded as skills (same as `.axon/skills/`) |
 | **Agents**        | `.claude/agents/`, `~/.claude/agents/`               | Loaded as subagents              |
@@ -2225,13 +2228,13 @@ Grok automatically discovers configuration from Claude Code directories alongsid
 
 ### Plugin components
 
-Claude Code plugins can provide skills (`skills/`), commands (`commands/`), agents (`agents/`), hooks (`hooks/hooks.json`), MCP servers (`.mcp.json`), and LSP servers (`.lsp.json`). All component types are discovered and used by Grok at runtime.
+Claude Code plugins can provide skills (`skills/`), commands (`commands/`), agents (`agents/`), hooks (`hooks/hooks.json`), MCP servers (`.mcp.json`), and LSP servers (`.lsp.json`). All component types are discovered and used by Axon at runtime.
 
 ---
 
 ## Built-in Tools
 
-Grok includes these tools by default:
+Axon includes these tools by default:
 
 | Tool             | Description                                                    |
 | ---------------- | -------------------------------------------------------------- |
@@ -2274,13 +2277,13 @@ disallowedTools:
 
 Fetch a specific URL and return its content as markdown. **Disabled by default** — enable with `AXON_WEB_FETCH=1`. 
 
-When no custom `allowed_domains` is set, the tool permits a default allowlist of useful documentation sites (SpaceXAI, language docs, frameworks, cloud providers, databases, etc.). Domains not on the allowlist prompt the user for approval; `--always-approve` auto-approves all. Domain matching is case-insensitive, strips `www.` prefixes, and supports path-scoped entries (e.g. `x.ai/company`).
+When no custom `allowed_domains` is set, the tool permits a default allowlist of useful documentation sites (language docs, frameworks, cloud providers, databases, etc.). Domains not on the allowlist prompt the user for approval; `--always-approve` auto-approves all. Domain matching is case-insensitive, strips `www.` prefixes, and supports path-scoped entries (e.g. `example.com/docs`).
 
 ---
 
 ## Session Persistence
 
-Grok automatically persists conversations to disk. This works across all modes: TUI, headless, and agent stdio.
+Axon automatically persists conversations to disk. This works across all modes: TUI, headless, and agent stdio.
 
 ### Storage Layout
 
@@ -2387,15 +2390,15 @@ The agent persists all session updates automatically. Clients can reconnect and 
 
 | Variable                         | Description                                                                                              |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `XAI_API_KEY`         | API key from [console.x.ai](https://console.x.ai). Used for custom endpoint auth and API key login      |
-| `AXON_CLI_CHAT_PROXY_BASE_URL`  | Override the cli-chat-proxy URL (default: `https://cli-chat-proxy.grok.com/v1`)                          |
+| `AXON_API_KEY`         | Global BYOK API key. Used for custom-endpoint auth and as the fallback for any model without its own `api_key`/`env_key` |
+| `AXON_CLI_CHAT_PROXY_BASE_URL`  | Base URL for the OpenAI-compatible chat proxy used with OIDC/session auth. No default in this fork — set it to your own proxy |
 | `AXON_MODELS_BASE_URL`          | Custom base URL for inference. Model list auto-fetched from `{base_url}/models` (see [Custom Models Endpoint](#custom-models-endpoint)) |
 | `AXON_MODELS_LIST_URL`          | Override the model list URL if it differs from `{AXON_MODELS_BASE_URL}/models`                                              |
 | `AXON_AUTH_PROVIDER_COMMAND`     | External auth binary (alternative to config file). See [External Auth Provider](#external-auth-provider) |
 | `AXON_AUTH_TOKEN_TTL`            | Token lifetime in seconds for external auth providers that output bare tokens. See [External Auth Provider](#external-auth-provider) |
 | `AXON_AUTH_EARLY_INVALIDATION_SECS` | Seconds before `expires_at` to consider a token expired (default: `300`). See [Automatic Credential Refresh](#automatic-credential-refresh) |
-| `AXON_OIDC_ISSUER`              | OIDC issuer URL (alternative to config file). See [OIDC](#oidc-customer-sso)                             |
-| `AXON_OIDC_CLIENT_ID`           | OIDC client ID (alternative to config file). See [OIDC](#oidc-customer-sso)                              |
+| `AXON_OIDC_ISSUER`              | OIDC issuer URL (alternative to config file). See [OIDC](#oidc-enterprise-sso-against-your-own-idp)                             |
+| `AXON_OIDC_CLIENT_ID`           | OIDC client ID (alternative to config file). See [OIDC](#oidc-enterprise-sso-against-your-own-idp)                              |
 | `AXON_HOME`                     | Override config directory (default: `~/.axon`)                                                           |
 | `AXON_SUBAGENTS`                | Enable (`1`) or disable (`0`) subagent/task tool support                                                 |
 | `AXON_MEMORY`                   | Enable (`1`) or disable (`0`) cross-session memory                                                       |
@@ -2403,7 +2406,6 @@ The agent persists all session updates automatically. Clients can reconnect and 
 | `AXON_WEB_FETCH`                | Enable (`1`) or disable (`0`) the `web_fetch` tool                                                       |
 | `AXON_WEB_FETCH_PROXY`          | Egress proxy URL for `web_fetch` requests (overridden by `[toolset.web_fetch] proxy_endpoint`)           |
 | `AXON_RESPECT_GITIGNORE`        | Disable `.gitignore` filtering in tools when set to `0`                                                  |
-| `AXON_FEEDBACK_ENABLED`         | Enable (`1`) or disable (`0`) feedback system independently from telemetry                               |
 | `AXON_DEPLOYMENT_KEY`           | Management API key for enterprise deployments                                                            |
 | `AXON_LOG_FILE`                 | Enable file logging by providing a file path (the value is used verbatim as the path)                    |
 | `AXON_DEBUG_LOG`                | Debug firehose (set by `--debug`): truthy routes per-session logs to `~/.axon/debug/<sessionId>.txt`, a path writes that one file |
@@ -2413,7 +2415,7 @@ The agent persists all session updates automatically. Clients can reconnect and 
 
 ## Shell Completions
 
-Generate completions for your shell and install them to enable tab completion for `grok` commands and flags.
+Generate completions for your shell and install them to enable tab completion for `axon` commands and flags.
 
 **Note:** The paths below are recommended defaults. Some environments do not automatically source the standard locations — you may need to adapt them to your shell framework or distro conventions.
 
@@ -2423,22 +2425,22 @@ Generate and install:
 
 ```bash
 mkdir -p ~/.local/share/bash-completion/completions
-grok completions bash > ~/.local/share/bash-completion/completions/grok
+axon completions bash > ~/.local/share/bash-completion/completions/axon
 ```
 
 Reload your shell or run `source ~/.bashrc`.
 
-Alternative (Grok-managed location):
+Alternative (Axon-managed location):
 
 ```bash
 mkdir -p ~/.axon/completions/bash
-grok completions bash > ~/.axon/completions/bash/grok.bash
+axon completions bash > ~/.axon/completions/bash/axon.bash
 ```
 
 Add to `~/.bashrc`:
 
 ```bash
-[[ -r "$HOME/.axon/completions/bash/grok.bash" ]] && source "$HOME/.axon/completions/bash/grok.bash"
+[[ -r "$HOME/.axon/completions/bash/axon.bash" ]] && source "$HOME/.axon/completions/bash/axon.bash"
 ```
 
 ### Zsh
@@ -2447,7 +2449,7 @@ Generate and install:
 
 ```bash
 mkdir -p ~/.zsh/completions
-grok completions zsh > ~/.zsh/completions/_grok
+axon completions zsh > ~/.zsh/completions/_axon
 ```
 
 Add to `~/.zshrc`:
@@ -2458,11 +2460,11 @@ autoload -Uz compinit
 compinit
 ```
 
-Alternative (Grok-managed location):
+Alternative (Axon-managed location):
 
 ```bash
 mkdir -p ~/.axon/completions/zsh
-grok completions zsh > ~/.axon/completions/zsh/_grok
+axon completions zsh > ~/.axon/completions/zsh/_axon
 ```
 
 Add to `~/.zshrc`:
@@ -2475,7 +2477,7 @@ compinit
 
 ### After Upgrading
 
-Regenerate completions after upgrading `grok` — the script reflects the CLI of the installed version.
+Regenerate completions after upgrading `axon` — the script reflects the CLI of the installed version.
 
 ---
 
@@ -2487,10 +2489,10 @@ Write logs to a file for debugging. The TUI captures stderr, so `RUST_LOG` alone
 
 ```bash
 # Per-session debug log (~/.axon/debug/<sessionId>.txt)
-grok --debug
+axon --debug
 
 # Log to a custom path
-AXON_LOG_FILE=/tmp/grok-debug.log grok
+AXON_LOG_FILE=/tmp/axon-debug.log axon
 
 # Tail the most-recently-opened session's log in another terminal (Unix symlink)
 tail -f ~/.axon/debug/latest.txt
@@ -2500,7 +2502,7 @@ The `--debug` firehose uses a fixed filter (first-party crates at `debug`) and i
 
 ```bash
 # Debug auth, info for everything else
-AXON_LOG_FILE=/tmp/grok-debug.log RUST_LOG="info,xai_grok_shell::auth=debug" grok
+AXON_LOG_FILE=/tmp/axon-debug.log RUST_LOG="info,axon_shell::auth=debug" axon
 ```
 
 ### Authentication fails
@@ -2510,15 +2512,15 @@ AXON_LOG_FILE=/tmp/grok-debug.log RUST_LOG="info,xai_grok_shell::auth=debug" gro
 axon login
 
 # Debug auth issues — check the log for "auth:" entries
-grok --debug-file /tmp/grok-auth.log -p "hello"
-grep "auth:" /tmp/grok-auth.log
+axon --debug-file /tmp/axon-auth.log -p "hello"
+grep "auth:" /tmp/axon-auth.log
 ```
 
 ### Model not found
 
 ```bash
 # List available models
-grok models
+axon models
 
 # Check config.toml for typos in [model.*] sections
 ```

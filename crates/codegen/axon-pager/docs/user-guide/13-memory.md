@@ -1,12 +1,12 @@
 # Cross-Session Memory
 
-Memory lets Grok recall facts, decisions, and patterns from earlier sessions. Grok indexes the information you save and searches it automatically, so a new session can reuse relevant context.
+Memory lets Axon recall facts, decisions, and patterns from earlier sessions. Axon indexes the information you save and searches it automatically, so a new session can reuse relevant context.
 
 ---
 
 ## What Is Memory?
 
-Without memory, each Grok session starts fresh: the model knows nothing about previous sessions. When you enable memory, Grok can:
+Without memory, each Axon session starts fresh: the model knows nothing about previous sessions. When you enable memory, Axon can:
 
 - Recall project conventions you explained before.
 - Reuse debugging steps that worked.
@@ -22,14 +22,14 @@ Memory is experimental and disabled by default.
 ### Per-Session Flag
 
 ```bash
-grok --experimental-memory
+axon --experimental-memory
 ```
 
 ### Environment Variable
 
 ```bash
 export AXON_MEMORY=1
-grok
+axon
 ```
 
 ### Config File (Persistent)
@@ -45,7 +45,7 @@ enabled = true
 To disable memory even when other settings enable it:
 
 ```bash
-grok --no-memory
+axon --no-memory
 ```
 
 Or:
@@ -89,7 +89,7 @@ Memory is stored as Markdown files under `~/.axon/memory/`:
 | `~/.axon/memory/<project-slug>-<hash8>/MEMORY.md` | Workspace | Project-specific conventions and context |
 | `~/.axon/memory/<project-slug>-<hash8>/sessions/` | Sessions | Per-session summaries and logs |
 
-Grok suffixes each workspace directory with a short hash of the repository's identity. The identity is the `origin` remote in `org/repo` form when the directory is a Git repository with an `origin` remote, or the directory path otherwise. Because clones and worktrees of the same repository share an `origin` remote, they also share one memory directory.
+Axon suffixes each workspace directory with a short hash of the repository's identity. The identity is the `origin` remote in `org/repo` form when the directory is a Git repository with an `origin` remote, or the directory path otherwise. Because clones and worktrees of the same repository share an `origin` remote, they also share one memory directory.
 
 An SQLite index supports hybrid search across all memory files:
 - **FTS5** provides full-text search for keyword matching.
@@ -99,13 +99,13 @@ An SQLite index supports hybrid search across all memory files:
 
 ## Automatic Saves
 
-When a session ends, Grok saves a structured metadata summary to that session's daily log. The summary contains:
+When a session ends, Axon saves a structured metadata summary to that session's daily log. The summary contains:
 
 - Message counts (user, assistant, and tool results).
 - Topics: the first few substantive user prompts from the session, up to five.
 - The session date and time (UTC).
 
-Grok builds the summary from conversation metadata without an LLM call, without added latency. Grok skips the save for trivial sessions -- those with fewer than three substantive prompts, or fewer than 50 bytes of user text.
+Axon builds the summary from conversation metadata without an LLM call, without added latency. Axon skips the save for trivial sessions -- those with fewer than three substantive prompts, or fewer than 50 bytes of user text.
 
 The summary does not record tool usage, file paths, or shell commands. The session ID forms part of the log filename. To turn automatic saves off, set `session.save_on_end = false`. For richer capture of decisions, patterns, and reasoning, use `/flush`.
 
@@ -132,13 +132,13 @@ Use `/flush` when you want to preserve important context:
 
 ### Remember
 
-Ask Grok to remember something, and it appends the note to a `MEMORY.md` file -- the workspace file for project-specific items, or the global `~/.axon/memory/MEMORY.md` for cross-project preferences:
+Ask Axon to remember something, and it appends the note to a `MEMORY.md` file -- the workspace file for project-specific items, or the global `~/.axon/memory/MEMORY.md` for cross-project preferences:
 
 ```
 > remember to always open PR links after pushing
 ```
 
-Grok records entries as durable statements under organized headings, such as `## Preferences`, `## Project Context`, or `## Debugging`. The file watcher reindexes the change on the next memory search, so the new entry is searchable within the current session.
+Axon records entries as durable statements under organized headings, such as `## Preferences`, `## Project Context`, or `## Debugging`. The file watcher reindexes the change on the next memory search, so the new entry is searchable within the current session.
 
 You can also save a note directly with the `/remember` command:
 
@@ -146,11 +146,11 @@ You can also save a note directly with the `/remember` command:
 /remember always open PR links after pushing
 ```
 
-Run `/remember` with no text to enter remember mode, where the next line you type becomes the note. Either way, Grok opens a review panel showing the note (with an optional rewritten version you can toggle with `Tab`); the note is written only after you confirm. On save, Grok shows `Memory saved to ~/.axon/memory/MEMORY.md`.
+Run `/remember` with no text to enter remember mode, where the next line you type becomes the note. Either way, Axon opens a review panel showing the note (with an optional rewritten version you can toggle with `Tab`); the note is written only after you confirm. On save, Axon shows `Memory saved to ~/.axon/memory/MEMORY.md`.
 
 ### Forget
 
-Ask Grok to forget something, and it finds and removes the matching entry:
+Ask Axon to forget something, and it finds and removes the matching entry:
 
 ```
 > forget the snake_case convention
@@ -160,13 +160,13 @@ Forget is best-effort: the model searches memory and removes entries that match.
 
 ### Recall
 
-Ask what Grok remembers:
+Ask what Axon remembers:
 
 ```
 > what do you remember?
 ```
 
-Grok searches across all memory files and summarizes what it knows, grouped by source: global preferences, project-specific knowledge, and session history. Use `/memory` to browse the raw files.
+Axon searches across all memory files and summarizes what it knows, grouped by source: global preferences, project-specific knowledge, and session history. Use `/memory` to browse the raw files.
 
 ### Direct Editing
 
@@ -212,13 +212,13 @@ You can also open `/memory` from the command palette.
 
 ## Memory Notifications
 
-When you save a note with `/remember`, Grok confirms in the scrollback:
+When you save a note with `/remember`, Axon confirms in the scrollback:
 
 ```
 Memory saved to ~/.axon/memory/MEMORY.md
 ```
 
-Background saves — flush, dream, and session-end — run silently and do not post a scrollback message. Use `/memory` at any time to browse what Grok has stored.
+Background saves — flush, dream, and session-end — run silently and do not post a scrollback message. Use `/memory` at any time to browse what Axon has stored.
 
 ---
 
@@ -234,7 +234,7 @@ Dream reorganizes individual session logs and memory entries into a coherent, de
 
 ### Auto-Dream
 
-Dream also runs automatically. By default, Grok checks the consolidation gates when a session ends and runs Dream once enough time has passed and enough sessions have accumulated:
+Dream also runs automatically. By default, Axon checks the consolidation gates when a session ends and runs Dream once enough time has passed and enough sessions have accumulated:
 
 ```toml
 [memory.dream]
@@ -251,7 +251,7 @@ min_sessions = 3   # Minimum sessions since the last consolidation
 
 ### First-Turn Injection
 
-On the first turn of each session, Grok automatically searches memory for content relevant to the current project and injects it as context. This means Grok starts with knowledge from previous sessions without a reminder.
+On the first turn of each session, Axon automatically searches memory for content relevant to the current project and injects it as context. This means Axon starts with knowledge from previous sessions without a reminder.
 
 First-turn injection can be configured:
 
@@ -269,7 +269,7 @@ Memory is also searched after auto-compaction to recover relevant context that m
 
 ## Memory Search
 
-Grok searches memory automatically, but you can also trigger searches manually in the chat:
+Axon searches memory automatically, but you can also trigger searches manually in the chat:
 
 ```
 Search memory for "auth middleware patterns"
@@ -386,7 +386,7 @@ To edit memory from the shell, open the files in your editor directly -- for exa
 | Key | Default | Description |
 |-----|---------|-------------|
 | `enabled` | `true` | Enable first-turn memory injection |
-| `min_score` | unset | Score threshold for first-turn results. When unset, Grok applies no threshold, which is equivalent to `0.0`. |
+| `min_score` | unset | Score threshold for first-turn results. When unset, Axon applies no threshold, which is equivalent to `0.0`. |
 
 ### Dream Settings (`[memory.dream]`)
 
@@ -407,7 +407,7 @@ You configure flush under `[compaction]`, not `[memory]`, because it is a compac
 | `enabled` | `true` | Enable the pre-compaction memory flush |
 | `soft_threshold_tokens` | `4000` | Token headroom before the compact threshold that triggers a flush |
 | `max_flush_write_chars` | `8000` | Maximum characters the flush may write to memory |
-| `flush_model` | unset | Model for the flush turn. When unset, Grok uses the session's primary model. |
+| `flush_model` | unset | Model for the flush turn. When unset, Axon uses the session's primary model. |
 | `idle_timeout_secs` | unset | Idle seconds before a background flush. When unset, flush runs only before compaction. |
 | `semantic_dedup_threshold` | unset | Cosine-similarity threshold for de-duplicating flushed content. When unset, defaults to `0.92`. |
 
@@ -428,13 +428,13 @@ You configure pruning under `[compaction]`, not `[memory]`, because it is a comp
 
 ## Memory Staleness
 
-When a session memory is old, Grok attaches a staleness note to it in search results. Older results get a stronger reminder to verify the current state before you rely on them. These notes help you spot stored facts that might no longer be accurate. Global and workspace memories never receive staleness notes, because they hold curated long-term knowledge.
+When a session memory is old, Axon attaches a staleness note to it in search results. Older results get a stronger reminder to verify the current state before you rely on them. These notes help you spot stored facts that might no longer be accurate. Global and workspace memories never receive staleness notes, because they hold curated long-term knowledge.
 
 ---
 
 ## File Watcher
 
-By default, Grok watches `~/.axon/memory/` for external file changes. If you edit memory files directly (e.g., in your editor), the changes are picked up automatically on the next memory search:
+By default, Axon watches `~/.axon/memory/` for external file changes. If you edit memory files directly (e.g., in your editor), the changes are picked up automatically on the next memory search:
 
 - Created or modified files are reindexed.
 - Deleted files have their stale chunks removed from the index.
@@ -471,6 +471,6 @@ $EDITOR ~/.axon/memory/MEMORY.md
 ### Debug Logging
 
 ```bash
-RUST_LOG=debug AXON_LOG_FILE=/tmp/grok.log grok
-grep "memory" /tmp/grok.log
+RUST_LOG=debug AXON_LOG_FILE=/tmp/axon.log axon
+grep "memory" /tmp/axon.log
 ```

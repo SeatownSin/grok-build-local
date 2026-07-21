@@ -1,6 +1,6 @@
 # Agent Mode (ACP) and IDE Integration
 
-Agent mode runs Grok as an ACP (Agent Client Protocol) server for integration with IDEs, editors, and custom tooling. Unlike single-prompt mode (`axon -p`, which prints one response and exits), agent mode keeps a persistent process running and communicates through structured JSON-RPC messages.
+Agent mode runs Axon as an ACP (Agent Client Protocol) server for integration with IDEs, editors, and custom tooling. Unlike single-prompt mode (`axon -p`, which prints one response and exits), agent mode keeps a persistent process running and communicates through structured JSON-RPC messages.
 
 ---
 
@@ -32,11 +32,11 @@ Clients that use this mode include:
 
 ### Options
 
-These options belong to the `axon agent` command and apply to every mode. Pass them before the mode name, for example `axon agent --model grok-build stdio`. The `stdio` subcommand itself takes no options.
+These options belong to the `axon agent` command and apply to every mode. Pass them before the mode name, for example `axon agent --model local stdio`. The `stdio` subcommand itself takes no options.
 
 | Flag                       | Description                                                       |
 | -------------------------- | ---------------------------------------------------------------- |
-| `-m, --model <MODEL>`      | Set the model ID (for example, `grok-build`).                    |
+| `-m, --model <MODEL>`      | Set the model ID (for example, `local`).                         |
 | `--always-approve`         | Auto-approve every tool execution. (Alias: `--yolo`.)            |
 | `--reauth`                 | Run authentication before starting the agent.                    |
 | `--agent-profile <PATH>`   | Load an agent profile from a file.                               |
@@ -60,7 +60,7 @@ Clients connect over WebSocket and authenticate with the secret token. If you om
 To reach the agent over the internet instead of the local network, run a WebSocket relay server and have the agent connect to it:
 
 ```bash
-axon agent headless --grok-ws-url wss://your-relay.example.com/ws
+axon agent headless --axon-ws-url wss://your-relay.example.com/ws
 ```
 
 The agent connects out to your relay, and your web clients connect to the same relay. This is useful for building web UIs where browsers cannot spawn local processes.
@@ -115,21 +115,20 @@ Each update names its type, so a client can render distinct panels for reasoning
 
 ## Extension methods
 
-Beyond the base ACP protocol, Grok defines extension methods under the `x.ai/` prefix for SpaceXAI-specific functionality. These cover:
+Beyond the base ACP protocol, Axon defines extension methods under the `axon/` prefix for Axon-specific functionality. These cover:
 
 | Category                   | Prefix               | Examples                                         |
 | -------------------------- | -------------------- | ------------------------------------------------ |
-| **Filesystem**             | `x.ai/fs/*`          | `list`, `exists`, `read_file`, `write_file`      |
-| **Git**                    | `x.ai/git/*`         | `status`, `stage`, `commit`, `diffs`, `discard`  |
-| **Git Worktree**           | `x.ai/git/worktree/*`| `create`, `remove`, `apply`, `list`, `gc`        |
-| **Search**                 | `x.ai/search/*`      | `fuzzy/open`, `fuzzy/change`, `content`          |
-| **Terminal**               | `x.ai/terminal/*`    | `create`, `kill`, `output`, `wait_for_exit`      |
-| **Session Management**     | `x.ai/session/*`     | `fork`, `resolve_local_for_worktree_resume`      |
-| **Conversation & History** | `x.ai/*`             | `prompt_history`, `rewind/*`, `compact_conversation` |
-| **Authentication**         | `x.ai/auth/*`        | `get_url`, `submit_code`                         |
-| **Feedback & Telemetry**   | `x.ai/*`             | `feedback`, `telemetry/*`                        |
+| **Filesystem**             | `axon/fs/*`          | `list`, `exists`, `read_file`, `write_file`      |
+| **Git**                    | `axon/git/*`         | `status`, `stage`, `commit`, `diffs`, `discard`  |
+| **Git Worktree**           | `axon/git/worktree/*`| `create`, `remove`, `apply`, `list`, `gc`        |
+| **Search**                 | `axon/search/*`      | `fuzzy/open`, `fuzzy/change`, `content`          |
+| **Terminal**               | `axon/terminal/*`    | `create`, `kill`, `output`, `wait_for_exit`      |
+| **Session Management**     | `axon/session/*`     | `fork`, `resolve_local_for_worktree_resume`      |
+| **Conversation & History** | `axon/*`             | `prompt_history`, `rewind/*`, `compact_conversation` |
+| **Authentication**         | `axon/auth/*`        | `get_url`, `submit_code`                         |
 
-The tables here show representative methods in each category. The `x.ai/*` set is SpaceXAI-specific and may expand across releases, so treat it as non-exhaustive and discover the available methods from the agent's `initialize` response.
+The tables here show representative methods in each category. The `axon/*` set is Axon-specific and may expand across releases, so treat it as non-exhaustive and discover the available methods from the agent's `initialize` response.
 
 ### Notifications (agent to client)
 
@@ -137,13 +136,13 @@ The agent sends push notifications to clients for real-time updates:
 
 | Notification               | Description                          |
 | -------------------------- | ------------------------------------ |
-| `x.ai/search/fuzzy/status` | Fuzzy search results update          |
-| `x.ai/git/worktree/status` | Worktree creation progress           |
-| `x.ai/fs_notify`           | Filesystem change notification       |
-| `x.ai/fs/index`            | Full file index update               |
-| `x.ai/fs/index/delta`      | Incremental file index update        |
-| `x.ai/session_notification`| Session-specific updates (diff review, retry state, auto-compact) |
-| `x.ai/session/update`      | Session update (tool calls, content) |
+| `axon/search/fuzzy/status` | Fuzzy search results update          |
+| `axon/git/worktree/status` | Worktree creation progress           |
+| `axon/fs_notify`           | Filesystem change notification       |
+| `axon/fs/index`            | Full file index update               |
+| `axon/fs/index/delta`      | Incremental file index update        |
+| `axon/session_notification`| Session-specific updates (diff review, retry state, auto-compact) |
+| `axon/session/update`      | Session update (tool calls, content) |
 
 ---
 
@@ -191,7 +190,7 @@ Official SDK libraries are available for multiple languages:
 import { spawn, ChildProcess } from "child_process";
 import * as readline from "readline";
 
-class GrokACPChat {
+class AxonACPChat {
   private proc!: ChildProcess;
   private sessionId!: string;
   private rl!: readline.Interface;
@@ -199,7 +198,7 @@ class GrokACPChat {
   constructor(private cwd = ".") {}
 
   async init() {
-    this.proc = spawn("grok", ["agent", "stdio"]);
+    this.proc = spawn("axon", ["agent", "stdio"]);
     this.rl = readline.createInterface({ input: this.proc.stdout! });
 
     // Initialize
@@ -257,7 +256,7 @@ class GrokACPChat {
 }
 
 // Usage
-const client = await new GrokACPChat(".").init();
+const client = await new AxonACPChat(".").init();
 
 for await (const update of client.streamPrompt("List the files in this project")) {
   switch (update.sessionUpdate) {

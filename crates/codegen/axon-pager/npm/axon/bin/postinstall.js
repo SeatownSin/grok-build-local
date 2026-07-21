@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// Runs once after npm install/update. Reads the grok binary from the
-// matching per-platform optional dependency (@xai-official/grok-<platform>)
-// and installs it to ~/.grok/bin/ using versioned filenames:
+// Runs once after npm install/update. Reads the axon binary from the
+// matching per-platform optional dependency (@axon-official/axon-<platform>)
+// and installs it to ~/.axon/bin/ using versioned filenames:
 //
-//   Unix:    grok-<version>  +  grok  (symlink)
-//   Windows: grok-<version>.exe  +  grok.exe  (copy)
+//   Unix:    axon-<version>  +  axon  (symlink)
+//   Windows: axon-<version>.exe  +  axon.exe  (copy)
 //
 // Versioned files ensure running processes are never disrupted on macOS
 // (replacing a binary that a running process has mmap'd causes SIGKILL
@@ -16,7 +16,7 @@ const zlib = require('zlib');
 const { execSync } = require('child_process');
 const TOML = require('@iarna/toml');
 
-const CANONICAL_DIR = path.join(os.homedir(), '.grok', 'bin');
+const CANONICAL_DIR = path.join(os.homedir(), '.axon', 'bin');
 
 const key = `${process.platform}-${process.arch}`;
 const SUPPORTED = new Set([
@@ -28,7 +28,7 @@ const SUPPORTED = new Set([
     'win32-arm64',
 ]);
 if (!SUPPORTED.has(key)) {
-    console.error(`@xai-official/grok: unsupported platform ${key}`);
+    console.error(`@axon-official/axon: unsupported platform ${key}`);
     process.exit(0);
 }
 
@@ -37,7 +37,7 @@ if (!SUPPORTED.has(key)) {
 // other five are silently skipped. If the matching one is missing, npm was
 // likely invoked with --no-optional or the platform is unsupported.
 function resolvePlatformPackageDir() {
-    const platformPkg = `@xai-official/grok-${key}`;
+    const platformPkg = `@axon-official/axon-${key}`;
     try {
         return path.dirname(require.resolve(`${platformPkg}/package.json`));
     } catch {
@@ -48,7 +48,7 @@ function resolvePlatformPackageDir() {
 let version;
 try { version = require('../package.json').version; } catch {}
 if (!version) {
-    console.error('@xai-official/grok: unable to determine version');
+    console.error('@axon-official/axon: unable to determine version');
     process.exit(0);
 }
 
@@ -75,7 +75,7 @@ function installBinary(binName, sourceDir, vendorSubpath) {
     } else if (fs.existsSync(rawPath)) {
         vendoredBinPath = rawPath;
     } else {
-        console.error(`@xai-official/grok: missing binary at ${brPath}`);
+        console.error(`@axon-official/axon: missing binary at ${brPath}`);
         return false;
     }
 
@@ -115,8 +115,8 @@ function installBinary(binName, sourceDir, vendorSubpath) {
                     throw copyErr;
                 }
             } catch (e2) {
-                console.error(`@xai-official/grok: failed to update ${canonicalPath}: ${e2.message}`);
-                console.error('Close all running grok processes and try again.');
+                console.error(`@axon-official/axon: failed to update ${canonicalPath}: ${e2.message}`);
+                console.error('Close all running axon processes and try again.');
                 return false;
             }
         }
@@ -135,7 +135,7 @@ function installBinary(binName, sourceDir, vendorSubpath) {
 // Best-effort cleanup of old versioned binaries for a given binary name.
 // Keeps the current version and the previous one (in case a process is still
 // running the old binary and hasn't fully loaded all pages yet).
-// Uses an exact prefix match + hyphen + digit to avoid grok-* matching grok-pager-*.
+// Uses an exact prefix match + hyphen + digit to avoid axon-* matching axon-pager-*.
 function cleanupOldVersions(binName) {
     try {
         const prefix = `${binName}-`;
@@ -165,30 +165,30 @@ function cleanupOldVersions(binName) {
 
 const platformDir = resolvePlatformPackageDir();
 if (!platformDir) {
-    console.error(`@xai-official/grok: platform package @xai-official/grok-${key} not installed.`);
+    console.error(`@axon-official/axon: platform package @axon-official/axon-${key} not installed.`);
     console.error('  This usually means npm was invoked with --no-optional, or the install failed.');
-    console.error('  Try: npm install -g @xai-official/grok');
+    console.error('  Try: npm install -g @axon-official/axon');
     process.exit(0);
 }
 
-installBinary('grok', platformDir, `grok${EXE}`);
-cleanupOldVersions('grok');
-cleanupOldVersions('grok-pager');
+installBinary('axon', platformDir, `axon${EXE}`);
+cleanupOldVersions('axon');
+cleanupOldVersions('axon-pager');
 
 // Write installer config
-const configDir = path.join(os.homedir(), '.grok');
+const configDir = path.join(os.homedir(), '.axon');
 const configPath = path.join(configDir, 'config.toml');
 let obj = {};
 try { obj = TOML.parse(fs.readFileSync(configPath, 'utf8')); } catch { }
 obj.cli ??= {};
 obj.cli.installer = 'npm';
 
-// Persist the npm registry so `grok update` and the trampoline use the same one.
-const npmRegistry = process.env.GROK_NPM_REGISTRY
+// Persist the npm registry so `axon update` and the trampoline use the same one.
+const npmRegistry = process.env.AXON_NPM_REGISTRY
     || (() => {
         try {
             const resolved = execSync(
-                'npm config get @xai-official:registry',
+                'npm config get @axon-official:registry',
                 { encoding: 'utf8', timeout: 5000 }
             ).trim();
             if (resolved && resolved !== 'undefined') return resolved;
@@ -203,23 +203,23 @@ if (npmRegistry) {
 fs.writeFileSync(configPath, TOML.stringify(obj), 'utf8');
 
 // Shell completions: print setup hints (no silent shell config mutation).
-// Set GROK_INSTALL_COMPLETIONS=1 to auto-generate to ~/.grok/completions.
-const GROK_PATH = path.join(CANONICAL_DIR, `grok${EXE}`);
-if (process.env.GROK_INSTALL_COMPLETIONS === '1' && !IS_WINDOWS) {
+// Set AXON_INSTALL_COMPLETIONS=1 to auto-generate to ~/.axon/completions.
+const AXON_PATH = path.join(CANONICAL_DIR, `axon${EXE}`);
+if (process.env.AXON_INSTALL_COMPLETIONS === '1' && !IS_WINDOWS) {
     try {
         const { spawnSync } = require('child_process');
-        const completionsDir = path.join(os.homedir(), '.grok', 'completions');
-        const bashPath = path.join(completionsDir, 'bash', 'grok.bash');
-        const zshPath = path.join(completionsDir, 'zsh', '_grok');
+        const completionsDir = path.join(os.homedir(), '.axon', 'completions');
+        const bashPath = path.join(completionsDir, 'bash', 'axon.bash');
+        const zshPath = path.join(completionsDir, 'zsh', '_axon');
         fs.mkdirSync(path.dirname(bashPath), { recursive: true });
         fs.mkdirSync(path.dirname(zshPath), { recursive: true });
-        const bashRes = spawnSync(GROK_PATH, ['completions', 'bash'], { encoding: 'utf8' });
+        const bashRes = spawnSync(AXON_PATH, ['completions', 'bash'], { encoding: 'utf8' });
         if (bashRes.status === 0) fs.writeFileSync(bashPath, bashRes.stdout);
-        const zshRes = spawnSync(GROK_PATH, ['completions', 'zsh'], { encoding: 'utf8' });
+        const zshRes = spawnSync(AXON_PATH, ['completions', 'zsh'], { encoding: 'utf8' });
         if (zshRes.status === 0) fs.writeFileSync(zshPath, zshRes.stdout);
-        console.log('Completions generated to ~/.grok/completions (bash/zsh)');
+        console.log('Completions generated to ~/.axon/completions (bash/zsh)');
     } catch {}
 } else if (!IS_WINDOWS) {
-    console.log('Tip: grok completions bash > ~/.local/share/bash-completion/completions/grok');
-    console.log('     grok completions zsh  > ~/.zsh/completions/_grok');
+    console.log('Tip: axon completions bash > ~/.local/share/bash-completion/completions/axon');
+    console.log('     axon completions zsh  > ~/.zsh/completions/_axon');
 }

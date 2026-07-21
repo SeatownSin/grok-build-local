@@ -40,7 +40,7 @@ Compress conversation history to save context window space. Optionally specify w
 /compact keep the auth implementation details
 ```
 
-When the context window fills up, Grok auto-compacts at 85% usage (configurable via `[session] auto_compact_threshold_percent` in config.toml).
+When the context window fills up, Axon auto-compacts at 85% usage (configurable via `[session] auto_compact_threshold_percent` in config.toml).
 
 ### `/context`
 
@@ -131,9 +131,9 @@ Aliases: `/title`
 Switch to a different model. Accepts model IDs or display names (case-insensitive). For reasoning models you can also pass an effort level as a second argument:
 
 ```
-/model grok-build
-/model Grok Build
-/model Reasoning X high
+/model local
+/model your-model-id
+/model your-model-id high
 ```
 
 Aliases: `/m`
@@ -214,7 +214,7 @@ fullscreen) switches to the experimental scrollback-native mode; `/fullscreen`
 TUI. Both relaunch the pager on the same conversation for this session only —
 they do not write `config.toml`. Descriptions and the relaunch banner tell you
 how to switch back (`/fullscreen` ⇄ `/minimal`). The `--minimal` /
-`--fullscreen` CLI flags are likewise session-scoped. To make plain `grok` open
+`--fullscreen` CLI flags are likewise session-scoped. To make plain `axon` open
 in a given mode by default, use `/settings` → **Default screen mode**, or set
 `[ui] screen_mode` in `config.toml`.
 
@@ -353,7 +353,7 @@ Generate a video from an image or text description. Plans shots, generates sourc
 
 ### `/loop [interval] <prompt>`
 
-Run a prompt on a recurring interval. Specify the interval as `30m`, `1 hour`, or `every 2 days`. If you omit it, Grok prompts you.
+Run a prompt on a recurring interval. Specify the interval as `30m`, `1 hour`, or `every 2 days`. If you omit it, Axon prompts you.
 
 ```
 /loop 30m check deploy status
@@ -370,7 +370,7 @@ Recurring tasks auto-expire after 7 days. Cancel with `scheduler_delete` (the jo
 
 ### `/goal`
 
-Set, manage, or check an autonomous goal. Grok works toward the objective across turns and reports progress.
+Set, manage, or check an autonomous goal. Axon works toward the objective across turns and reports progress.
 
 ```
 /goal Migrate the auth module to the new API
@@ -388,14 +388,6 @@ Switch the TUI color theme.
 ```
 
 Aliases: `/t`
-
-### `/feedback [message]`
-
-Report an issue or send feedback.
-
-```
-/feedback Something isn't working correctly
-```
 
 ### `/btw`
 
@@ -439,7 +431,7 @@ Aliases: `/changelog`
 
 ### `/docs`
 
-Browse in-TUI How-to Guides, open online Build docs, or jump to a guide by title.
+Browse in-TUI How-to Guides, open the online documentation, or jump to a guide by title.
 
 ```
 /docs
@@ -448,7 +440,7 @@ Browse in-TUI How-to Guides, open online Build docs, or jump to a guide by title
 ```
 
 - Bare `/docs` (or `/docs how-to`) opens the How-to Guides picker
-- `/docs web` opens https://docs.x.ai/build/overview in the browser
+- `/docs web` opens the online documentation (https://github.com/SeatownSin/grok-build-local) in the browser
 - `/docs <title>` opens a specific guide (case-insensitive title match)
 
 Aliases: `/howto`, `/guides`
@@ -482,50 +474,6 @@ Manage personas -- create, edit, and delete personas. A subagent can apply a per
 ```
 /personas
 ```
-
----
-
-## Account and Billing
-
-### `/login`
-
-Log in or re-authenticate with your account without leaving the session.
-
-```
-/login
-```
-
-### `/logout`
-
-Log out and return to the login screen.
-
-```
-/logout
-```
-
-### `/usage`
-
-View credit usage or manage billing.
-
-```
-/usage
-```
-
-### `/privacy`
-
-Show or toggle privacy and data-retention status.
-
-```
-/privacy
-/privacy opt-in
-/privacy opt-out
-```
-
-Does not change `[features] telemetry`, `trace_upload`, or external OTEL settings.
-See [Monitoring Usage](24-monitoring-usage.md#related-settings).
-On team accounts, only a team admin can toggle privacy with `/privacy`.
-Team admins can also enable or disable Zero Data Retention (ZDR) for their team:
-[How to enable ZDR](https://docs.x.ai/developers/faq/security#how-to-enable-zdr).
 
 ---
 

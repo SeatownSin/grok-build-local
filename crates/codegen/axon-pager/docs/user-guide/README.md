@@ -1,6 +1,8 @@
-# Grok Build User Guide
+# Axon User Guide
 
-Learn how to install, configure, and extend Grok Build, the terminal-based AI coding assistant from SpaceXAI.
+Learn how to install, configure, and extend Axon, a local-first, privacy-focused terminal-based AI coding assistant.
+
+Axon is an independent fork of xAI's Apache-2.0-licensed Grok Build; it is not affiliated with xAI.
 
 ---
 
@@ -11,7 +13,7 @@ Start here. These guides cover what you need on your first day.
 | # | Document | Description |
 |---|----------|-------------|
 | 1 | [Getting Started](01-getting-started.md) | Installation, first launch, authentication, basic interaction, and key concepts |
-| 2 | [Authentication](02-authentication.md) | Browser login, API keys, OIDC/SSO, external auth providers, and device-code flow |
+| 2 | [Authentication](02-authentication.md) | API keys (BYOK), OIDC/SSO against your own IdP, external auth providers, and local no-auth detection |
 | 3 | [Keyboard Shortcuts](03-keyboard-shortcuts.md) | Reference for every key binding and mouse action in the TUI |
 | 4 | [Slash Commands](04-slash-commands.md) | Every `/` command for sessions, models, memory, hooks, and plugins |
 | 5 | [Configuration](05-configuration.md) | `config.toml`, `pager.toml`, environment variables, and file locations |
@@ -20,7 +22,7 @@ Start here. These guides cover what you need on your first day.
 
 ## Tier 2: Core Feature Docs
 
-Customize and extend Grok Build.
+Customize and extend Axon.
 
 | # | Document | Description |
 |---|----------|-------------|
@@ -37,7 +39,7 @@ Customize and extend Grok Build.
 
 ## Tier 3: Advanced Usage Docs
 
-Automate, script, and integrate Grok Build with other systems.
+Automate, script, and integrate Axon with other systems.
 
 | # | Document | Description |
 |---|----------|-------------|

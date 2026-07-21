@@ -1,4 +1,4 @@
 bin/*.br
-bin/grok
-bin/grok.exe
+bin/axon
+bin/axon.exe
 THIRD_PARTY_NOTICES.md

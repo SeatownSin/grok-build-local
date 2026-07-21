@@ -1,35 +1,37 @@
-# Grok
+# Axon
 
-Bring Grok into your terminal. Fast, flicker-free CLI built for plans, subagents, and parallel work.
+A local-first, privacy-focused AI coding agent for your terminal. Fast, flicker-free TUI built for plans, subagents, and parallel work — running entirely against your local or BYOK models, with no calls to xAI infrastructure by default.
 
-**[Homepage](https://x.ai/cli)** | **[Documentation](https://docs.x.ai/build/overview)**
+**[Repository](https://github.com/SeatownSin/grok-build-local)**
+
+> Axon is an independent fork of xAI's Apache-2.0-licensed **Grok Build**. Not affiliated with, endorsed by, or supported by xAI.
 
 ## Install
 
 ```bash
-curl -fsSL https://x.ai/cli/install.sh | bash
-```
-
-Or install with npm:
-
-```bash
-npm i -g @axon-official/grok
+npm i -g @axon-official/axon
 ```
 
 ## Get Started
 
 ```bash
 # Launch the interactive TUI
-grok
+axon
 
 # Run a single task
 axon -p "Explain this codebase"
 ```
 
-On first launch, Grok opens your browser to authenticate. For CI or headless environments, use an API key from [console.x.ai](https://console.x.ai):
+On first launch, with no model configured, Axon drops into a short setup wizard that scans `localhost` and your local network for running model servers (Ollama, LM Studio, llama.cpp, vLLM) and writes the config for you. There is no browser auth flow. To configure a model by hand, edit `~/.axon/config.toml`:
 
-```bash
-export XAI_API_KEY="axon-..."
+```toml
+[model.local]
+model = "your-model-id"
+base_url = "http://localhost:11434/v1"
+name = "Local model"
+
+[models]
+default = "local"
 ```
 
 ## Update
@@ -41,21 +43,19 @@ axon update
 Or if installed via npm:
 
 ```bash
-npm i -g @axon-official/grok@latest
+npm i -g @axon-official/axon@latest
 ```
 
 ## Supported Platforms
 
 | Platform | Architecture |
 |---|---|
-| macOS | Apple Silicon (arm64) |
+| macOS | Apple Silicon (arm64), x86_64 |
 | Linux | x86_64, arm64 |
-| Windows | x86_64 |
+| Windows | x86_64, arm64 |
 
 ## Documentation
 
-For full documentation including configuration, MCP servers, custom models, headless mode, agent mode, and more, visit [docs.x.ai/build/overview](https://docs.x.ai/build/overview).
-
-## Feedback
-
-Run `/feedback` inside Grok to report issues or send feedback directly.
+Full documentation lives in the repository's
+[`docs/user-guide`](https://github.com/SeatownSin/grok-build-local/tree/main/crates/codegen/axon-pager/docs/user-guide):
+configuration, MCP servers, custom models, headless mode, agent mode, and more.
