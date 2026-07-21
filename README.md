@@ -1,9 +1,10 @@
-# grok-build-local
+# Axon
 
-A **local-first, privacy-focused fork** of **Grok Build** (`grok`) — xAI's
-terminal-based AI coding agent — modified so it makes **no network calls to
-xAI infrastructure by default** and runs entirely against **local or
-third-party (BYOK) models**.
+**Axon** is a **local-first, privacy-focused fork** of **Grok Build** — xAI's
+terminal-based AI coding agent — rebranded and modified so it makes **no
+network calls to xAI infrastructure by default** and runs entirely against
+**local or third-party (BYOK) models**. It is published as the
+[`grok-build-local`](https://github.com/SeatownSin/grok-build-local) repository.
 
 > **Not affiliated with, endorsed by, or supported by xAI.** This is an
 > independent modification of xAI's Apache-2.0-licensed source. See
@@ -12,7 +13,9 @@ third-party (BYOK) models**.
 It runs as a full-screen TUI that understands your codebase, edits files,
 executes shell commands, and manages long-running tasks — interactively,
 headlessly for scripting/CI, or embedded in editors via the Agent Client
-Protocol (ACP). The binary artifact is `xai-grok-pager` and installs as `grok`.
+Protocol (ACP). The app presents itself as **Axon**; the build artifact and
+command still carry upstream's `xai-grok-pager`/`grok` names (renaming those
+internal identifiers is a separate, later change).
 
 [What's different](#whats-different-from-upstream) ·
 [Building](#building-from-source) ·
@@ -47,11 +50,21 @@ servers, and adds first-class support for local models. The changes:
   [Configuring a local model](#configuring-a-local-model).
 - **Grok models hidden.** The xAI-hosted default models are hidden from the
   picker (they're unusable here); your local/BYOK models are all that show.
+- **Rebranded as Axon.** The welcome screen (a new mark), model picker,
+  notifications, and theme names carry the Axon identity — no `grok`/`xAI`
+  branding is shown in the UI. The bundled themes are **Axon Night** (a cerebral
+  cool-slate default) and **Axon Day**. Internal crate/command names are
+  unchanged for now.
 - **First-run setup wizard.** With no model configured, launch drops into a
-  short wizard that scans `localhost` for a running model server and writes the
-  config for you — replacing the (removed) login screen.
-- **Windows build support.** The proto codegen no longer depends on
-  `/dev/stdout`, so the workspace builds natively on Windows.
+  short wizard that scans **`localhost` and your local network** for running
+  model servers — probing the ports actually in use, so it finds servers on
+  non-standard/dynamic ports (LM Studio, for one, rarely sits on its documented
+  default) — and writes the config for you, replacing the (removed) login
+  screen.
+- **Windows support.** The proto codegen no longer depends on `/dev/stdout`, so
+  the workspace builds natively on Windows — and the app runs natively there
+  too (the async runtime is given a large stack, so the composed entrypoint
+  doesn't overflow the small Windows main-thread stack at startup).
 - **Updates from this repo.** `grok update` pulls GitHub Releases from
   `SeatownSin/grok-build-local`, not the x.ai CDN.
 
@@ -87,17 +100,20 @@ cargo check -p xai-grok-pager-bin            # fast validation
 ```
 
 **First launch.** With no model configured, the first run drops into a short
-setup wizard: it scans `localhost` for a running model server (Ollama, LM
-Studio, llama.cpp, vLLM), lets you pick a detected model or enter an endpoint
-manually, writes it to `~/.grok/config.toml`, and starts straight into a
-session. Quit the wizard and it exits cleanly. Prefer to set things up ahead of
-time? Configure a model up front ([below](#configuring-a-local-model)) and
-launch goes directly to a session — no wizard, no login. There is no browser
-auth flow to xAI in this build.
+setup wizard: it scans `localhost` **and your local network** for running model
+servers (Ollama, LM Studio, llama.cpp, vLLM) — probing the ports actually
+listening, so it finds servers on non-standard ports too — lets you pick a
+detected model or enter an endpoint manually, writes it to
+`~/.grok/config.toml`, and starts straight into a session. Quit the wizard and
+it exits cleanly. Prefer to set things up ahead of time? Configure a model up
+front ([below](#configuring-a-local-model)) and launch goes directly to a
+session — no wizard, no login. There is no browser auth flow to xAI in this
+build.
 
 ## Configuring a local model
 
-The first-run wizard writes this for you, but you can also add or edit models in
+The first-run wizard writes this for you (auto-detecting servers on `localhost`
+and your LAN, on any port), but you can also add or edit models in
 `~/.grok/config.toml` by hand. A loopback endpoint needs nothing else — no key,
 no login:
 
