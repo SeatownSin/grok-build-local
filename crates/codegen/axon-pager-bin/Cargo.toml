@@ -6,7 +6,7 @@ license = "Apache-2.0"
 authors = ["xAI"]
 default-run = "axon-pager"
 
-# Composition-root binary for the Grok Build TUI. The artifact is still named
+# Composition-root binary for the Axon TUI. The artifact is still named
 # `axon-pager`. This package exists so the binary can link both the pager
 # library and the optional `axon-pager-minimal` render mode: `minimal`
 # depends on `axon-pager`, so the pager library cannot depend back on it

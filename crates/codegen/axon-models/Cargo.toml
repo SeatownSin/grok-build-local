@@ -3,7 +3,7 @@ license = "Apache-2.0"
 name = "axon-models"
 version = "0.1.0"
 edition.workspace = true
-description = "Default model IDs for the grok CLI, loaded from the embedded default_models.json."
+description = "Default model IDs for the Axon CLI, loaded from the embedded default_models.json."
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }

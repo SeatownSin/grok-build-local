@@ -3,10 +3,10 @@ license = "Apache-2.0"
 edition.workspace = true
 name = "axon-announcements"
 version = "0.1.0"
-description = "Shared announcement types, persistence, and formatting for Grok CLI apps"
+description = "Shared announcement types, persistence, and formatting for Axon CLI apps"
 
 [features]
-# TS bindings generation only (grok-desktop consumes the committed output);
+# TS bindings generation only (a desktop app consumes the committed output);
 # off by default so Bazel/CI builds never compile ts-rs. See generate.sh.
 ts = ["dep:ts-rs"]
 

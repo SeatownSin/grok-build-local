@@ -113,7 +113,7 @@ libc = { workspace = true }
 windows = { workspace = true }
 
 [[bin]]
-name = "xai-workspace-server"
+name = "axon-workspace-server"
 path = "src/bin/workspace_server.rs"
 
 [[bin]]

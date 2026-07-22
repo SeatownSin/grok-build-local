@@ -3,7 +3,7 @@ license = "Apache-2.0"
 name = "axon-voice"
 version = "0.1.0"
 edition.workspace = true
-description = "Voice dictation (streaming STT) for Grok Build CLI"
+description = "Voice dictation (streaming STT) for Axon CLI"
 
 [dependencies]
 anyhow = { workspace = true }
