@@ -11,6 +11,10 @@ name: Release
 #
 # Each target builds NATIVELY on its own runner (no cross-compilation). The
 # arm64 Linux/Windows runners are free for public repositories.
+#
+# macOS targets are intentionally NOT built here — macOS runners are billed
+# for this account. To add them back, restore the macos-13 (x86_64) and
+# macos-14 (aarch64) matrix rows below; the rest of the job is platform-generic.
 
 on:
   push:
@@ -35,8 +39,6 @@ jobs:
         include:
           - { os_label: linux,   arch_label: x86_64,  runner: ubuntu-22.04,     ext: "" }
           - { os_label: linux,   arch_label: aarch64, runner: ubuntu-22.04-arm, ext: "" }
-          - { os_label: macos,   arch_label: x86_64,  runner: macos-13,         ext: "" }
-          - { os_label: macos,   arch_label: aarch64, runner: macos-14,         ext: "" }
           - { os_label: windows, arch_label: x86_64,  runner: windows-2022,     ext: ".exe" }
           - { os_label: windows, arch_label: aarch64, runner: windows-11-arm,   ext: ".exe" }
     steps:
