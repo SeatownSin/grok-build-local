@@ -1856,6 +1856,43 @@ pub fn conversation_to_chat_messages(items: Vec<ConversationItem>) -> Vec<ChatRe
                 // calls.
                 out.push(conversation_item_to_chat_message(item));
             }
+            ConversationItem::ToolResult(t) if !t.images.is_empty() => {
+                // Strict OpenAI-compatible backends (LM Studio among them)
+                // only accept text content in `role:"tool"` messages and
+                // reject the whole request otherwise. Emit the text in the
+                // tool message and move the images into an immediately
+                // following user message; every chat-completions backend
+                // accepts user-role image blocks.
+                pending_reasoning.clear();
+                out.push(ChatRequestMessage::tool(
+                    t.tool_call_id,
+                    format!(
+                        "{}\n[image content from this tool result is attached in the next message]",
+                        t.content.as_ref()
+                    ),
+                ));
+                let mut blocks = vec![ChatContentBlock::Text {
+                    text: "Image content from the preceding tool result:".to_owned(),
+                }];
+                for img in t.images {
+                    if let ContentPart::Image { url } = img {
+                        blocks.push(ChatContentBlock::ImageUrl {
+                            image_url: ImageUrl {
+                                url: url.as_ref().to_owned(),
+                            },
+                        });
+                    }
+                }
+                out.push(ChatRequestMessage {
+                    role: Role::User,
+                    content: MessageContent::Blocks(blocks),
+                    name: None,
+                    tool_calls: Vec::new(),
+                    tool_call_id: None,
+                    model_id: None,
+                    reasoning_content: None,
+                });
+            }
             other => {
                 // Trailing reasoning is held until the next assistant;
                 // intervening user/tool messages clear it, matching the
@@ -8443,6 +8480,46 @@ mod tests {
             msgs[1].reasoning_content.as_deref(),
             Some("thinking step 1\nthinking step 2"),
             "reasoning text joined and attached to the assistant"
+        );
+    }
+
+    #[test]
+    fn conversation_to_chat_messages_moves_tool_result_images_to_user_message() {
+        // Strict backends reject image blocks inside `role:"tool"` messages
+        // (LM Studio: "Invalid 'messages' in payload"), so an image-bearing
+        // tool result must be split into a text-only tool message plus a
+        // following user message carrying the image blocks.
+        let items = vec![
+            ConversationItem::user("read the screenshot"),
+            ConversationItem::ToolResult(ToolResultItem {
+                tool_call_id: "tc_1".to_string(),
+                content: Arc::<str>::from("Read image: shot.png"),
+                images: vec![ContentPart::Image {
+                    url: Arc::<str>::from("data:image/png;base64,AAAA"),
+                }],
+            }),
+        ];
+
+        let msgs = conversation_to_chat_messages(items);
+
+        assert_eq!(msgs.len(), 3, "user + text-only tool + image user message");
+        assert_eq!(msgs[1].role, Role::Tool);
+        assert_eq!(msgs[1].tool_call_id.as_deref(), Some("tc_1"));
+        assert!(
+            matches!(msgs[1].content, MessageContent::Text(_)),
+            "tool message must be text-only for strict backends"
+        );
+        assert!(msgs[1].text_content().contains("Read image: shot.png"));
+        assert_eq!(msgs[2].role, Role::User);
+        let MessageContent::Blocks(ref blocks) = msgs[2].content else {
+            panic!("follow-up user message must use content blocks");
+        };
+        assert!(
+            blocks.iter().any(|b| matches!(
+                b,
+                ChatContentBlock::ImageUrl { image_url } if image_url.url.starts_with("data:image/png")
+            )),
+            "image block must move to the user message"
         );
     }
 
